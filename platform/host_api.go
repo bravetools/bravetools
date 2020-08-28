@@ -1,10 +1,12 @@
 package platform
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -12,7 +14,9 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
+	"github.com/beringresearch/bravetools/db"
 	"github.com/beringresearch/bravetools/shared"
+	"github.com/google/uuid"
 	"github.com/olekukonko/tablewriter"
 )
 
@@ -433,7 +437,6 @@ func (bh *BraveHost) MountDirectory(unit string, source string, destination stri
 
 // DeleteUnit ..
 func (bh *BraveHost) DeleteUnit(name string) error {
-	var iprules string
 	var unitNames []string
 
 	unitList, err := listHostUnits(bh.Remote)
@@ -454,61 +457,21 @@ func (bh *BraveHost) DeleteUnit(name string) error {
 		return errors.New("Failed to delete unit: " + err.Error())
 	}
 
-	unitAddress, err := getUnitIPAddress(name, bh.Remote)
-	backend := bh.Settings.BackendSettings.Type
-	hostName := bh.Settings.Name
+	// Deleting unit from databse
 
-	switch backend {
-	case "multipass":
-		iprules, err = shared.ExecCommandWReturn("multipass", "exec", hostName,
-			"--",
-			"sudo",
-			"iptables",
-			"-t", "nat", "-L", "PREROUTING", "-n", "--line-numbers")
-		if err != nil {
-			return errors.New("Failed to obtain IP rule: " + err.Error())
-		}
+	userHome, err := os.UserHomeDir()
+	if err != nil {
+		return errors.New("Failed to get home directory")
+	}
+	dbPath := path.Join(userHome, shared.BraveDB)
+	database := db.OpenDB(dbPath)
 
-		c, err := cmdDeleteIPRule(iprules, unitAddress)
-		if err != nil {
-			return errors.New("Failed to create delete iprules command: " + err.Error())
-		}
-
-		if c != nil {
-			cmd := []string{"exec", hostName, "--", "sudo"}
-			for index := range c {
-				cmd = append(cmd, c[index])
-			}
-
-			err = shared.ExecCommand("multipass", cmd...)
-
-			if err != nil {
-				return errors.New("Failed to remove iptables rule: " + err.Error())
-			}
-		}
-
-	case "lxd":
-		iprules, err = shared.ExecCommandWReturn("sudo", "iptables",
-			"-t", "nat", "-L", "PREROUTING", "-n", "--line-numbers")
-		if err != nil {
-			return errors.New("Failed to obtain IP rule: " + err.Error())
-		}
-
-		cmd, err := cmdDeleteIPRule(iprules, unitAddress)
-		if err != nil {
-			return errors.New("Failed to create delete iprules command: " + err.Error())
-		}
-
-		if cmd != nil {
-			err = shared.ExecCommand("sudo", cmd...)
-
-			if err != nil {
-				return errors.New("Failed to remove iptables rule: " + err.Error())
-			}
-		}
+	err = db.DeleteUnitDB(database, name)
+	if err != nil {
+		return errors.New("Failed to delete unit from database. Name: " + name + " Error: " + err.Error())
 	}
 
-	fmt.Println(name)
+	fmt.Println("Unit deleted: ", name)
 	return nil
 }
 
@@ -558,14 +521,12 @@ func (bh *BraveHost) BuildUnit(bravefile *shared.Bravefile) error {
 	case "public":
 		err = importLXD(bravefile, bh.Remote)
 		if err != nil {
-			fmt.Println(err)
-			// log.Fatal(err)
+			log.Fatal(err)
 		}
 
 		err = Start(bravefile.PlatformService.Name, bh.Remote)
 		if err != nil {
-			fmt.Println(err)
-			// log.Fatal(err)
+			log.Fatal(err)
 		}
 	case "github":
 		err = importGitHub(bravefile, bh)
@@ -924,104 +885,75 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 
 	fmt.Println("Service started: ", unitParams.PlatformService.Name)
 
-	// Get IP address of a running Unit
-	// This avoid issues when IP is not provided in Braveup file
-	time.Sleep(2 * time.Second)
-	unitAddress, err := getUnitIPAddress(unitParams.PlatformService.Name, bh.Remote)
-
-	backendName := bh.Settings.BackendSettings.Type
-	var networkInterfaces []string
-	switch backendName {
-	case "multipass":
-		networkInterfaces, err = getMPInterfaceName(bh)
-		if err != nil {
-			return errors.New("Failed to get network interface name: " + err.Error())
-		}
-	case "lxd":
-		networkInterfaces, err = getInterfaceName()
-		if err != nil {
-			return errors.New("Failed to get network interface name: " + err.Error())
-		}
-	}
-
 	ports := unitParams.PlatformService.Ports
 	if len(ports) > 0 {
-		f, err := os.Create("iprules.sh")
-		if err != nil {
-
-			return err
-		}
-		defer f.Close()
 		for _, p := range ports {
 			ps := strings.Split(p, ":")
 			if len(ps) < 2 {
 				DeleteImage(fingerprint, bh.Remote)
 				Delete(unitParams.PlatformService.Name, bh.Remote)
-				return errors.New("Invalid port forwarding definition. Approriate format is UNIT_PORT:HOST_PORT")
+				return errors.New("Invalid port forwarding definition. Appropriate format is UNIT_PORT:HOST_PORT")
 			}
 
-			for _, iface := range networkInterfaces {
-				rule := "sudo iptables -t nat -A PREROUTING -i " + iface + " -p tcp --dport " + ps[1] + " -j DNAT --to-destination " + unitAddress + ":" + ps[0] + "\n"
-				_, err = f.Write([]byte(rule))
+			err := addIPRules(unitParams.PlatformService.Name, ps[1], ps[0], bh)
+			if err != nil {
+				err = Delete(unitParams.PlatformService.Name, bh.Remote)
 				if err != nil {
-					return err
+					return errors.New("Failed to delete unit: " + err.Error())
 				}
+				log.Fatal(err)
 			}
 		}
+	}
 
-		wd, _ := os.Getwd()
-		switch backendName {
-		case "multipass":
-			wd, _ := os.Getwd()
-			err = copyTo(wd+"/iprules.sh", bh.Settings)
-			if err != nil {
-				return err
-			}
-			// TODO needed to acquire IP address of large instances.
-			// This needs to be automated since not useful to wait 30s on smaller images
-			time.Sleep(30 * time.Second)
+	// Add unit into database
 
-			err = run("/home/ubuntu/iprules.sh", bh.Settings)
-			if err != nil {
-				return errors.New("Failed to configure iprules: " + err.Error())
-			}
+	var braveUnit db.BraveUnit
+	userHome, err := os.UserHomeDir()
+	if err != nil {
+		return errors.New("Failed to get home directory")
+	}
+	dbPath := path.Join(userHome, shared.BraveDB)
 
-			err = shared.ExecCommand("multipass",
-				"exec",
-				bh.Settings.Name,
-				"--",
-				"sudo",
-				"netfilter-persistent",
-				"save",
-			)
-			err = shared.ExecCommand("multipass",
-				"exec",
-				bh.Settings.Name,
-				"--",
-				"sudo",
-				"netfilter-persistent",
-				"reload",
-			)
+	_, err = os.Stat(dbPath)
+	if os.IsNotExist(err) {
 
-		case "lxd":
-			time.Sleep(30 * time.Second)
-			err = run(wd+"/iprules.sh", bh.Settings)
-			if err != nil {
-				return errors.New("Failed to configure iprules: " + err.Error())
-			}
-			err = shared.ExecCommand(
-				"sudo",
-				"netfilter-persistent",
-				"save",
-			)
-			err = shared.ExecCommand(
-				"sudo",
-				"netfilter-persistent",
-				"reload",
-			)
+		err = db.InitDB(dbPath)
+
+		if err != nil {
+			DeleteImage(fingerprint, bh.Remote)
+			Delete(unitParams.PlatformService.Name, bh.Remote)
+			return errors.New("Failed to initialize database. Error: " + err.Error())
 		}
+	}
 
-		os.Remove(wd + "/iprules.sh")
+	log.Println("Connecting to database")
+	database := db.OpenDB(dbPath)
+
+	uuid, _ := uuid.NewUUID()
+	braveUnit.UID = uuid.String()
+	braveUnit.Name = unitParams.PlatformService.Name
+	braveUnit.Date = time.Now().String()
+
+	var unitData db.UnitData
+	unitData.CPU, _ = strconv.Atoi(unitParams.PlatformService.Resources.CPU)
+	unitData.RAM = unitParams.PlatformService.Resources.RAM
+	unitData.IP = unitParams.PlatformService.IP
+	unitData.Image = unitParams.Base.Image
+
+	data, err := json.Marshal(unitData)
+	if err != nil {
+		DeleteImage(fingerprint, bh.Remote)
+		Delete(unitParams.PlatformService.Name, bh.Remote)
+		return errors.New("Failed to serialize unit data")
+	}
+	braveUnit.Data = data
+	log.Println("Inserting unit")
+	_, err = db.InsertUnitDB(database, braveUnit)
+	if err != nil {
+		DeleteImage(fingerprint, bh.Remote)
+		Delete(unitParams.PlatformService.Name, bh.Remote)
+		return errors.New("Failed to insert unit to database. Error: " + err.Error())
 	}
 
 	return nil

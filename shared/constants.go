@@ -25,3 +25,6 @@ const BraveClientCert = "/.bravetools/certs/client.crt"
 
 // SnapLXC lxc command path in Snap
 const SnapLXC = "/snap/bin/lxc"
+
+// BraveDB path to Bravetools database
+const BraveDB = "/.bravetools/bravetools.db"

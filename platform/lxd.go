@@ -76,11 +76,6 @@ func (vm Lxd) BraveBackendInit() error {
 			return errors.New("Failed to update workspace: " + err.Error())
 		}
 
-		err = configureIPTables()
-		if err != nil {
-			return errors.New("Failed to configure iptables: " + err.Error())
-		}
-
 		err = installLxd(vm)
 		if err != nil {
 			return errors.New("Failed to install LXD: " + err.Error())
@@ -257,33 +252,6 @@ func enableRemote(vm Lxd) error {
 		vm.Settings.Trust)
 	if err != nil {
 		return errors.New("Error setting workspace security: " + err.Error())
-	}
-
-	return nil
-}
-
-func configureIPTables() error {
-	var ipv4 = "echo iptables-persistent iptables-persistent/autosave_v4 boolean true | sudo debconf-set-selections"
-	var ipv6 = "echo iptables-persistent iptables-persistent/autosave_v6 boolean true | sudo debconf-set-selections"
-
-	shared.ExecCommand(
-		"bash",
-		"-c",
-		ipv4)
-
-	shared.ExecCommand(
-		"bash",
-		"-c",
-		ipv6)
-
-	err := shared.ExecCommand(
-		"sudo",
-		"apt",
-		"install",
-		"-y",
-		"iptables-persistent")
-	if err != nil {
-		return errors.New("Failed to install packages in workspace: " + err.Error())
 	}
 
 	return nil

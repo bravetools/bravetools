@@ -103,25 +103,6 @@ func (vm Multipass) BraveBackendInit() error {
 		return errors.New("Failed to update workspace: " + err.Error())
 	}
 
-	var ipv4 = "echo iptables-persistent iptables-persistent/autosave_v4 boolean true | sudo debconf-set-selections"
-	var ipv6 = "echo iptables-persistent iptables-persistent/autosave_v6 boolean true | sudo debconf-set-selections"
-
-	shared.ExecCommand("multipass",
-		"exec",
-		vm.Settings.Name,
-		"--",
-		"bash",
-		"-c",
-		ipv4)
-
-	shared.ExecCommand("multipass",
-		"exec",
-		vm.Settings.Name,
-		"--",
-		"bash",
-		"-c",
-		ipv6)
-
 	shared.ExecCommand("multipass",
 		"exec",
 		vm.Settings.Name,
@@ -167,15 +148,6 @@ func (vm Multipass) BraveBackendInit() error {
 		"lxd",
 		"ubuntu")
 
-	err = shared.ExecCommand("multipass",
-		"exec",
-		vm.Settings.Name,
-		"--",
-		"sudo",
-		"apt",
-		"install",
-		"-y",
-		"iptables-persistent")
 	if err != nil {
 		return errors.New("Failed to install packages in workspace: " + err.Error())
 	}

@@ -192,24 +192,24 @@ func DeleteDevice(name string, target string, remote Remote) (string, error) {
 }
 
 // AddDevice adds an external device to
-func AddDevice(name string, devname string, config map[string]string, remote Remote) error {
+func AddDevice(ct string, devname string, devices map[string]string, remote Remote) error {
 	lxdServer := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
 
-	inst, etag, err := lxdServer.GetInstance(name)
+	inst, etag, err := lxdServer.GetInstance(ct)
 	if err != nil {
-		return err
+		return errors.New("Error accessing unit: " + ct)
 	}
 
-	inst.Devices[devname] = config
+	inst.Devices[devname] = devices
 
-	op, err := lxdServer.UpdateInstance(name, inst.Writable(), etag)
+	op, err := lxdServer.UpdateInstance(ct, inst.Writable(), etag)
 	if err != nil {
-		return err
+		return errors.New("Errors updating unit configuration: " + ct)
 	}
 
 	err = op.Wait()
 	if err != nil {
-		return err
+		return errors.New("Error updating unit " + ct + " Error: " + err.Error())
 	}
 
 	return nil
@@ -898,7 +898,7 @@ func SetConfig(name string, config map[string]string, remote Remote) error {
 	lxdServer := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
 	inst, etag, err := lxdServer.GetInstance(name)
 	if err != nil {
-		return err
+		return errors.New("Error connecting to unit: " + name)
 	}
 
 	for key, value := range config {
@@ -907,12 +907,12 @@ func SetConfig(name string, config map[string]string, remote Remote) error {
 
 	op, err := lxdServer.UpdateInstance(name, inst.Writable(), etag)
 	if err != nil {
-		return err
+		return errors.New("Error updating unit configuration: " + name)
 	}
 
 	err = op.Wait()
 	if err != nil {
-		return err
+		return errors.New("Error updating unit: " + err.Error())
 	}
 
 	return nil

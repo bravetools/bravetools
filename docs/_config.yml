@@ -37,15 +37,6 @@ remote_theme: pmarsceill/just-the-docs
 plugins:
   - jekyll-feed
 
-# Aux links
-aux_links:
-  "★":
-    - "//github.com/beringresearch/bravetools/stargazers"
-  "Bravetools on GitHub":
-    - "//github.com/beringresearch/bravetools"
-
-# Makes Aux links open in a new tab. Default is false
-aux_links_new_tab: false
 
 # Back to top link
 back_to_top: true

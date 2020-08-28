@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"syscall"
 
@@ -240,29 +239,6 @@ func getUnitIPAddress(name string, remote Remote) (string, error) {
 	return unitAddress, nil
 }
 
-// Generate command string to delete an IP rule
-func cmdDeleteIPRule(iprules string, unitAddress string) ([]string, error) {
-	rulesArray := strings.Split(iprules, "\n")
-	unitIndexArray, err := shared.StringSliceSearch(rulesArray, unitAddress)
-
-	if err != nil {
-		return nil, errors.New("Can't process IP rules string: " + err.Error())
-	}
-
-	var ruleIndex []int
-	for k, v := range unitIndexArray {
-		if v > 0 {
-			ruleIndex = append(ruleIndex, k-1)
-		}
-	}
-
-	var result []string
-	if ruleIndex != nil {
-		result = []string{"iptables", "-t", "nat", "-D", "PREROUTING", strconv.Itoa(ruleIndex[0])}
-	}
-	return result, nil
-}
-
 // ProcessInterruptHandler monitors for Ctrl+C keypress in Terminal
 func processInterruptHandler(fingerprint string, bravefile *shared.Bravefile, bh *BraveHost) {
 	c := make(chan os.Signal)
@@ -361,4 +337,23 @@ func fileExists(filename string) bool {
 		return false
 	}
 	return !info.IsDir()
+}
+
+// addIPRules adds firewall rule to the host iptable
+func addIPRules(ct string, hostPort string, ctPort string, bh *BraveHost) error {
+
+	name := ct + "proxy-" + hostPort + ":" + ctPort
+
+	var config = make(map[string]string)
+
+	config["type"] = "proxy"
+	config["listen"] = "tcp:0.0.0.0:" + hostPort
+	config["connect"] = "tcp:127.0.0.1:" + ctPort
+
+	err := AddDevice(ct, name, config, bh.Remote)
+	if err != nil {
+		return errors.New("failed to add proxy settings for unit " + err.Error())
+	}
+
+	return nil
 }
