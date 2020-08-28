@@ -1,0 +1,1 @@
+To build and install Mac OS binary run `make darwin` in project root.

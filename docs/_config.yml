@@ -1,0 +1,59 @@
+# Welcome to Jekyll!
+#
+# This config file is meant for settings that affect your whole blog, values
+# which you are expected to set up once and rarely edit after that. If you find
+# yourself editing this file very often, consider using Jekyll's data files
+# feature for the data you need to update frequently.
+#
+# For technical reasons, this file is *NOT* reloaded automatically when you use
+# 'bundle exec jekyll serve'. If you change this file, please restart the server process.
+#
+# If you need help with YAML syntax, here are some quick references for you: 
+# https://learn-the-web.algonquindesign.ca/topics/markdown-yaml-cheat-sheet/#yaml
+# https://learnxinyminutes.com/docs/yaml/
+#
+# Site settings
+# These are used to personalize your new site. If you look in the HTML files,
+# you will see them accessed via {{ site.title }}, {{ site.email }}, and so on.
+# You can create any custom variable you would like, and they will be accessible
+# in the templates via {{ site.myvariable }}.
+
+title: Bravetools
+email: bravetools@beringresearch.com
+description: Bravetools is a complete System Container mangement platform. Bravetools makes it easy to configure, build, and deploy reproducible and isolated environments either on single machines or large clusters.>- # this means to ignore newlines until "baseurl:"
+  
+baseurl: "/bravetools"
+url: "https://beringresearch.github.io" # the base hostname & protocol for your site, e.g. http://example.com
+twitter_username: beringresearch
+github_username:  beringresearch
+
+permalink: pretty
+search_enabled: true
+heading_anchors: true
+
+# Build settings
+#theme: just-the-docs
+remote_theme: pmarsceill/just-the-docs
+plugins:
+  - jekyll-feed
+
+# Aux links
+aux_links:
+  "★":
+    - "//github.com/beringresearch/bravetools/stargazers"
+  "Bravetools on GitHub":
+    - "//github.com/beringresearch/bravetools"
+
+# Makes Aux links open in a new tab. Default is false
+aux_links_new_tab: false
+
+# Back to top link
+back_to_top: true
+back_to_top_text: "Back to top"
+footer_content: "Copyright &copy; 2020 Bering Limited."
+
+gh_edit_link: true # show or hide edit this page link
+gh_edit_link_text: "Edit this page on GitHub."
+gh_edit_repository: "https://github.com/beringresearch/bravetools" # the github URL for your repo
+gh_edit_branch: "master" # the branch that your docs is served from
+gh_edit_view_mode: "tree" # "tree" or "edit" if you want the user to jump into the editor immediately

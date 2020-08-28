@@ -1,0 +1,258 @@
+@media (prefers-color-scheme: dark) {
+    :root {
+        --highlight-background-color: #202531;
+        --highlight-default-color: #D3D4D4;
+        --highlight-comment-color: rgba(204, 206, 211, 0.5);
+        --highlight-keyword-color: #ff7085;
+        --highlight-keyword2-color: #42ffc2;
+        --highlight-number-color: #a1ffe0;
+        --highlight-decorator-color: #abc8ff;
+        --highlight-type-color: #8effda;
+        --highlight-type2-color: #c6ffed;
+        --highlight-function-color: #57b3ff;
+        --highlight-operator-color: #abc8ff;
+        --highlight-string-color: #ffeca1;
+
+        --admonition-note-background-color: #303d4f;
+        --admonition-note-color: #bfeeff;
+        --admonition-note-title-background-color: #305070;
+        --admonition-note-title-color: #bfefff;
+        --admonition-attention-background-color: #444033;
+        --admonition-attention-color: #ffeeaf;
+        --admonition-attention-title-background-color: #665022;
+        --admonition-attention-title-color: #ffeeaf;
+        --admonition-danger-background-color: #433;
+        --admonition-danger-color: #fcc;
+        --admonition-danger-title-background-color: #633;
+        --admonition-danger-title-color: #fcc;
+        --admonition-tip-background-color: #28382d;
+        --admonition-tip-color: #dfd;
+        --admonition-tip-title-background-color: #336648;
+        --admonition-tip-title-color: #dfd;
+    }
+}
+
+/* Max window size */
+.wy-nav-content{
+    max-width: 1200px;
+}
+
+/* Sidebar */
+.wy-side-nav-search{
+    background-color: #29343A;
+}
+
+.wy-nav-side{
+    background-color: #131E25;
+}
+
+.wy-menu-vertical li.current{
+    background-color: #29343A;
+}
+
+/* Main sections */
+.wy-nav-content-wrap {
+    background-color: #0D1F2E;
+}
+
+.wy-nav-content {
+    background-color: #0D1F2E;
+}
+
+.wy-body-for-nav {
+    background-color: #0D1F2E;
+}
+
+.rst-content .admonition.note,
+.rst-content .admonition.seealso {
+    background-color: var(--admonition-note-background-color);
+    color: var(--admonition-note-color);
+}
+
+.rst-content .admonition.note .admonition-title,
+.rst-content .admonition.seealso .admonition-title {
+    background-color: var(--admonition-note-title-background-color);
+    color: var(--admonition-note-title-color);
+}
+
+.rst-content .admonition.attention,
+.rst-content .admonition.caution,
+.rst-content .admonition.warning {
+    background-color: var(--admonition-attention-background-color);
+    color: var(--admonition-attention-color);
+}
+
+.rst-content .admonition.attention .admonition-title,
+.rst-content .admonition.caution .admonition-title,
+.rst-content .admonition.warning .admonition-title {
+    background-color: var(--admonition-attention-title-background-color);
+    color: var(--admonition-attention-title-color);
+}
+
+.rst-content .admonition.danger {
+    background-color: var(--admonition-danger-background-color);
+    color: var(--admonition-danger-color);
+}
+
+.rst-content .admonition.danger .admonition-title {
+    background-color: var(--admonition-danger-title-background-color);
+    color: var(--admonition-danger-title-color);
+}
+
+.rst-content .admonition.tip,
+.rst-content .admonition.important {
+    background-color: var(--admonition-tip-background-color);
+    color: var(--admonition-tip-color);
+}
+
+.rst-content .admonition.tip .admonition-title,
+.rst-content .admonition.important .admonition-title {
+    background-color: var(--admonition-tip-title-background-color);
+    color: var(--admonition-tip-title-color);
+}
+
+
+/* Code Snippets */
+code,
+.rst-content tt,
+.rst-content code {
+    font-size: 14px;
+    background-color: #000;
+    border: 1px solid #000;
+    color: #D3D4D4;
+}
+
+.rst-content div[class^="highlight"] {
+    background-color: #0B1025;
+    border-color: #0B1025;
+    color: #D3D4D4;
+}
+
+.rst-content div[class^="highlight"] pre {
+    background-color: #0B1025;
+    border-color: #0B1025;
+    color: #D3D4D4;
+}
+
+
+.highlight * {
+    color: #D3D4D4;
+    font-weight: normal;
+    font-style: normal;
+    background-color: transparent;
+}
+
+.highlight .gh /* Generic.Heading */,
+.highlight .gu /* Generic.Subheading */,
+.highlight .go /* Generic.Output */,
+.highlight .gt /* Generic.Traceback */ {
+    color: var(--highlight-default-color);
+}
+
+.highlight .c  /* Comment */,
+.highlight .c1 /* Comment.Single */,
+.highlight .cm /* Comment.Multiline */,
+.highlight .cs /* Comment.Special */ {
+    color: var(--highlight-comment-color);
+}
+
+.highlight .bp /* Name.Builtin.Pseudo */,
+.highlight .k  /* Keyword */,
+.highlight .kc /* Keyword.Constant */,
+.highlight .kd /* Keyword.Declaration */,
+.highlight .kn /* Keyword.Namespace */,
+.highlight .kp /* Keyword.Pseudo */,
+.highlight .kr /* Keyword.Reserved */,
+.highlight .kt /* Keyword.Type */,
+.highlight .ow /* Operator.Word */ {
+    color: var(--highlight-keyword-color);
+}
+
+.highlight .ch /* Comment.Hashbang */,
+.highlight .cp /* Comment.Preproc */ {
+    color: var(--highlight-keyword2-color);
+}
+
+.highlight .m  /* Literal.Number */,
+.highlight .mf /* Literal.Number.Float */,
+.highlight .mi /* Literal.Number.Integer */,
+.highlight .il /* Literal.Number.Integer.Long */,
+.highlight .mb /* Literal.Number.Bin */,
+.highlight .mh /* Literal.Number.Hex */,
+.highlight .mo /* Literal.Number.Oct */ {
+    color: var(--highlight-number-color);
+}
+
+.highlight .na /* Name.Attribute */,
+.highlight .nd /* Name.Decorator */,
+.highlight .ni /* Name.Entity */,
+.highlight .nl /* Name.Label */ {
+    color: var(--highlight-decorator-color);
+}
+
+.highlight .nb /* Name.Builtin */,
+.highlight .ne /* Name.Exception */ {
+    color: var(--highlight-type-color);
+}
+
+.highlight .nc /* Name.Class */,
+.highlight .nn /* Name.Namespace */,
+.highlight .no /* Name.Constant */,
+.highlight .nv /* Name.Variable */,
+.highlight .vc /* Name.Variable.Class */,
+.highlight .vg /* Name.Variable.Global */,
+.highlight .vi /* Name.Variable.Instance */,
+.highlight .vm /* Name.Variable.Magic */ {
+    color: var(--highlight-type2-color);
+}
+
+.highlight .nf /* Name.Function */,
+.highlight .fm /* Name.Function.Magic */,
+.highlight .nt /* Name.Tag */ {
+    color: var(--highlight-function-color);
+}
+
+.highlight .o  /* Operator */,
+.highlight .si /* Literal.String.Interpol */,
+.highlight .sx /* Literal.String.Other */,
+.highlight .sr /* Literal.String.Regex */,
+.highlight .ss /* Literal.String.Symbol */ {
+    color: var(--highlight-operator-color);
+}
+
+.highlight .cpf/* Comment.PreprocFile */,
+.highlight .s  /* Literal.String */,
+.highlight .s1 /* Literal.String.Single */,
+.highlight .s2 /* Literal.String.Double */,
+.highlight .sc /* Literal.String.Char */,
+.highlight .se /* Literal.String.Escape */,
+.highlight .sa /* Literal.String.Affix */,
+.highlight .sb /* Literal.String.Backtick */,
+.highlight .dl /* Literal.String.Delimiter */,
+.highlight .sd /* Literal.String.Doc */,
+.highlight .sh /* Literal.String.Heredoc */ {
+    color: var(--highlight-string-color);
+}
+
+/* Links */
+a {
+    color: #4AA3DE;
+}
+
+/* Fonts */
+body{
+    font-family: Century-Gothic, sans-serif;
+    font-size: 14px;
+    color: #D3D4D4;
+}
+
+h1 {
+    color: #FFF;
+    font-family: Century-Gothic, sans-serif;
+    font-size: 50px;
+}
+
+h2, .rst-content .toctree-wrapper p.caption, h3, h4, h5, h6, legend{
+    color: #FFF;
+    font-family: Century-Gothic, sans-serif;
+}

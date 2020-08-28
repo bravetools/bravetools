@@ -1,0 +1,44 @@
+base:
+  image: brave-base-ubuntu-bionic-1.0
+  location: local
+
+packages:
+  manager: apt
+  system:
+    - snapd
+    - git
+    - htop
+
+copy:
+  - source: main.go
+    target: /root/
+
+run:
+  - command: snap
+    args:
+      - install
+      - go
+      - --classic
+
+service:
+  postdeploy:
+    run:
+      - command: go
+        args:
+          - build
+          - main.go
+      - command: bash
+        args:
+          - -c
+        content: |-
+          ./main >std.txt 2>err.txt &
+    
+  image: go-service-1.0 
+  name: go-service
+  version: 1.0
+  ip: 10.0.0.100
+  ports:
+    - 3000:3000
+  resources:
+    ram: 2GB
+    cpu: 1

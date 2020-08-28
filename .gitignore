@@ -1,0 +1,17 @@
+.vagrant/
+.idea/
+.vscode/
+.DS_Store
+
+*.swp
+
+docs/_build
+
+release/bin/brave
+release/bin/*.tar.gz
+
+vagrant/.vagrant
+vagrant/*.log
+
+install/darwin/brave
+install/ubuntu/brave

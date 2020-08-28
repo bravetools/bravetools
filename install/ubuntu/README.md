@@ -1,0 +1,1 @@
+To build and install Ubuntu binary run `make ubuntu` in project root.
