@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/beringresearch/bravetools/shared"
+	"github.com/bravetools/bravetools/shared"
 
 	pem "encoding/pem"
 

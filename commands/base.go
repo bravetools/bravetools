@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/beringresearch/bravetools/shared"
+	"github.com/bravetools/bravetools/shared"
 
 	"github.com/spf13/cobra"
 )

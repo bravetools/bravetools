@@ -6,8 +6,8 @@ import (
 	"os"
 	"path"
 
-	"github.com/beringresearch/bravetools/platform"
-	"github.com/beringresearch/bravetools/shared"
+	"github.com/bravetools/bravetools/platform"
+	"github.com/bravetools/bravetools/shared"
 
 	"github.com/spf13/cobra"
 )

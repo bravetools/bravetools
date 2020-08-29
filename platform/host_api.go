@@ -14,8 +14,8 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/beringresearch/bravetools/db"
-	"github.com/beringresearch/bravetools/shared"
+	"github.com/bravetools/bravetools/db"
+	"github.com/bravetools/bravetools/shared"
 	"github.com/google/uuid"
 	"github.com/olekukonko/tablewriter"
 )

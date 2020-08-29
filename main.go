@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"github.com/beringresearch/bravetools/commands"
+	"github.com/bravetools/bravetools/commands"
 )
 
 type cmdGlobal struct {
