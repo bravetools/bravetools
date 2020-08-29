@@ -707,7 +707,7 @@ func (bh *BraveHost) PublishUnit(name string, backend Backend) error {
 	var unitFingerprint string
 	unitFingerprint, err = Publish(name, timestamp.Format("20060102150405"), bh.Remote)
 	if err != nil {
-		// unit.Delete(bravefile.PlatformService.Name)
+		DeleteImage(unitFingerprint, bh.Remote)
 		return errors.New("Failed to publish image: " + err.Error())
 	}
 
@@ -715,7 +715,6 @@ func (bh *BraveHost) PublishUnit(name string, backend Backend) error {
 	err = ExportImage(unitFingerprint, name+"-"+timestamp.Format("20060102150405"), bh.Remote)
 	if err != nil {
 		DeleteImage(unitFingerprint, bh.Remote)
-		//unit.Delete(bravefile.PlatformService.Name)
 		return errors.New("Failed to export unit: " + err.Error())
 	}
 
@@ -841,7 +840,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 
 	err = AttachNetwork(unitParams.PlatformService.Name, "lxdbr0", "eth0", "eth0", bh.Remote)
 	if err != nil {
-		return errors.New("Failed attaching to network" + err.Error())
+		return errors.New("Failed to attach network: " + err.Error())
 	}
 
 	err = ConfigDevice(unitParams.PlatformService.Name, "eth0", unitParams.PlatformService.IP, bh.Remote)
@@ -852,7 +851,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 	err = Stop(unitParams.PlatformService.Name, bh.Remote)
 	err = Start(unitParams.PlatformService.Name, bh.Remote)
 	if err != nil {
-		return errors.New("Failed to restart test unit" + err.Error())
+		return errors.New("Failed to restart unit: " + err.Error())
 	}
 
 	config := map[string]string{
@@ -874,13 +873,13 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 
 	err = SetConfig(unitParams.PlatformService.Name, config, bh.Remote)
 	if err != nil {
-		return errors.New("Error configuring unit" + err.Error())
+		return errors.New("Error configuring unit: " + err.Error())
 	}
 
 	err = Stop(unitParams.PlatformService.Name, bh.Remote)
 	err = Start(unitParams.PlatformService.Name, bh.Remote)
 	if err != nil {
-		return errors.New("Failed to restart test unit" + err.Error())
+		return errors.New("Failed to restart unit: " + err.Error())
 	}
 
 	fmt.Println("Service started: ", unitParams.PlatformService.Name)
@@ -923,7 +922,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 		if err != nil {
 			DeleteImage(fingerprint, bh.Remote)
 			Delete(unitParams.PlatformService.Name, bh.Remote)
-			return errors.New("Failed to initialize database. Error: " + err.Error())
+			return errors.New("Failed to initialize database: " + err.Error())
 		}
 	}
 
@@ -953,7 +952,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 	if err != nil {
 		DeleteImage(fingerprint, bh.Remote)
 		Delete(unitParams.PlatformService.Name, bh.Remote)
-		return errors.New("Failed to insert unit to database. Error: " + err.Error())
+		return errors.New("Failed to insert unit to database: " + err.Error())
 	}
 
 	return nil

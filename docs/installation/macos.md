@@ -4,7 +4,7 @@ description: Instructions for installing Bravetools on macOS
 keywords: requirements, apt, installation, ubuntu, install, uninstall, upgrade, update
 title: Install Bravetools on macOS
 parent: Install Bravetools
-nav_order: 1
+nav_order: 2
 ---
 
 To get started with Bravetools on macOS, make sure you [meet the prerequisites](#prerequisites), then [install Bravetools](#install-bravetools)
@@ -22,7 +22,7 @@ Your Mac must meet the following requirements to successfully install Bravetools
 
 Default installation of Bravetools runs on top of the [LXD](https://linuxcontainers.org/lxd/introduction/) daemon. Although LXD client is supported on macOS, LXC (the underlying container technology), is a feature of the Linux kernel and is not available natively on macOS.
 
-On macOS, Bravetool requires [multipass](multipass.run). Multipass uses Mac's native hyperkit technolgy to provision fast and lightweight Ubuntu virtual machines, which are seamlessly used by Bravetools behind the scenes.
+On macOS, Bravetool requires [multipass](multipass.run). Multipass uses Mac's native hyperkit technology to provision fast and lightweight Ubuntu virtual machines, which are seamlessly used by Bravetools behind the scenes.
 
 
 ## Install Bravetools
