@@ -3,7 +3,14 @@ Bravetools is an end-to-end System Container management platform. Bravetools mak
 
 ## Quickstart
 
-> **_NOTE:_** Add quickstart instructions once OS-specific binaries are available for download.
+To get started using Bravetools, download a platform-specific binary and add it to your PATH variable:
+
+| Operating System | Binary | Version |
+|------------------|--------|---------|
+| Ubuntu           | [download](https://github.com/bravetools/bravetools/releases/download/1.52/brave-release-1.52-ubuntu) | release-1.52 |
+| macOS            | [download](https://github.com/bravetools/bravetools/releases/download/1.52/brave-release-1.52-darwin) | release-1.52 |
+
+> **NOTE:** Bravetools can be built from source on any platform that supports Go.
 
 ## Using Bravetools
 
@@ -23,7 +30,7 @@ To learn more about using Bravetools, please refer to our [Bravetools Documentat
   * [LXD 4.3](https://linuxcontainers.org/lxd/getting-started-cli/)
 
 ```bash
-git clone https://github.com/beringresearch/bravetools
+git clone https://github.com/bravetools/bravetools
 cd bravetools
 make ubuntu
 brave init
@@ -41,7 +48,7 @@ brave init
   * [Multipass](https://multipass.run/)
 
 ```bash
-git clone https://github.com/beringresearch/bravetools
+git clone https://github.com/bravetools/bravetools
 cd bravetools
 make darwin
 brave init
@@ -56,7 +63,7 @@ cd vagrant
 vagrant up
 vagrant ssh
 // inside Vagrant VM
-cd $HOME/workspace/src/github.com/beringresearch/bravetools
+cd $HOME/workspace/src/github.com/bravetools/bravetools
 make ubuntu
 brave init
 ```
@@ -66,7 +73,7 @@ brave init
 To update existing installation of Bravetools for your platform:
 
 ```bash
-git clone https://github.com/beringresearch/bravetools
+git clone https://github.com/bravetools/bravetools
 cd bravetools
 make [darwin][ubuntu]
 ```
