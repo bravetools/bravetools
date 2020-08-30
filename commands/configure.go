@@ -3,7 +3,7 @@ package commands
 import (
 	"log"
 
-	"github.com/beringresearch/bravetools/platform"
+	"github.com/bravetools/bravetools/platform"
 	"github.com/spf13/cobra"
 )
 

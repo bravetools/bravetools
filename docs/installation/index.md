@@ -8,7 +8,7 @@ nav_order: 2
 
 ## Supported platforms
 
-Bravetools is available on a variety of Linux platforms, macOS, and Windows 10 as a static binary installation.
+Bravetools is available on a variety of Linux platforms, macOS, and Windows 10 as a static binary.
 The following table lists minimal requirements on each supported platform:
 
 | Platform      			 | Hardware          | Software 	  |
@@ -23,7 +23,7 @@ Bravetools has three types of update channels - **stable**, **test**, and **nigh
 
 ### Stable
 
-Stable releases are made from a release branch diverged from the master brach. All further patch releases are performed from that branch.
+Stable releases are made from a release branch diverged from the master branch. All further patch releases are performed from that branch.
 
 ### Test
 

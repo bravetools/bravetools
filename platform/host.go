@@ -10,7 +10,7 @@ import (
 	"path"
 	"time"
 
-	"github.com/beringresearch/bravetools/shared"
+	"github.com/bravetools/bravetools/shared"
 	"gopkg.in/yaml.v2"
 )
 

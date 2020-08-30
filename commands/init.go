@@ -8,8 +8,8 @@ import (
 	"path"
 	"runtime"
 
-	"github.com/beringresearch/bravetools/platform"
-	"github.com/beringresearch/bravetools/shared"
+	"github.com/bravetools/bravetools/platform"
+	"github.com/bravetools/bravetools/shared"
 	"github.com/spf13/cobra"
 )
 
@@ -118,12 +118,4 @@ func serverInit(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-}
-
-func fileExists(filename string) bool {
-	info, err := os.Stat(filename)
-	if os.IsNotExist(err) {
-		return false
-	}
-	return !info.IsDir()
 }

@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/beringresearch/bravetools/shared"
+	"github.com/bravetools/bravetools/shared"
 
 	pem "encoding/pem"
 
@@ -553,7 +553,7 @@ func Publish(name string, version string, remote Remote) (fingerprint string, er
 	aliasPost.Target = fingerprint
 	err = lxdServer.CreateImageAlias(aliasPost)
 	if err != nil {
-		return "", err
+		return fingerprint, err
 	}
 
 	if unitStatus == "Running" {
@@ -565,12 +565,12 @@ func Publish(name string, version string, remote Remote) (fingerprint string, er
 
 		op, err := lxdServer.UpdateInstanceState(name, req, "")
 		if err != nil {
-			return "", err
+			return fingerprint, err
 		}
 
 		err = op.Wait()
 		if err != nil {
-			return "", err
+			return fingerprint, err
 		}
 
 	}

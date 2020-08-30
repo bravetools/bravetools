@@ -10,7 +10,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/beringresearch/bravetools/shared"
+	"github.com/bravetools/bravetools/shared"
 	"github.com/lxc/lxd/shared/api"
 )
 

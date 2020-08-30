@@ -35,7 +35,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
             vb.memory = "3072"
             vb.cpus = 2
         end
-        bravetoolsvm.vm.synced_folder "../.", "/home/vagrant/workspace/src/github.com/beringresearch/bravetools"
+        bravetoolsvm.vm.synced_folder "../.", "/home/vagrant/workspace/src/github.com/bravetools/bravetools"
         
         bravetoolsvm.vm.provision :shell, :privileged => false, :path => "bootstrap.sh"
     end

@@ -4,7 +4,7 @@ description: Instructions for installing Bravetools on Windows
 keywords: requirements, installation, windows, install, uninstall, upgrade, update
 title: Install Bravetools on Windows
 parent: Install Bravetools
-nav_order: 1
+nav_order: 3
 ---
 
 To get started with Bravetools on Windows, make sure you [meet the prerequisites](#prerequisites), then [install Bravetools](#install-bravetools)
@@ -27,7 +27,7 @@ Hyper-V on Windows 10:
 
 Default installation of Bravetools runs on top of the [LXD](https://linuxcontainers.org/lxd/introduction/) daemon, which is not supported natively on Windows.
 
-To run effectively on Windows, Bravetool requires [multipass](multipass.run). Multipass uses Windows' native Hyper-V technolgy to provision fast and lightweight Ubuntu virtual machines, which are seamlessly used by Bravetools behind the scenes.
+To run effectively on Windows, Bravetool requires [multipass](multipass.run). Multipass uses Windows' native Hyper-V technology to provision fast and lightweight Ubuntu virtual machines, which are seamlessly used by Bravetools behind the scenes.
 
 ## Install Bravetools
 
