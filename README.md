@@ -15,7 +15,7 @@ To get started using Bravetools, download a platform-specific binary and add it 
 
 ## Using Bravetools
 
-To learn more about using Bravetools, please refer to our [Bravetools Documentation](https://beringresearch.github.io/bravetools/).
+To learn more about using Bravetools, please refer to our [Bravetools Documentation](https://bravetools.github.io/bravetools/).
 
 ## Install from Source
 
