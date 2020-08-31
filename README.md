@@ -7,8 +7,9 @@ To get started using Bravetools, download a platform-specific binary and add it 
 
 | Operating System | Binary | Version |
 |------------------|--------|---------|
-| Ubuntu           | [download](https://github.com/bravetools/bravetools/releases/download/1.52/brave-release-1.52-ubuntu) | release-1.52 |
-| macOS            | [download](https://github.com/bravetools/bravetools/releases/download/1.52/brave-release-1.52-darwin) | release-1.52 |
+| Ubuntu           | [download](https://github.com/bravetools/bravetools/releases/download/1.53/brave-release-1.53-ubuntu) | release-1.53 |
+| macOS            | [download](https://github.com/bravetools/bravetools/releases/download/1.53/brave-release-1.53-darwin) | release-1.53 |
+| Windows 8/10     | [download](https://github.com/bravetools/bravetools/releases/download/1.53/brave-release-1.53-win.exe)  | release-1.53 |
 
 > **NOTE:** Bravetools can be built from source on any platform that supports Go.
 
@@ -26,8 +27,10 @@ To learn more about using Bravetools, please refer to our [Bravetools Documentat
 * Hardware
   * 4GB of Memory
 * Software
-  * [Golang](https://golang.org/)
+  * [Go](https://golang.org/)
   * [LXD 4.3](https://linuxcontainers.org/lxd/getting-started-cli/)
+
+> **NOTE**: LXD up to 3.0.x were published as non-snap versions. Bravetools will not work with these distributions. The user is encouraged to use snap-LXD before continuing with installation.
 
 ```bash
 git clone https://github.com/bravetools/bravetools
@@ -62,7 +65,8 @@ brave init
 cd vagrant
 vagrant up
 vagrant ssh
-// inside Vagrant VM
+
+// execute inside Vagrant VM
 cd $HOME/workspace/src/github.com/bravetools/bravetools
 make ubuntu
 brave init
