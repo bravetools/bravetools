@@ -9,7 +9,7 @@ description: "Bravetools is an end-to-end System Container management platform. 
 
 ## Community Support
 
-Bravetools is a new open source project. You can start a conversation by [raising an issue](https://github.com/beringresearch/bravetools/issues) on the project's GitHub page.
+Bravetools is a new open source project. You can start a conversation by [raising an issue](https://github.com/bravetools/bravetools/issues) on the project's GitHub page.
 
 ## Commercial Support
 
