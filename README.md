@@ -57,6 +57,26 @@ make darwin
 brave init
 ```
 
+### Windows
+
+**Minimum Requirements**
+* Operating System
+  * Windows 8 (64-bit)
+* Hardware
+  * 8GB of Memory
+* Software
+  * [Go](https://golang.org/)
+  * [Multipass](https://multipass.run/)
+  * BIOS-level hardware virtualization support must be enabled in the BIOS settings.
+
+```bash
+git clone https://github.com/beringresearch/bravetools
+cd bravetools
+go build -ldflags=“-s -X github.com/bravetools/bravetools/shared.braveVersion=VERSION” -o brave.exe
+```
+
+Where VERSION reflects the latest stable release of Bravetools e.g `shared.braveVersion=1.53`
+
 ### Vagrant
 
 1. Start Vagrant VM:

@@ -36,5 +36,7 @@ Latest stable release of Bravetools can be installed by:
 ```bash
 git clone https://github.com/beringresearch/bravetools
 cd bravetools
-make ubuntu
+go build -ldflags=“-s -X github.com/bravetools/bravetools/shared.braveVersion=VERSION” -o brave.exe
 ```
+
+Where VERSION reflects the latest stable release of Bravetools e.g `shared.braveVersion=1.53`
