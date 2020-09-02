@@ -29,7 +29,7 @@ Cuda compilation tools, release 11.0, V11.0.194
 Build cuda_11.0_bu.TC445_37.28540450_0
 ```
 
-Finally, if CUDA was installed with extras included, you may ensure all NVIDIA components are functioning correctly by running `$CUDA_HOME/extras/demo_suite/bandwidthTest`. Typically, cuda is installed in `/usr/local/cuda` on Linux systems. The output should contain `Result = PASS`.
+Finally, if CUDA was installed with extras included, you may ensure all NVIDIA components are functioning correctly by running `$CUDA_HOME/extras/demo_suite/bandwidthTest`. Typically, CUDA is installed in `/usr/local/cuda` on Linux systems. The output should contain `Result = PASS`.
 
 # Enable GPU support in a Bravefile
 
