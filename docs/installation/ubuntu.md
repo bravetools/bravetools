@@ -40,4 +40,5 @@ Latest stable release of Bravetools can be installed by:
 git clone https://github.com/beringresearch/bravetools
 cd bravetools
 make ubuntu
+brave init
 ```
