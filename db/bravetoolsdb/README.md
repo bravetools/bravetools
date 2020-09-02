@@ -1,4 +1,4 @@
-This direectory contains source code of the utility which creates Bravetools SQLite database and performs basic operation on that database.
+This directory contains source code of the utility which creates Bravetools SQLite database and performs basic operation on that database.
 
 To build executable run `go build`.
 

@@ -16,7 +16,7 @@ brave publish NAME
 
 ## Description
 
-Published Unit will be saved in the current working direectory as *.tar.gz file
+Published Unit will be saved in the current working directory as *.tar.gz file
 
 ## Options
 
