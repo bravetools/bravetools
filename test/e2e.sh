@@ -3,38 +3,36 @@
 BRAVETOOLS_HOME=$HOME"/.bravetools"
 
 if  which lxc >/dev/null 2>&1; then
+    lxc profile delete brave
     sudo snap remove lxd
 fi
 
 if [ -d "$BRAVETOOLS_HOME" ]; then rm -Rf $BRAVETOOLS_HOME; fi
 
+echo ">> Installing Bravetools"
 cd ..
 make ubuntu
 brave version
+sleep 10
 
-echo ">>>"
-echo "Bravetools installed"
-echo ">>>"
-echo "Initialising host with default settings ..."
-echo ""
+echo ">> Initialising host with default settings ..."
 brave init
-
-echo ">>>"
-echo "Bravehost is runnnig"
-echo ">>>"
 brave info
+sleep 10
 
-echo ">>>"
-echo "LXC parameters"
-echo ">>>"
-lxc profile show brave
-lxc storage list
+echo ">> Building and deploying a unit ..."
+cd examples/go-service
+brave build
+brave deploy
+brave unitssleep 10
 
-# echo ">>>"
-# echo "Building and deploying a unit"
-# echo ">>>"
-# cd examples/go-service
-# brave base ubuntu/bionic
-# brave build
-# brave deploy
+echo ">> Stopping a unit ..."
+brave stop go-service
+brave units
+sleep 10
 
+echo ">> Deleteing a unit ..."
+brave remove go-service
+brave units
+brave images
+brave info
