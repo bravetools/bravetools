@@ -134,7 +134,6 @@ Available Commands:
   info        Display workspace information
   init        Create a new Bravetools host
   mount       Mount a directory to a Unit
-  publish     Publish deployed Unit as image
   remote      Add a remote connection to a Bravetools host via an IP address
   remove      Remove a Unit or an Image
   start       Start Unit

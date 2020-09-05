@@ -9,7 +9,6 @@ In this section we highlight *some* uses cases for Bravetools, predominantly dra
 
 
 # Dev/Prod Parity
-
 Bravetools was conceived to keep development, staging, and production environments as similar as possible. The key advantage for us were:
 
 * Making the time gap small - our developers write code and deploy it within hours or even just minutes later.

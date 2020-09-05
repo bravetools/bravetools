@@ -29,7 +29,6 @@ Available Commands:
   init        Create a new Bravetools host
   mount       Mount directory to a Unit
   publish     Publish deployed Unit as image
-  remote      Add a remote connection to a Bravetools host
   remove      Remove Unit or Image
   start       Start Unit
   stop        Stop Unit
