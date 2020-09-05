@@ -19,3 +19,7 @@ echo 'export PATH=$PATH:$GOROOT/bin' | sudo tee -a /home/vagrant/.bashrc
 sudo usermod -aG lxd vagrant
 
 sudo chown -R vagrant:vagrant /home/vagrant/workspace
+
+sudo apt remove lxd
+sudo apt purge lxd
+sudo apt autoremove
