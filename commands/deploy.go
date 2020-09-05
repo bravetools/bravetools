@@ -12,7 +12,7 @@ var braveDeploy = &cobra.Command{
 	Use:   "deploy IMAGE",
 	Short: "Deploy Unit from image",
 	Long: `Bravetools supports Unit deployment using either command line arguments or a configuration file.
-In cases where IPv4 address is not provided, a random ephemoral IP address will be assigned. More detailed
+In cases where IPv4 address is not provided, a random ephemeral IP address will be assigned. More detailed
 deployment options e.g. CPU and RAM should be configured through a configuration file.`,
 	Run: deploy,
 }

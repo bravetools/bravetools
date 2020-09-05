@@ -23,7 +23,7 @@ email: bravetools@beringresearch.com
 description: Bravetools is a complete System Container mangement platform. Bravetools makes it easy to configure, build, and deploy reproducible and isolated environments either on single machines or large clusters.>- # this means to ignore newlines until "baseurl:"
   
 baseurl: "/bravetools"
-url: "https://beringresearch.github.io" # the base hostname & protocol for your site, e.g. http://example.com
+url: "https://bravetools.github.io" # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username: beringresearch
 github_username:  beringresearch
 
@@ -40,9 +40,9 @@ plugins:
 # Aux links
 aux_links:
   "★":
-    - "//github.com/beringresearch/bravetools/stargazers"
+    - "//github.com/bravetools/bravetools/stargazers"
   "Bravetools on GitHub":
-    - "//github.com/beringresearch/bravetools"
+    - "//github.com/bravetools/bravetools"
 
 # Makes Aux links open in a new tab. Default is false
 aux_links_new_tab: false
@@ -54,6 +54,6 @@ footer_content: "Copyright &copy; 2020 Bering Limited."
 
 gh_edit_link: true # show or hide edit this page link
 gh_edit_link_text: "Edit this page on GitHub."
-gh_edit_repository: "https://github.com/beringresearch/bravetools" # the github URL for your repo
+gh_edit_repository: "https://github.com/bravetools/bravetools" # the github URL for your repo
 gh_edit_branch: "master" # the branch that your docs is served from
 gh_edit_view_mode: "tree" # "tree" or "edit" if you want the user to jump into the editor immediately

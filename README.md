@@ -1,3 +1,5 @@
+[![Gitter](https://badges.gitter.im/bravetools/community.svg)](https://gitter.im/bravetools/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![Go Report Card](https://goreportcard.com/badge/github.com/bravetools/bravetools)](https://goreportcard.com/report/github.com/bravetools/bravetools)
+
 # Bravetools
 Bravetools is an end-to-end System Container management platform. Bravetools makes it easy to configure, build, and deploy reproducible and isolated environments either on single machines or large clusters.
 
@@ -7,14 +9,15 @@ To get started using Bravetools, download a platform-specific binary and add it 
 
 | Operating System | Binary | Version |
 |------------------|--------|---------|
-| Ubuntu           | [download](https://github.com/bravetools/bravetools/releases/download/1.52/brave-release-1.52-ubuntu) | release-1.52 |
-| macOS            | [download](https://github.com/bravetools/bravetools/releases/download/1.52/brave-release-1.52-darwin) | release-1.52 |
+| Ubuntu           | [download](https://github.com/bravetools/bravetools/releases/download/1.53/brave-release-1.53-ubuntu) | release-1.53 |
+| macOS            | [download](https://github.com/bravetools/bravetools/releases/download/1.53/brave-release-1.53-darwin) | release-1.53 |
+| Windows 8/10     | [download](https://github.com/bravetools/bravetools/releases/download/1.53/brave-release-1.53-win.exe)  | release-1.53 |
 
 > **NOTE:** Bravetools can be built from source on any platform that supports Go.
 
 ## Using Bravetools
 
-To learn more about using Bravetools, please refer to our [Bravetools Documentation](https://beringresearch.github.io/bravetools/).
+To learn more about using Bravetools, please refer to our [Bravetools Documentation](https://bravetools.github.io/bravetools/).
 
 ## Install from Source
 
@@ -26,8 +29,10 @@ To learn more about using Bravetools, please refer to our [Bravetools Documentat
 * Hardware
   * 4GB of Memory
 * Software
-  * [Golang](https://golang.org/)
+  * [Go](https://golang.org/)
   * [LXD 4.3](https://linuxcontainers.org/lxd/getting-started-cli/)
+
+> **NOTE**: LXD up to 3.0.x were published as non-snap versions. Bravetools will not work with these distributions. The user is encouraged to use snap-LXD before continuing with installation.
 
 ```bash
 git clone https://github.com/bravetools/bravetools
@@ -54,6 +59,26 @@ make darwin
 brave init
 ```
 
+### Windows
+
+**Minimum Requirements**
+* Operating System
+  * Windows 8 (64-bit)
+* Hardware
+  * 8GB of Memory
+* Software
+  * [Go](https://golang.org/)
+  * [Multipass](https://multipass.run/)
+  * BIOS-level hardware virtualization support must be enabled in the BIOS settings.
+
+```bash
+git clone https://github.com/beringresearch/bravetools
+cd bravetools
+go build -ldflags=“-s -X github.com/bravetools/bravetools/shared.braveVersion=VERSION” -o brave.exe
+```
+
+Where VERSION reflects the latest stable release of Bravetools e.g `shared.braveVersion=1.53`
+
 ### Vagrant
 
 1. Start Vagrant VM:
@@ -62,7 +87,8 @@ brave init
 cd vagrant
 vagrant up
 vagrant ssh
-// inside Vagrant VM
+
+// execute inside Vagrant VM
 cd $HOME/workspace/src/github.com/bravetools/bravetools
 make ubuntu
 brave init

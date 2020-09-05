@@ -11,7 +11,7 @@ import (
 var bravePublish = &cobra.Command{
 	Use:   "publish NAME",
 	Short: "Publish deployed Unit as image",
-	Long:  `Published Unit will be saved in the current working direectory as *.tar.gz file`,
+	Long:  `Published Unit will be saved in the current working directory as *.tar.gz file`,
 	Run:   publish,
 }
 
