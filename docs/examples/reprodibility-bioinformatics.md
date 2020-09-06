@@ -139,7 +139,7 @@ To restore the original environment, simply import the image archive into Bravet
 
 ```bash
 > brave import ubuntu-bionic-rstudio-server-TIMESTAMP.tar.gz
-> brave deploy ubuntu-bionic-rstudio-server-TIMESTAMP --ip 10.0.0.23:8787
+> brave deploy ubuntu-bionic-rstudio-server-TIMESTAMP --ip 10.0.0.23 --ports 8787:8787 --name ubuntu-bionic-rstudio-server
 ```
 
 ## Conclusions
