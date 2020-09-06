@@ -20,7 +20,7 @@ Our research team works extensively with Docker to build, maintain and scale a n
 
 ## Why Docker didn't work for us
 
-* **Docker containers were being treated like VMs**. Our team was pushing Vim, python, RStudio, R, libraries, and Shiny webservers into the same Docker container and treating it like a lightweight WM. Docker containers are simply not designed to run multiple processes and our approach was an anti-pattern.
+* **Docker containers were being treated like VMs**. Our team was pushing Vim, python, RStudio, R, libraries, and Shiny webservers into the same Docker container and treating it like a lightweight VM. Docker containers are simply not designed to run multiple processes and our approach was an anti-pattern.
 
 * **Valuable time was being spent on devops and not research**. As our container practices improved, the number of Docker containers required to run our research pipelines increased drastically. We found that we were spending more time on managing containers instead of doing iterative research.
 
@@ -43,7 +43,7 @@ In this example, we assume that Bravetools [has been installed](../../installati
 Let's get started by grabbing the Bravefile that scripts our full environment:
 
 ```bash
-> wget https://raw.githubusercontent.com/beringresearch/bravefiles/master/ubuntu/ubuntu-bionic-rstudio-server/Bravefile
+> wget --no-check-certificate https://raw.githubusercontent.com/beringresearch/bravefiles/master/ubuntu/ubuntu-bionic-rstudio-server/Bravefile
 ```
 
 This Bravefile will install R and RStudio Server with all of their dependencies into an Ubuntu 18.04 image. To build the image run:
@@ -94,7 +94,7 @@ Service started:  ubuntu-bionic-rstudio-server
 ...
 ```
 
-During deployment, Bravetools will set you up with a new user `rstudio` and the corresponding password `password`. Now we can check the status of the running unit:
+During deployment, Bravetools will set you up with a new user `rstudio` and user-specified password. Now we can check the status of the running unit:
 
 ``` bash
 > brave units
@@ -115,9 +115,9 @@ service:
 
 A blank IP field will result in an ephemeral IP being generated for this unit. Since a default RStudio runs on port 8787, we will leave this unchanged.
 
-You can now navigate to 10.0.0.23:8787 and login using `rstudio`/`password` credentials.
+> **NOTE** If you're using Multipass (e.g. on a Mac or Windows machine), RStudio service will be accessible from HOSTIP:8787, where HOSTIP is the IPV4 address of your Multipass host, easily obtained by running `brave info`.
 
-> **NOTE** If you're using multipass (e.g. on a Mac or Windows machine), RStudio service will be accessible from HOSTIP:8787, where HOSTIP is the IPV4 address of your multipass host, easily obtained by running `brave info`.
+You can now navigate to 10.0.0.23:8787 and login using `rstudio`/`password` credentials.
 
 As a side node, installing an OpenSSH server inside this environment, will allow others to connect to it over ssh, facilitating collaborative research.
 
@@ -139,7 +139,7 @@ To restore the original environment, simply import the image archive into Bravet
 
 ```bash
 > brave import ubuntu-bionic-rstudio-server-TIMESTAMP.tar.gz
-> brave deploy
+> brave deploy ubuntu-bionic-rstudio-server-TIMESTAMP --ip 10.0.0.23:8787
 ```
 
 ## Conclusions
