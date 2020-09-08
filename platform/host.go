@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"strconv"
 	"time"
 
 	"github.com/bravetools/bravetools/shared"
@@ -90,6 +91,8 @@ func NewBraveHost() *BraveHost {
 // SetupHostConfiguration creates configuration file and saves it in bravetools directory
 func SetupHostConfiguration(params map[string]string, userHome string) {
 	var settings = HostSettings{}
+	poolSizeInt, _ := strconv.Atoi(params["storage"])
+	poolSizeInt = poolSizeInt - 2
 
 	settings = HostSettings{
 		Name:    "brave",
@@ -98,7 +101,7 @@ func SetupHostConfiguration(params map[string]string, userHome string) {
 		StoragePool: Storage{
 			Type: "zfs",
 			Name: "brave",
-			Size: params["storage"],
+			Size: strconv.Itoa(poolSizeInt) + "GB",
 		},
 		Network: Network{
 			Bridge: params["network"],
@@ -114,7 +117,7 @@ func SetupHostConfiguration(params map[string]string, userHome string) {
 				OS:   "bionic",
 				CPU:  "2",
 				RAM:  params["ram"],
-				HD:   params["storage"],
+				HD:   params["storage"] + "GB",
 				IP:   "",
 			},
 		}
