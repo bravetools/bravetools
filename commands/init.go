@@ -50,7 +50,7 @@ func serverInit(cmd *cobra.Command, args []string) {
 	}
 
 	if storage == "" {
-		storage = "10GB"
+		storage = "12"
 	}
 	params["storage"] = storage
 	if ram == "" {
