@@ -68,6 +68,8 @@ func serverInit(cmd *cobra.Command, args []string) {
 			backendType = "lxd"
 		case "darwin":
 			backendType = "multipass"
+		case "windows":
+			backendType = "multipass"
 		default:
 			err := deleteLocalDirectories(userHome)
 			if err != nil {
