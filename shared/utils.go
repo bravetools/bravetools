@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -47,6 +48,20 @@ func Color(colorString string) func(...interface{}) string {
 			fmt.Sprint(args...))
 	}
 	return sprint
+}
+
+// TCPPortStatus checks if multiple ports are available on the host
+func TCPPortStatus(ip string, ports []string) error {
+	for _, port := range ports {
+		address := net.JoinHostPort(ip, port)
+		server, err := net.Listen("tcp", address)
+
+		if err != nil {
+			return err
+		}
+		server.Close()
+	}
+	return nil
 }
 
 // GetBravefileFromGitHub reads bravefile from a github URL
