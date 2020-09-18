@@ -103,10 +103,10 @@ func (bh *BraveHost) ImportLocalImage(name string) error {
 	if err != nil {
 		return errors.New(err.Error())
 	}
+	defer f.Close()
 
 	_, err = f.WriteString(imageHash)
 	if err != nil {
-		f.Close()
 		return errors.New(err.Error())
 	}
 
@@ -165,10 +165,10 @@ func (bh *BraveHost) ListLocalImages() error {
 						if err != nil {
 							return errors.New(err.Error())
 						}
+						defer f.Close()
 
 						_, err = f.WriteString(imageHash)
 						if err != nil {
-							f.Close()
 							return errors.New(err.Error())
 						}
 
@@ -662,12 +662,13 @@ func (bh *BraveHost) BuildUnit(bravefile *shared.Bravefile) error {
 	if err != nil {
 		return errors.New(err.Error())
 	}
+	defer f.Close()
 
 	_, err = f.WriteString(imageHash)
 	if err != nil {
-		f.Close()
 		return errors.New(err.Error())
 	}
+	f.Close()
 
 	err = shared.CopyFile(localImageFile, home+shared.ImageStore+localImageFile)
 	if err != nil {
