@@ -791,7 +791,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 		return err
 	}
 
-	if requestedImageSize*4 > (totalDiskSize - usedDiskSize) {
+	if requestedImageSize*5 > (totalDiskSize - usedDiskSize) {
 		return errors.New("Requested unit size exceeds available disk space on bravetools host")
 	}
 
