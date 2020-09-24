@@ -50,17 +50,32 @@ func Color(colorString string) func(...interface{}) string {
 	return sprint
 }
 
+func ping(ip string, port string) error {
+	address, err := net.ResolveTCPAddr("tcp", ip+":"+port)
+    if err != nil {
+        return err
+    }
+
+	conn, err := net.DialTCP("tcp", nil, address)
+    if err != nil {
+        return nil
+    }
+
+    if conn != nil {
+    	defer conn.Close()
+    	return errors.New("Port " + port + " already assigned on host")
+    }
+
+    return err
+}
 // TCPPortStatus checks if multiple ports are available on the host
 func TCPPortStatus(ip string, ports []string) error {
 	for _, port := range ports {
-		//address := net.JoinHostPort(ip, port)
-		address := ":" + port
-		server, err := net.Listen("tcp", address)
-
+		err := ping(ip, port)
 		if err != nil {
 			return err
 		}
-		server.Close()
+
 	}
 	return nil
 }

@@ -832,7 +832,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 	}
 	err = shared.TCPPortStatus(hostIP, hostPorts)
 	if err != nil {
-		return errors.New("Failed to check port status on host: " + err.Error())
+		return err
 	}
 
 	// Unit Checks
