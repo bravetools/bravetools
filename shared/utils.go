@@ -53,7 +53,8 @@ func Color(colorString string) func(...interface{}) string {
 // TCPPortStatus checks if multiple ports are available on the host
 func TCPPortStatus(ip string, ports []string) error {
 	for _, port := range ports {
-		address := net.JoinHostPort(ip, port)
+		//address := net.JoinHostPort(ip, port)
+		address := ":" + port
 		server, err := net.Listen("tcp", address)
 
 		if err != nil {
