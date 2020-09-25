@@ -94,13 +94,16 @@ func SetupHostConfiguration(params map[string]string, userHome string) {
 	poolSizeInt, _ := strconv.Atoi(params["storage"])
 	poolSizeInt = poolSizeInt - 2
 
+	timestamp := time.Now()
+	storagePoolName := "brave-" + timestamp.Format("20060102150405")
+
 	settings = HostSettings{
 		Name:    "brave",
 		Trust:   "brave",
 		Profile: "brave",
 		StoragePool: Storage{
 			Type: "zfs",
-			Name: "brave",
+			Name: storagePoolName,
 			Size: strconv.Itoa(poolSizeInt) + "GB",
 		},
 		Network: Network{

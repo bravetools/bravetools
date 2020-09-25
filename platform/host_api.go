@@ -290,24 +290,20 @@ func (bh *BraveHost) ListUnits(backend Backend) error {
 	for _, u := range units {
 		name := u.Name
 		status := u.Status
-		address := ""
+		address := u.Address
 		devices := u.Devices
-		deviceInfo := ""
 
-		deviceSlice := []string{}
-		for key, value := range devices {
-			switch value["type"] {
-			case "disk":
-				deviceInfo = "(disk):" + shared.TruncateStringRight(value["source"], 20) + "-->" + value["path"]
-			case "nic":
-				deviceInfo = "(nic):" + value["nictype"]
+		var deviceSlice []string
+		var deviceInfo string
+		for _, device := range devices {
+			if device.Name == "diskPath" {
+				deviceInfo = "(disk):" + "-->" + device.Info
+			}
+			if device.Name == "nic" {
+				deviceInfo = "(nic):" + device.Info
 			}
 
-			deviceSlice = append(deviceSlice, key+deviceInfo)
-		}
-
-		if len(u.State.Network["eth0"].Addresses) > 0 {
-			address = u.State.Network["eth0"].Addresses[0].Address
+			deviceSlice = append(deviceSlice, deviceInfo)
 		}
 
 		r := []string{name, status, address, strings.Join(deviceSlice, " ")}

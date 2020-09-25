@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/bravetools/bravetools/shared"
@@ -263,11 +264,42 @@ func GetImages(remote Remote) ([]api.Image, error) {
 }
 
 // GetUnits returns all running units
-func GetUnits(remote Remote) ([]api.InstanceFull, error) {
+func GetUnits(remote Remote) ([]shared.BraveUnit, error) {
 	lxdServer := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-	units, err := lxdServer.GetInstancesFull(api.InstanceTypeAny)
+
+	names, err := lxdServer.GetContainerNames()
 	if err != nil {
 		return nil, err
+	}
+
+	fmt.Println("Containers: ", names)
+
+	var units []shared.BraveUnit
+	for _, n := range names {
+		containerState, _, _ := lxdServer.GetContainerState(n)
+		var unit shared.BraveUnit
+
+		unit.Name = n
+		unit.Status = containerState.Status
+		if strings.ToLower(containerState.Status) == "running" {
+			unit.Address = containerState.Network["eth0"].Addresses[0].Address
+
+			var devices []shared.Device
+			var device shared.Device
+
+			device.Name = "diskPath"
+			disk := containerState.Disk["root"]
+			device.Info = strconv.FormatInt(disk.Usage, 10)
+			devices = append(devices, device)
+
+			device.Name = "nic"
+			nic := containerState.Network["eth0"].Addresses[0].Family
+			device.Info = nic
+
+			devices = append(devices, device)
+			unit.Devices = devices
+		}
+		units = append(units, unit)
 	}
 
 	return units, nil

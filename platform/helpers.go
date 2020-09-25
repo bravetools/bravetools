@@ -158,7 +158,7 @@ func listHostImages(remote Remote) ([]api.Image, error) {
 	return images, nil
 }
 
-func listHostUnits(remote Remote) ([]api.InstanceFull, error) {
+func listHostUnits(remote Remote) ([]shared.BraveUnit, error) {
 	units, err := GetUnits(remote)
 	if err != nil {
 		return nil, errors.New("Failed to access host units: " + err.Error())
@@ -221,7 +221,6 @@ func getMPInterfaceName(bh *BraveHost) ([]string, error) {
 
 // Get IP address of a running unit
 func getUnitIPAddress(name string, remote Remote) (string, error) {
-	var unitAddress string
 	unitList, err := listHostUnits(remote)
 
 	if err != nil {
@@ -230,13 +229,11 @@ func getUnitIPAddress(name string, remote Remote) (string, error) {
 
 	for _, u := range unitList {
 		if u.Name == name {
-			if len(u.State.Network["eth0"].Addresses) > 0 {
-				unitAddress = u.State.Network["eth0"].Addresses[0].Address
-			}
+			return u.Address, nil
 		}
 	}
 
-	return unitAddress, nil
+	return "", nil
 }
 
 // ProcessInterruptHandler monitors for Ctrl+C keypress in Terminal
