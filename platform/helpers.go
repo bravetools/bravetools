@@ -331,14 +331,6 @@ func cleanUnusedStoragePool(name string, remote Remote) {
 	}
 }
 
-func fileExists(filename string) bool {
-	info, err := os.Stat(filename)
-	if os.IsNotExist(err) {
-		return false
-	}
-	return !info.IsDir()
-}
-
 // addIPRules adds firewall rule to the host iptable
 func addIPRules(ct string, hostPort string, ctPort string, bh *BraveHost) error {
 
