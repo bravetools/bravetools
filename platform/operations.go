@@ -10,7 +10,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/bravetools/bravetools/shared"
@@ -266,39 +265,48 @@ func GetImages(remote Remote) ([]api.Image, error) {
 // GetUnits returns all running units
 func GetUnits(remote Remote) ([]shared.BraveUnit, error) {
 	lxdServer := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-
 	names, err := lxdServer.GetContainerNames()
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println("Containers: ", names)
-
 	var units []shared.BraveUnit
 	for _, n := range names {
 		containerState, _, _ := lxdServer.GetContainerState(n)
 		var unit shared.BraveUnit
+		container, _, _ := lxdServer.GetContainer(n)
+		devices := container.Devices
+		var diskDevice shared.DiskDevice
+		var proxyDevice shared.ProxyDevice
+		var nicDevice shared.NicDevice
+		for k, device := range devices {
+			if val, ok := device["type"]; ok {
+				switch val {
+				case "disk":
+					diskDevice.Name = k
+					diskDevice.Path = device["path"]
+					diskDevice.Source = device["source"]
+				case "proxy":
+					proxyDevice.Name = k
+					proxyDevice.ConnectIP = device["connect"]
+					proxyDevice.ListenIP = device["listen"]
+				case "nic":
+					nicDevice.Name = k
+					nicDevice.Parent = device["parent"]
+					nicDevice.Type = device["type"]
+					nicDevice.NicType = device["nictype"]
+					nicDevice.IP = device["ipv4.address"]
+				}
+			}
+		}
 
 		unit.Name = n
 		unit.Status = containerState.Status
 		if strings.ToLower(containerState.Status) == "running" {
 			unit.Address = containerState.Network["eth0"].Addresses[0].Address
-
-			var devices []shared.Device
-			var device shared.Device
-
-			device.Name = "diskPath"
-			disk := containerState.Disk["root"]
-			device.Info = strconv.FormatInt(disk.Usage, 10)
-			devices = append(devices, device)
-
-			device.Name = "nic"
-			nic := containerState.Network["eth0"].Addresses[0].Family
-			device.Info = nic
-
-			devices = append(devices, device)
-			unit.Devices = devices
 		}
+		unit.Disk = diskDevice
+		unit.Proxy = proxyDevice
+		unit.NIC = nicDevice
 		units = append(units, unit)
 	}
 

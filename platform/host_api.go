@@ -285,28 +285,13 @@ func (bh *BraveHost) ListUnits(backend Backend) error {
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Name", "Status", "IPv4", "Devices"})
+	table.SetHeader([]string{"Name", "Status", "IPv4", "NIC", "Disk", "Proxy"})
 
 	for _, u := range units {
 		name := u.Name
 		status := u.Status
 		address := u.Address
-		devices := u.Devices
-
-		var deviceSlice []string
-		var deviceInfo string
-		for _, device := range devices {
-			if device.Name == "diskPath" {
-				deviceInfo = "(disk):" + "-->" + device.Info
-			}
-			if device.Name == "nic" {
-				deviceInfo = "(nic):" + device.Info
-			}
-
-			deviceSlice = append(deviceSlice, deviceInfo)
-		}
-
-		r := []string{name, status, address, strings.Join(deviceSlice, " ")}
+		r := []string{name, status, address, u.NIC.Name, u.Disk.Name, u.Proxy.Name}
 		table.Append(r)
 	}
 	table.SetRowLine(false)
