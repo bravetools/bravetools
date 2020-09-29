@@ -113,6 +113,7 @@ func AddRemote(braveHost *BraveHost) error {
 	if err != nil {
 		return err
 	}
+	defer certOut.Close()
 
 	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: certificate.Raw})
 	certOut.Close()
@@ -784,6 +785,9 @@ func ExportImage(fingerprint string, name string, remote Remote) error {
 	if err != nil {
 		return err
 	}
+	// Implicitly clean up temporary file on err
+	// Defers are resolved LIFO - below ensures file closed before deletion
+	defer os.Remove(targetRootfs)
 	defer destRootfs.Close()
 
 	req := lxd.ImageFileRequest{
@@ -793,8 +797,8 @@ func ExportImage(fingerprint string, name string, remote Remote) error {
 
 	resp, err := lxdServer.GetImageFile(fingerprint, req)
 	if err != nil {
+		dest.Close()
 		os.Remove(name)
-		os.Remove(targetRootfs)
 		return err
 	}
 
@@ -811,12 +815,14 @@ func ExportImage(fingerprint string, name string, remote Remote) error {
 		return err
 	}
 
+	dest.Close()
+	destRootfs.Close()
+
 	// Cleanup
 	if resp.RootfsSize == 0 {
 		err := os.Remove(targetRootfs)
 		if err != nil {
 			os.Remove(name)
-			os.Remove(targetRootfs)
 			return err
 		}
 	}
