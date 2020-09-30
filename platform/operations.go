@@ -263,6 +263,36 @@ func GetImages(remote Remote) ([]api.Image, error) {
 	return images, nil
 }
 
+// DeleteVolume ..
+func DeleteVolume(pool string, volume api.StorageVolume, remote Remote) error {
+	lxdServer := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
+	err := lxdServer.DeleteStoragePoolVolume(pool, volume.Type, volume.Name)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// GetVolume ..
+func GetVolume(pool string, remote Remote) (volume api.StorageVolume, err error) {
+	lxdServer := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
+	volumes, err := lxdServer.GetStoragePoolVolumes(pool)
+	if err != nil {
+		return volume, err
+	}
+
+	if len(volumes) > 0 {
+		for _, v := range volumes {
+			if v.Type == "custom" {
+				volume = v
+				break
+			}
+		}
+	}
+	return volume, nil
+}
+
 // GetUnits returns all running units
 func GetUnits(remote Remote) ([]shared.BraveUnit, error) {
 	lxdServer := GetLXDServer(remote.key, remote.cert, remote.remoteURL)

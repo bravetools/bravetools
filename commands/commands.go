@@ -35,7 +35,6 @@ func init() {
 	BravetoolsCmd.AddCommand(braveRemove)
 	BravetoolsCmd.AddCommand(braveListUnits)
 	BravetoolsCmd.AddCommand(braveListImages)
-	BravetoolsCmd.AddCommand(braveShares)
 	BravetoolsCmd.AddCommand(mountDir)
 	BravetoolsCmd.AddCommand(umountDir)
 	BravetoolsCmd.AddCommand(braveImportImage)
