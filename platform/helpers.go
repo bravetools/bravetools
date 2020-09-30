@@ -16,6 +16,54 @@ import (
 
 // Private Helpers
 
+func createSharedVolume(storagePoolName string,
+	sharedDirectory string,
+	sourceUnit string,
+	destUnit string,
+	destPath string,
+	bh *BraveHost) error {
+
+	// 1. Create storage volume
+	err := shared.ExecCommand(
+		"lxc",
+		"storage",
+		"volume",
+		"create",
+		storagePoolName,
+		sharedDirectory)
+	if err != nil {
+		return errors.New("Failed to create storage volume: " + sharedDirectory + ": " + err.Error())
+	}
+
+	shareSettings := map[string]string{}
+	shareSettings["path"] = destPath
+	shareSettings["pool"] = storagePoolName
+	shareSettings["source"] = sharedDirectory
+	shareSettings["type"] = "disk"
+
+	// 2. Add storage volume as a disk device to source unit
+	err = AddDevice(sourceUnit, sharedDirectory, shareSettings, bh.Remote)
+	if err != nil {
+		shared.ExecCommand(
+			"lxc",
+			"storage",
+			"volume",
+			"delete",
+			storagePoolName,
+			sharedDirectory)
+		return errors.New("Failed to mount to the source: " + err.Error())
+	}
+
+	// 3. Add storage volume as a disk device to target unit
+	err = AddDevice(destUnit, sharedDirectory, shareSettings, bh.Remote)
+	if err != nil {
+		bh.UmountDirectory(sourceUnit, sharedDirectory)
+		return errors.New("Failed to mount to the destination: " + err.Error())
+	}
+
+	return nil
+}
+
 func importLXD(bravefile *shared.Bravefile, remote Remote) error {
 	err := Launch(bravefile.PlatformService.Name, bravefile.Base.Image, remote)
 	if err != nil {

@@ -193,24 +193,24 @@ func DeleteDevice(name string, target string, remote Remote) (string, error) {
 }
 
 // AddDevice adds an external device to
-func AddDevice(ct string, devname string, devices map[string]string, remote Remote) error {
+func AddDevice(unitName string, devname string, devSettings map[string]string, remote Remote) error {
 	lxdServer := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
 
-	inst, etag, err := lxdServer.GetInstance(ct)
+	inst, etag, err := lxdServer.GetInstance(unitName)
 	if err != nil {
-		return errors.New("Error accessing unit: " + ct)
+		return errors.New("Error accessing unit: " + unitName)
 	}
 
-	inst.Devices[devname] = devices
+	inst.Devices[devname] = devSettings
 
-	op, err := lxdServer.UpdateInstance(ct, inst.Writable(), etag)
+	op, err := lxdServer.UpdateInstance(unitName, inst.Writable(), etag)
 	if err != nil {
-		return errors.New("Errors updating unit configuration: " + ct)
+		return errors.New("Errors updating unit configuration: " + unitName)
 	}
 
 	err = op.Wait()
 	if err != nil {
-		return errors.New("Error updating unit " + ct + " Error: " + err.Error())
+		return errors.New("Error updating unit " + unitName + " Error: " + err.Error())
 	}
 
 	return nil
@@ -218,10 +218,10 @@ func AddDevice(ct string, devname string, devices map[string]string, remote Remo
 }
 
 // MountDirectory mounts local directory to unit
-func MountDirectory(name string, source string, destination string, remote Remote) error {
+func MountDirectory(sourcePath string, destUnit string, destPath string, remote Remote) error {
 	lxdServer := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
 
-	inst, etag, err := lxdServer.GetInstance(name)
+	inst, etag, err := lxdServer.GetInstance(destUnit)
 	if err != nil {
 		return err
 	}
@@ -234,14 +234,14 @@ func MountDirectory(name string, source string, destination string, remote Remot
 
 	device := map[string]string{}
 	device["type"] = "disk"
-	device["source"] = source
-	device["path"] = destination
+	device["source"] = sourcePath
+	device["path"] = destPath
 
 	inst.Devices[devname] = device
 
-	op, err := lxdServer.UpdateInstance(name, inst.Writable(), etag)
+	op, err := lxdServer.UpdateInstance(destUnit, inst.Writable(), etag)
 	if err != nil {
-		return err
+		return errors.New("Failed to update unit settings: " + err.Error())
 	}
 
 	err = op.Wait()

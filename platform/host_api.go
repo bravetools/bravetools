@@ -261,11 +261,9 @@ func (bh *BraveHost) HostInfo(backend Backend, short bool) error {
 	table.SetBorder(false)
 	table.SetTablePadding("\t")
 	table.SetNoWhiteSpace(true)
-
 	table.Render()
 
 	return nil
-
 }
 
 // ListUnits prints all LXD containers on remote host
@@ -351,69 +349,80 @@ func (bh *BraveHost) UmountDirectory(unit string, target string) error {
 	}
 
 	return nil
-
 }
 
 // MountDirectory ..
-func (bh *BraveHost) MountDirectory(unit string, source string, destination string) error {
-	directory := filepath.Base(source)
+func (bh *BraveHost) MountDirectory(source string, destUnit string, destPath string) error {
 	backend := bh.Settings.BackendSettings.Type
-	sourceUnit := ""
+	var sourceUnit string
+	var sourcePath string
 
 	sourceSlice := strings.SplitN(source, ":", -1)
 	if len(sourceSlice) > 2 {
 		return errors.New("Failed to parse source " + source + "Accepted form [UNIT:]<path>")
 	} else if len(sourceSlice) == 2 {
 		sourceUnit = sourceSlice[0]
-		source = sourceSlice[1]
+		sourcePath = sourceSlice[1]
+	} else if len(sourceSlice) == 1 {
+		sourceUnit = ""
+		sourcePath = source
 	}
+
+	fmt.Println("Source unit: ", sourceUnit)
+	fmt.Println("Source path: ", sourcePath)
+	fmt.Println("Dest unit: ", destUnit)
+	fmt.Println("Dest path: ", destPath)
+
+	sharedDirectory := filepath.Base(sourcePath)
 
 	switch backend {
 	case "multipass":
 
-		if len(sourceUnit) == 0 {
+		if sourceUnit == "" {
 			err := shared.ExecCommand("multipass",
 				"mount",
-				source,
-				bh.Settings.Name+":/home/ubuntu/volumes/"+directory)
+				sourcePath,
+				bh.Settings.Name+":/home/ubuntu/volumes/"+sharedDirectory)
+			if err != nil {
+				return errors.New("Failed to initialize mount on host :" + err.Error())
+			}
+
+			err = MountDirectory(filepath.Join("/home/ubuntu", "volumes", sharedDirectory), destUnit, destPath, bh.Remote)
+			if err != nil {
+				return errors.New("Failed to mount " + sourcePath + " to " + destUnit + ":" + destPath + " : " + err.Error())
+			}
+		} else {
+			err := createSharedVolume(bh.Settings.StoragePool.Name,
+				sharedDirectory,
+				sourceUnit,
+				destUnit,
+				destPath,
+				bh)
 			if err != nil {
 				return err
 			}
-
-			err = MountDirectory(unit, filepath.Join("/home/ubuntu", "volumes", directory), destination, bh.Remote)
-			if err != nil {
-				return errors.New("Failed to mount " + source + " to " + unit + ":" + destination + " : " + err.Error())
-			}
-		} else {
-			err := MountDirectory(unit,
-				// TODO potentially use a variable storage pool obtained from Brave Host
-				filepath.Join("/var", "snap", "lxd", "common", "mntns", "var", "snap",
-					"lxd", "common", "lxd", "storage-pools", "brave", "containers",
-					sourceUnit, "rootfs", source), destination, bh.Remote)
-			if err != nil {
-				return errors.New("Failed to mount " + source + " to " + unit + ":" + destination + " : " + err.Error())
-			}
 		}
 	case "lxd":
-		if len(sourceUnit) == 0 {
-			err := MountDirectory(unit, source, destination, bh.Remote)
+		if sourceUnit == "" {
+			fmt.Println("Mounting share from host")
+			err := MountDirectory(sourcePath, destUnit, destPath, bh.Remote)
 			if err != nil {
-				return errors.New("Failed to mount " + source + " to " + unit + ":" + destination + " : " + err.Error())
+				return errors.New("Failed to mount " + source + " to " + destUnit + ":" + destPath + " : " + err.Error())
 			}
 		} else {
-			err := MountDirectory(unit,
-				// TODO potentially use a variable storage pool obtained from Brave Host
-				filepath.Join("/var", "snap", "lxd", "common", "mntns", "var", "snap",
-					"lxd", "common", "lxd", "storage-pools", "brave", "containers",
-					sourceUnit, "rootfs", source), destination, bh.Remote)
+			err := createSharedVolume(bh.Settings.StoragePool.Name,
+				sharedDirectory,
+				sourceUnit,
+				destUnit,
+				destPath,
+				bh)
 			if err != nil {
-				return errors.New("Failed to mount " + source + " to " + unit + ":" + destination + " : " + err.Error())
+				return err
 			}
 		}
 	}
 
 	return nil
-
 }
 
 // DeleteUnit ..
@@ -960,6 +969,33 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 		return errors.New("Failed to insert unit to database: " + err.Error())
 	}
 
+	return nil
+}
+
+// ListVolumes ..
+func (bh *BraveHost) ListVolumes() error {
+	err := shared.ExecCommand("lxc",
+		"storage",
+		"volume",
+		"list",
+		bh.Settings.StoragePool.Name)
+	if err != nil {
+		return errors.New("Cannot access data volumes")
+	}
+	return nil
+}
+
+// DeleteVolume ..
+func (bh *BraveHost) DeleteVolume(name string) error {
+	err := shared.ExecCommand("lxc",
+		"storage",
+		"volume",
+		"delete",
+		bh.Settings.StoragePool.Name,
+		name)
+	if err != nil {
+		return errors.New("Cannot access data volumes")
+	}
 	return nil
 }
 
