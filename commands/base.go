@@ -59,8 +59,6 @@ func buildBase(cmd *cobra.Command, args []string) {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Building base unit: ", bravefile.PlatformService.Name)
-
 	err = host.BuildUnit(bravefile)
 	if err != nil {
 		log.Fatal(err)
