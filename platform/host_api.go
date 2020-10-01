@@ -466,7 +466,7 @@ func (bh *BraveHost) DeleteUnit(name string) error {
 		return errors.New("Failed to delete unit from database. Name: " + name + " Error: " + err.Error())
 	}
 
-	fmt.Println("Unit deleted: ", name)
+	//fmt.Println("Unit deleted: ", name)
 	return nil
 }
 
@@ -899,7 +899,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 		return errors.New("Failed to restart unit: " + err.Error())
 	}
 
-	fmt.Println("Service started: ", unitParams.PlatformService.Name)
+	//fmt.Println("Service started: ", unitParams.PlatformService.Name)
 
 	ports = unitParams.PlatformService.Ports
 	if len(ports) > 0 {
