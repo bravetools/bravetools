@@ -466,7 +466,7 @@ func (bh *BraveHost) DeleteUnit(name string) error {
 		return errors.New("Failed to delete unit from database. Name: " + name + " Error: " + err.Error())
 	}
 
-	fmt.Println("Unit deleted: ", name)
+	//fmt.Println("Unit deleted: ", name)
 	return nil
 }
 
@@ -618,8 +618,6 @@ func (bh *BraveHost) BuildUnit(bravefile *shared.Bravefile) error {
 	}
 
 	// Create an image based on running container and export it. Image saved as tar.gz in project local directory.
-	fmt.Println("Publishing image " + bravefile.PlatformService.Name)
-
 	var unitFingerprint string
 	unitFingerprint, err = Publish(bravefile.PlatformService.Name, bravefile.PlatformService.Version, bh.Remote)
 	if err != nil {
@@ -901,7 +899,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 		return errors.New("Failed to restart unit: " + err.Error())
 	}
 
-	fmt.Println("Service started: ", unitParams.PlatformService.Name)
+	//fmt.Println("Service started: ", unitParams.PlatformService.Name)
 
 	ports = unitParams.PlatformService.Ports
 	if len(ports) > 0 {
@@ -945,7 +943,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 		}
 	}
 
-	log.Println("Connecting to database")
+	//log.Println("Connecting to database")
 	database := db.OpenDB(dbPath)
 
 	uuid, _ := uuid.NewUUID()
@@ -966,7 +964,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 		return errors.New("Failed to serialize unit data")
 	}
 	braveUnit.Data = data
-	log.Println("Inserting unit")
+	//log.Println("Inserting unit")
 	_, err = db.InsertUnitDB(database, braveUnit)
 	if err != nil {
 		DeleteImage(fingerprint, bh.Remote)

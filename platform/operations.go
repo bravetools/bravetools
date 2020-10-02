@@ -378,7 +378,6 @@ func LaunchFromImage(image string, name string, remote Remote) error {
 		return err
 	}
 
-	fmt.Println("Unit launched: ", name)
 	return nil
 }
 
@@ -412,7 +411,6 @@ func Launch(name string, alias string, remote Remote) error {
 		return errors.New("Error waiting: " + err.Error())
 	}
 
-	fmt.Println("Unit launched: ", name, alias)
 	return nil
 }
 
