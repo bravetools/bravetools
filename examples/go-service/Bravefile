@@ -33,7 +33,7 @@ service:
         content: |-
           ./main >std.txt 2>err.txt &
     
-  image: go-service-1.0
+  image: go-service-1-1.0
   name: go-service-1
   version: 1.0
   ip: 10.0.0.101

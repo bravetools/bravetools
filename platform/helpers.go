@@ -23,16 +23,37 @@ func createSharedVolume(storagePoolName string,
 	destPath string,
 	bh *BraveHost) error {
 
-	// 1. Create storage volume
-	err := shared.ExecCommand(
-		"lxc",
-		"storage",
-		"volume",
-		"create",
-		storagePoolName,
-		sharedDirectory)
-	if err != nil {
-		return errors.New("Failed to create storage volume: " + sharedDirectory + ": " + err.Error())
+	backend := bh.Settings.BackendSettings.Type
+
+	switch backend {
+	case "multipass":
+		// 1. Create storage volume
+		err := shared.ExecCommand(
+			"multipass",
+			"exec",
+			bh.Settings.BackendSettings.Resources.Name,
+			"--",
+			shared.SnapLXC,
+			"storage",
+			"volume",
+			"create",
+			storagePoolName,
+			sharedDirectory)
+		if err != nil {
+			return errors.New("Failed to create storage volume: " + sharedDirectory + ": " + err.Error())
+		}
+	case "lxd":
+		// 1. Create storage volume
+		err := shared.ExecCommand(
+			"lxc",
+			"storage",
+			"volume",
+			"create",
+			storagePoolName,
+			sharedDirectory)
+		if err != nil {
+			return errors.New("Failed to create storage volume: " + sharedDirectory + ": " + err.Error())
+		}
 	}
 
 	shareSettings := map[string]string{}
@@ -42,22 +63,39 @@ func createSharedVolume(storagePoolName string,
 	shareSettings["type"] = "disk"
 
 	// 2. Add storage volume as a disk device to source unit
-	err = AddDevice(sourceUnit, sharedDirectory, shareSettings, bh.Remote)
+	err := AddDevice(sourceUnit, sharedDirectory, shareSettings, bh.Remote)
 	if err != nil {
-		shared.ExecCommand(
-			"lxc",
-			"storage",
-			"volume",
-			"delete",
-			storagePoolName,
-			sharedDirectory)
-		return errors.New("Failed to mount to the source: " + err.Error())
+		switch backend {
+		case "multipass":
+			shared.ExecCommand(
+				"multipass",
+				"exec",
+				bh.Settings.BackendSettings.Resources.Name,
+				"--",
+				shared.SnapLXC,
+				"lxc",
+				"storage",
+				"volume",
+				"delete",
+				storagePoolName,
+				sharedDirectory)
+			return errors.New("Failed to mount to the source: " + err.Error())
+		case "lxd":
+			shared.ExecCommand(
+				"lxc",
+				"storage",
+				"volume",
+				"delete",
+				storagePoolName,
+				sharedDirectory)
+			return errors.New("Failed to mount to the source: " + err.Error())
+		}
 	}
 
 	// 3. Add storage volume as a disk device to target unit
 	err = AddDevice(destUnit, sharedDirectory, shareSettings, bh.Remote)
 	if err != nil {
-		bh.UmountDirectory(sourceUnit, sharedDirectory)
+		bh.UmountShare(sourceUnit, sharedDirectory)
 		return errors.New("Failed to mount to the destination: " + err.Error())
 	}
 

@@ -28,7 +28,7 @@ func umount(cmd *cobra.Command, args []string) {
 		log.Fatal("Target directory should be specified as UNIT:<disk>")
 	}
 
-	err := host.UmountDirectory(remote[0], remote[1])
+	err := host.UmountShare(remote[0], remote[1])
 	if err != nil {
 		log.Fatal(err)
 	}

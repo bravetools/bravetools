@@ -314,8 +314,8 @@ func (bh *BraveHost) ListUnits(backend Backend) error {
 	return nil
 }
 
-// UmountDirectory ..
-func (bh *BraveHost) UmountDirectory(unit string, target string) error {
+// UmountShare ..
+func (bh *BraveHost) UmountShare(unit string, target string) error {
 	backend := bh.Settings.BackendSettings.Type
 
 	switch backend {
@@ -362,8 +362,8 @@ func (bh *BraveHost) UmountDirectory(unit string, target string) error {
 	return nil
 }
 
-// MountDirectory ..
-func (bh *BraveHost) MountDirectory(source string, destUnit string, destPath string) error {
+// MountShare ..
+func (bh *BraveHost) MountShare(source string, destUnit string, destPath string) error {
 	backend := bh.Settings.BackendSettings.Type
 	var sourceUnit string
 	var sourcePath string
