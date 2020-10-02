@@ -80,8 +80,6 @@ func (vm Lxd) BraveBackendInit() error {
 		return errors.New("Failed to identify LXD: " + err.Error())
 	}
 
-	fmt.Println("LXD status: ", lxdStatus)
-
 	switch lxdStatus {
 	case Incompatible:
 		_ = deleteBraveHome()
