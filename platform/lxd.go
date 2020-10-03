@@ -139,7 +139,7 @@ func initiateLxd(vm Lxd, whichLxc string) error {
 		whichLxc,
 		"network",
 		"create",
-		"lxdbr0",
+		"bravebr0",
 		"ipv6.address=none",
 		bridge,
 		"ipv4.nat=true")
@@ -151,7 +151,7 @@ func initiateLxd(vm Lxd, whichLxc string) error {
 		whichLxc,
 		"network",
 		"attach-profile",
-		"lxdbr0",
+		"bravebr0",
 		"brave",
 		"eth0")
 	if err != nil {
