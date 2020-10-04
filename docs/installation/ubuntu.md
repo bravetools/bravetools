@@ -32,7 +32,7 @@ versions:
 
 ### Software requirements
 
-Default installation of Bravetools runs on top of the [LXD](https://linuxcontainers.org/lxd/introduction/) daemon. It is recommended that `snap` LXD is installed on the base system. If it's not, Bravetools will install and configure it automatically for you at the time of initialisation.
+Default installation of Bravetools runs on top of the [LXD](https://linuxcontainers.org/lxd/introduction/) daemon.
 
 ### Supported storage backends
 
