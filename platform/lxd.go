@@ -190,19 +190,19 @@ func checkLXDVersion(whichLxc string) error {
 	}
 
 	v := strings.Split(ver, "\n")
-	clientVersionString := strings.ReplaceAll(strings.Split(v[0], ":")[1], ".", "")
-	serverVersionString := strings.ReplaceAll(strings.Split(v[0], ":")[1], ".", "")
+	clientVersionString := strings.TrimSpace(strings.ReplaceAll(strings.Split(v[0], ":")[1], ".", ""))
+	serverVersionString := strings.TrimSpace(strings.ReplaceAll(strings.Split(v[0], ":")[1], ".", ""))
 	if len(clientVersionString) == 2 {
 		clientVersionString = clientVersionString + "0"
 	}
 	if len(serverVersionString) == 2 {
 		serverVersionString = serverVersionString + "0"
 	}
-	clientVersion, err := strconv.Atoi(strings.TrimSpace(clientVersionString))
+	clientVersion, err := strconv.Atoi(clientVersionString)
 	if err != nil {
 		fmt.Println(err)
 	}
-	serverVersion, err := strconv.Atoi(strings.TrimSpace(serverVersionString))
+	serverVersion, err := strconv.Atoi(serverVersionString)
 	if err != nil {
 		fmt.Println(err)
 	}
