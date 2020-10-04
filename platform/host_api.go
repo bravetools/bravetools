@@ -855,7 +855,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 		return errors.New("Failed to launch unit: " + err.Error())
 	}
 
-	err = AttachNetwork(unitParams.PlatformService.Name, "lxdbr0", "eth0", "eth0", bh.Remote)
+	err = AttachNetwork(unitParams.PlatformService.Name, "bravebr0", "eth0", "eth0", bh.Remote)
 	if err != nil {
 		return errors.New("Failed to attach network: " + err.Error())
 	}

@@ -208,11 +208,11 @@ func checkLXDVersion(whichLxc string) error {
 	}
 	if clientVersion < 303 {
 		fmt.Println("Client version: ", clientVersion)
-		return errors.New("Unsupportred LXD client version")
+		return errors.New("Bravetools supports LXD >= 3.0.3. Found " + clientVersionString)
 	}
 	if serverVersion < 303 {
 		fmt.Println("Server version: ", serverVersion)
-		return errors.New("Unsupportred LXD server version")
+		return errors.New("Bravetools supports LXD >= 3.0.3. Found " + clientVersionString)
 	}
 	return nil
 }

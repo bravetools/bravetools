@@ -1207,7 +1207,7 @@ func CopyFiles(name string, src, dst string, remote Remote) error {
 
 	contentLength, err := args.Content.Seek(0, io.SeekEnd)
 	if err != nil {
-		return errors.New("Failed to get lenght of the source file")
+		return errors.New("Failed to get length of the source file")
 	}
 
 	_, err = args.Content.Seek(0, io.SeekStart)

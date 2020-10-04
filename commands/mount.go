@@ -12,7 +12,7 @@ import (
 var mountDir = &cobra.Command{
 	Use:   "mount [UNIT:]<source> UNIT:<target>",
 	Short: "Mount a directory to a Unit",
-	Long:  `mount supports local directories as well as shared directories between Units.`,
+	Long:  `mount local directories as well as shared volumes between Units.`,
 	Run:   mount,
 }
 

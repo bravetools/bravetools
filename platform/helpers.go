@@ -425,7 +425,7 @@ func fileExists(filename string) bool {
 // addIPRules adds firewall rule to the host iptable
 func addIPRules(ct string, hostPort string, ctPort string, bh *BraveHost) error {
 
-	name := ct + "proxy-" + hostPort + ":" + ctPort
+	name := ct + "-proxy-" + hostPort + ":" + ctPort
 
 	var config = make(map[string]string)
 
