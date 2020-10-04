@@ -86,7 +86,7 @@ func (vm Lxd) BraveBackendInit() error {
 		return errors.New("Incompatible LXD version")
 	case NotInstalled:
 		_ = deleteBraveHome()
-		return errors.New("LXD notinstalled")
+		return errors.New("LXD not installed")
 
 	case NotInitialised:
 		err = initiateLxd(vm, whichLxc)

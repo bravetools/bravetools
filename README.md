@@ -19,7 +19,17 @@ To get started using Bravetools, download a platform-specific binary and add it 
 
 To learn more about using Bravetools, please refer to our [Bravetools Documentation](https://bravetools.github.io/bravetools/).
 
-## Install from Source
+## Installation
+
+Ensure that your user is part of the `lxd group`:
+```bash
+sudo usermod --append --groups lxd USER
+```
+
+You may also need to install `zfsutils`:
+```bash
+sudo apt install zfsutils-linux
+```
 
 ### Ubuntu
 

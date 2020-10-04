@@ -110,7 +110,7 @@ func serverInit(cmd *cobra.Command, args []string) {
 		err = backend.BraveBackendInit()
 		if err != nil {
 			fmt.Println("Error initializing Bravetools backend: ", err)
-			log.Fatal(shared.REMOVELIN)
+			//log.Fatal(shared.REMOVELIN)
 		}
 
 		loadConfig()

@@ -11,6 +11,16 @@ To get started with Bravetools on Ubuntu, make sure you [meet the prerequisites]
 
 ## Prerequisites
 
+Ensure that your user is part of the `lxd group`:
+```bash
+sudo usermod --append --groups lxd USER
+```
+
+You may also need to install `zfsutils`:
+```bash
+sudo apt install zfsutils-linux
+```
+
 ### OS requirements
 
 To install Bravetools, you need the 64-bit version of one of these Ubuntu
