@@ -87,11 +87,12 @@ func (vm Lxd) BraveBackendInit() error {
 	case NotInstalled:
 		_ = deleteBraveHome()
 		return errors.New("LXD notinstalled")
+
 	case NotInitialised:
 		err = initiateLxd(vm, whichLxc)
 		if err != nil {
 			_ = deleteBraveHome()
-			return errors.New("Failed to initiate Lxd: " + err.Error())
+			return errors.New("Failed to initiate LXD: " + err.Error())
 		}
 
 		err = enableRemote(vm, whichLxc)
@@ -111,9 +112,12 @@ func (vm Lxd) BraveBackendInit() error {
 
 func initiateLxd(vm Lxd, whichLxc string) error {
 
-	fmt.Println("Createing profile ...")
+	err := checkLXDVersion(whichLxc)
+	if err != nil {
+		return err
+	}
 
-	err := shared.ExecCommand(
+	err = shared.ExecCommand(
 		whichLxc,
 		"profile",
 		"create",
@@ -173,6 +177,42 @@ func initiateLxd(vm Lxd, whichLxc string) error {
 	err = UpdateBraveSettings(*vm.Settings)
 	if err != nil {
 		return err
+	}
+	return nil
+}
+
+func checkLXDVersion(whichLxc string) error {
+	ver, err := shared.ExecCommandWReturn(
+		whichLxc,
+		"version")
+	if err != nil {
+		return errors.New("Cannot get LXD version")
+	}
+
+	v := strings.Split(ver, "\n")
+	clientVersionString := strings.ReplaceAll(strings.Split(v[0], ":")[1], ".", "")
+	serverVersionString := strings.ReplaceAll(strings.Split(v[0], ":")[1], ".", "")
+	if len(clientVersionString) == 2 {
+		clientVersionString = clientVersionString + "0"
+	}
+	if len(serverVersionString) == 2 {
+		serverVersionString = serverVersionString + "0"
+	}
+	clientVersion, err := strconv.Atoi(strings.TrimSpace(clientVersionString))
+	if err != nil {
+		fmt.Println(err)
+	}
+	serverVersion, err := strconv.Atoi(strings.TrimSpace(serverVersionString))
+	if err != nil {
+		fmt.Println(err)
+	}
+	if clientVersion < 303 {
+		fmt.Println("Client version: ", clientVersion)
+		return errors.New("Unsupportred LXD client version")
+	}
+	if serverVersion < 303 {
+		fmt.Println("Server version: ", serverVersion)
+		return errors.New("Unsupportred LXD server version")
 	}
 	return nil
 }

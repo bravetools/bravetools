@@ -32,3 +32,11 @@ type NicDevice struct {
 	Parent  string
 	IP      string
 }
+
+// BraveProfile ..
+type BraveProfile struct {
+	Name       string
+	Storage    string
+	Bridge     string
+	LxdVersion string
+}
