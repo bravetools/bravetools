@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -41,7 +42,22 @@ func buildBase(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	fmt.Println("Building base unit: ", bravefile.PlatformService.Name)
+	// Resource checks
+	info, err := backend.Info()
+
+	usedDiskSize, err := shared.SizeCountToInt(info.Disk[0])
+	if err != nil {
+		log.Fatal(err)
+	}
+	totalDiskSize, err := shared.SizeCountToInt(info.Disk[1])
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if (totalDiskSize - usedDiskSize) < 5000000000 {
+		err = errors.New("Not enough free storage on disk")
+		log.Fatal(err)
+	}
 
 	err = host.BuildUnit(bravefile)
 	if err != nil {

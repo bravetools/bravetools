@@ -1,12 +1,13 @@
 package commands
 
 import (
-	"errors"
+	"bufio"
 	"fmt"
 	"log"
 	"os"
 	"path"
 	"runtime"
+	"strings"
 
 	"github.com/bravetools/bravetools/platform"
 	"github.com/bravetools/bravetools/shared"
@@ -36,31 +37,24 @@ func includeInitFlags(cmd *cobra.Command) {
 
 func serverInit(cmd *cobra.Command, args []string) {
 	userHome, _ := os.UserHomeDir()
-
 	params := make(map[string]string)
 
+	braveHome := false
 	if _, err := os.Stat(path.Join(userHome, ".bravetools")); !os.IsNotExist(err) {
-		msg := errors.New("Bravetools is already initialised. Run \"brave configure\" if you'd like to tweak configuration")
-		log.Fatal(msg.Error())
+		braveHome = true
 	}
 
-	err := createLocalDirectories(userHome)
+	braveProfile := true
+	remote := host.Remote
+	_, err := platform.GetBraveProfile(remote)
 	if err != nil {
-		log.Fatal(err.Error())
+		//fmt.Println("Brave profile: ", err)
+		braveProfile = false
+	}
+	if err == nil {
+		braveProfile = true
 	}
 
-	if storage == "" {
-		storage = "12"
-	}
-	params["storage"] = storage
-	if ram == "" {
-		ram = "4GB"
-	}
-	params["ram"] = ram
-	if network == "" {
-		network = "10.0.0.1"
-	}
-	params["network"] = network
 	if backendType == "" {
 		hostOs := runtime.GOOS
 		switch hostOs {
@@ -71,7 +65,7 @@ func serverInit(cmd *cobra.Command, args []string) {
 		case "windows":
 			backendType = "multipass"
 		default:
-			err := deleteLocalDirectories(userHome)
+			err := deleteBraveHome(userHome)
 			if err != nil {
 				log.Fatal(err.Error())
 			}
@@ -79,45 +73,104 @@ func serverInit(cmd *cobra.Command, args []string) {
 			fmt.Println("Unsupported OS")
 		}
 	}
-	params["backend"] = backendType
 
-	if hostConfigPath != "" {
-		// TODO: validate configuration. Now assume that path ends with config.yml
-		err = shared.CopyFile(hostConfigPath, path.Join(userHome, ".bravetools", "config.yml"))
+	if braveHome == false && braveProfile == false {
+		err = createBraveHome(userHome)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+
+		if storage == "" {
+			storage = "12"
+		}
+		params["storage"] = storage
+		if ram == "" {
+			ram = "4GB"
+		}
+		params["ram"] = ram
+		if network == "" {
+			network = "10.0.0.1"
+		}
+		params["network"] = network
+		params["backend"] = backendType
+
+		if hostConfigPath != "" {
+			// TODO: validate configuration. Now assume that path ends with config.yml
+			err = shared.CopyFile(hostConfigPath, path.Join(userHome, ".bravetools", "config.yml"))
+			if err != nil {
+				log.Fatal(err)
+			}
+			loadConfig()
+		} else {
+			userHome, _ := os.UserHomeDir()
+			platform.SetupHostConfiguration(params, userHome)
+			loadConfig()
+		}
+
+		err = backend.BraveBackendInit()
+		if err != nil {
+			fmt.Println("Error initializing Bravetools backend: ", err)
+			//log.Fatal(shared.REMOVELIN)
+		}
+
+		loadConfig()
+
+		if backendType == "multipass" {
+			info, err := backend.Info()
+
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			settings := host.Settings
+			settings.BackendSettings.Resources.IP = info.IPv4
+			err = platform.UpdateBraveSettings(settings)
+
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			loadConfig()
+		}
+
+		err = host.AddRemote()
 		if err != nil {
 			log.Fatal(err)
 		}
 	} else {
-		userHome, _ := os.UserHomeDir()
-		platform.SetupHostConfiguration(params, userHome)
-		loadConfig()
-	}
+		scanner := bufio.NewScanner(os.Stdin)
+		for {
+			fmt.Println(shared.REINIT)
+			scanner.Scan()
+			in := scanner.Text()
+			in = strings.ToLower(in)
+			if in == "yes" || in == "y" {
+				if backendType == "multipass" {
+					log.Fatal(shared.REMOVEMP)
+				} else {
+					p := path.Join(userHome, ".bravetools/")
 
-	loadConfig()
-	err = backend.BraveBackendInit()
-	if err != nil {
-		log.Fatal(err)
-	}
+					if braveHome == false {
+						log.Fatal(shared.REMOVELIN)
+					} else {
 
-	loadConfig()
-	if backendType == "multipass" {
-		info, err := backend.Info()
-		if err != nil {
-			log.Fatal(err)
+						err1 := os.RemoveAll(p)
+						err2 := platform.DeleteProfile(host.Settings.Profile, remote)
+						err3 := platform.DeleteStoragePool(host.Settings.StoragePool.Name, remote)
+						err4 := platform.DeleteNetwork("bravebr0", remote)
+
+						if err1 != nil || err2 != nil || err3 != nil || err4 != nil {
+							log.Fatal(shared.REMOVELIN)
+						}
+					}
+				}
+
+				break
+			} else if in == "no" || in == "n" {
+				break
+			} else {
+				continue
+			}
 		}
-		settings := host.Settings
-
-		settings.BackendSettings.Resources.IP = info.IPv4
-		err = platform.UpdateBraveSettings(settings)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		loadConfig()
-	}
-
-	err = host.AddRemote()
-	if err != nil {
-		log.Fatal(err)
 	}
 }

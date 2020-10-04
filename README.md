@@ -19,7 +19,17 @@ To get started using Bravetools, download a platform-specific binary and add it 
 
 To learn more about using Bravetools, please refer to our [Bravetools Documentation](https://bravetools.github.io/bravetools/).
 
-## Install from Source
+## Installation
+
+Ensure that your user is part of the `lxd group`:
+```bash
+sudo usermod --append --groups lxd USER
+```
+
+You may also need to install `zfsutils`:
+```bash
+sudo apt install zfsutils-linux
+```
 
 ### Ubuntu
 
@@ -30,16 +40,15 @@ To learn more about using Bravetools, please refer to our [Bravetools Documentat
   * 4GB of Memory
 * Software
   * [Go](https://golang.org/)
-  * [LXD 4.3](https://linuxcontainers.org/lxd/getting-started-cli/)
-
-> **NOTE**: LXD up to 3.0.x were published as non-snap versions. Bravetools will not work with these distributions. The user is encouraged to use snap-LXD before continuing with installation.
+  * [LXD >3.0.3](https://linuxcontainers.org/lxd/getting-started-cli/)
 
 ```bash
 git clone https://github.com/bravetools/bravetools
 cd bravetools
 make ubuntu
-brave init
 ```
+
+If this is your first time setting up Bravetools, run `brave init` to initialise the required profile, storage pool, and LXD bridge.
 
 ### Mac OS
 
@@ -56,8 +65,10 @@ brave init
 git clone https://github.com/bravetools/bravetools
 cd bravetools
 make darwin
-brave init
 ```
+
+If this is your first time setting up Bravetools, run `brave init` to initialise the required profile, storage pool, and LXD bridge.
+
 
 ### Windows
 

@@ -16,6 +16,92 @@ import (
 
 // Private Helpers
 
+func createSharedVolume(storagePoolName string,
+	sharedDirectory string,
+	sourceUnit string,
+	destUnit string,
+	destPath string,
+	bh *BraveHost) error {
+
+	backend := bh.Settings.BackendSettings.Type
+
+	switch backend {
+	case "multipass":
+		// 1. Create storage volume
+		err := shared.ExecCommand(
+			"multipass",
+			"exec",
+			bh.Settings.BackendSettings.Resources.Name,
+			"--",
+			shared.SnapLXC,
+			"storage",
+			"volume",
+			"create",
+			storagePoolName,
+			sharedDirectory)
+		if err != nil {
+			return errors.New("Failed to create storage volume: " + sharedDirectory + ": " + err.Error())
+		}
+	case "lxd":
+		// 1. Create storage volume
+		err := shared.ExecCommand(
+			"lxc",
+			"storage",
+			"volume",
+			"create",
+			storagePoolName,
+			sharedDirectory)
+		if err != nil {
+			return errors.New("Failed to create storage volume: " + sharedDirectory + ": " + err.Error())
+		}
+	}
+
+	shareSettings := map[string]string{}
+	shareSettings["path"] = destPath
+	shareSettings["pool"] = storagePoolName
+	shareSettings["source"] = sharedDirectory
+	shareSettings["type"] = "disk"
+
+	// 2. Add storage volume as a disk device to source unit
+	err := AddDevice(sourceUnit, sharedDirectory, shareSettings, bh.Remote)
+	if err != nil {
+		switch backend {
+		case "multipass":
+			shared.ExecCommand(
+				"multipass",
+				"exec",
+				bh.Settings.BackendSettings.Resources.Name,
+				"--",
+				shared.SnapLXC,
+				"lxc",
+				"storage",
+				"volume",
+				"delete",
+				storagePoolName,
+				sharedDirectory)
+			return errors.New("Failed to mount to the source: " + err.Error())
+		case "lxd":
+			shared.ExecCommand(
+				"lxc",
+				"storage",
+				"volume",
+				"delete",
+				storagePoolName,
+				sharedDirectory)
+			return errors.New("Failed to mount to the source: " + err.Error())
+		}
+	}
+
+	// 3. Add storage volume as a disk device to target unit
+	err = AddDevice(destUnit, sharedDirectory, shareSettings, bh.Remote)
+	if err != nil {
+		bh.UmountShare(sourceUnit, sharedDirectory)
+		return errors.New("Failed to mount to the destination: " + err.Error())
+	}
+
+	return nil
+}
+
 func importLXD(bravefile *shared.Bravefile, remote Remote) error {
 	err := Launch(bravefile.PlatformService.Name, bravefile.Base.Image, remote)
 	if err != nil {
@@ -158,7 +244,7 @@ func listHostImages(remote Remote) ([]api.Image, error) {
 	return images, nil
 }
 
-func listHostUnits(remote Remote) ([]api.InstanceFull, error) {
+func listHostUnits(remote Remote) ([]shared.BraveUnit, error) {
 	units, err := GetUnits(remote)
 	if err != nil {
 		return nil, errors.New("Failed to access host units: " + err.Error())
@@ -221,7 +307,6 @@ func getMPInterfaceName(bh *BraveHost) ([]string, error) {
 
 // Get IP address of a running unit
 func getUnitIPAddress(name string, remote Remote) (string, error) {
-	var unitAddress string
 	unitList, err := listHostUnits(remote)
 
 	if err != nil {
@@ -230,13 +315,11 @@ func getUnitIPAddress(name string, remote Remote) (string, error) {
 
 	for _, u := range unitList {
 		if u.Name == name {
-			if len(u.State.Network["eth0"].Addresses) > 0 {
-				unitAddress = u.State.Network["eth0"].Addresses[0].Address
-			}
+			return u.Address, nil
 		}
 	}
 
-	return unitAddress, nil
+	return "", nil
 }
 
 // ProcessInterruptHandler monitors for Ctrl+C keypress in Terminal
@@ -342,7 +425,7 @@ func fileExists(filename string) bool {
 // addIPRules adds firewall rule to the host iptable
 func addIPRules(ct string, hostPort string, ctPort string, bh *BraveHost) error {
 
-	name := ct + "proxy-" + hostPort + ":" + ctPort
+	name := ct + "-proxy-" + hostPort + ":" + ctPort
 
 	var config = make(map[string]string)
 
