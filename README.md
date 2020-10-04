@@ -5,13 +5,13 @@ Bravetools is an end-to-end System Container management platform. Bravetools mak
 
 ## Quickstart
 
-To get started using Bravetools, download a platform-specific binary and add it to your PATH variable:
+To get started using Bravetools, download a platform-specific binary, rename it to `brave`, and add it to your PATH variable:
 
 | Operating System | Binary | Version |
 |------------------|--------|---------|
-| Ubuntu           | [download](https://github.com/bravetools/bravetools/releases/download/1.53/brave-release-1.53-ubuntu) | release-1.53 |
-| macOS            | [download](https://github.com/bravetools/bravetools/releases/download/1.53/brave-release-1.53-darwin) | release-1.53 |
-| Windows 8/10     | [download](https://github.com/bravetools/bravetools/releases/download/1.53/brave-release-1.53-win.exe)  | release-1.53 |
+| Ubuntu           | [download](https://github.com/bravetools/bravetools/releases/download/1.54/brave-release-1.54-ubuntu) | release-1.54 |
+| macOS            | [download](https://github.com/bravetools/bravetools/releases/download/1.54/brave-release-1.54-darwin) | release-1.54 |
+| Windows 8/10     | [download](https://github.com/bravetools/bravetools/releases/download/1.54/brave-release-1.54-win.exe)  | release-1.54 |
 
 > **NOTE:** Bravetools can be built from source on any platform that supports Go.
 
