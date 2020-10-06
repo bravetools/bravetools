@@ -471,6 +471,7 @@ func LaunchFromImage(image string, name string, remote Remote) error {
 // Alias: "ubuntu/bionic/amd64"
 // Alias: "alpine/3.9/amd64"
 func Launch(name string, alias string, remote Remote) error {
+	fmt.Println(shared.Info("["+name+"] "+"IMPORT: "), alias)
 	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
 	if err != nil {
 		return err
@@ -489,7 +490,6 @@ func Launch(name string, alias string, remote Remote) error {
 	//TODO: obtain profile from settings
 	req.Profiles = []string{"brave"}
 
-	fmt.Println("Creating " + name)
 	op, err := lxdServer.CreateContainer(req)
 	if err != nil {
 		return errors.New("Failed to create unit: " + err.Error())
