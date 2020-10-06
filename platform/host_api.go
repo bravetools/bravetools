@@ -290,8 +290,10 @@ func (bh *BraveHost) ListUnits(backend Backend) error {
 		address := u.Address
 
 		disk := ""
-		if u.Disk.Name != "" {
-			disk = u.Disk.Name + ":" + u.Disk.Source + "->" + u.Disk.Path
+		for _, diskDevice := range u.Disk {
+			if diskDevice.Name != "" {
+				disk += diskDevice.Name + ":" + diskDevice.Source + "->" + diskDevice.Path + "\n"
+			}
 		}
 
 		r := []string{name, status, u.NIC.Name + ":" + address, disk, u.Proxy.Name}
