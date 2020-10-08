@@ -5,11 +5,11 @@ Bravetools is an end-to-end System Container management platform. Bravetools mak
 
 ## Why use Bravetools
 
-Configurable system images have a lot advantages, but their use has been limited. In our own development practice, we found that there were either no existing tools to automate the full lifecycle of a System Container or they had a steep learning curve.
+Configurable system images have a lot advantages, but their use has been limited. In our own development practice, we found that there were either no existing tools to automate the full lifecycle of a System Container or they had a steep learning curve. Here are some improvements that our team has noticed when using Bravetools in development and production:
 
 * **Improved Stability**. All software and configurations are installed into your images at build-time. Once your image is launched and tested, you can be confident that any environment launched from that image will function properly.
 
-* **No overheads** of a VM. Bravetools runs on LXD. LXD uses Linux containers to offer a user experience similar to virtual machines, but without the expensive overhead. You can run either single images on a local machines or scale to thousands of compute nodes.
+* **No overheads of a VM**. Bravetools runs on LXD. LXD uses Linux containers to offer a user experience similar to virtual machines, but without the expensive overhead. You can run either single images on a local machines or scale to thousands of compute nodes.
 
 * **Focus on code not infrastructure**. Maintaining and configuring infrastructure is difficult! With any application built and deployed using Bravetools infrastructure and environment have to be configured just once. Developers can spend more time on creating and improving software and less time on managing production environments.
 
@@ -20,10 +20,10 @@ Here's a toy example showing how to create a simple container configuration, add
 Configuration instructions are stored in a [Bravefile](https://bravetools.github.io/bravetools/docs/bravefile/). Let's crate a simple Bravefile that uses Alpine Edge image and installs python3:
 
 ```bash
-touch Bravefile
+$ touch Bravefile
 ```
 
-Now populate your Bravefile:
+Populate this Bravefile with basic configuration, adding `python3` package through `apk` manager:
 
 ```yaml
 base:
@@ -76,7 +76,19 @@ NAME            STATUS  IPV4              DISK  PROXY
 alpine-example  Running eth0:10.0.0.117                                      
 ```
 
-This is a very basic example - Bravertools makes it easy to create complex System Containers, abstracting configuration options such as [GPU support](https://bravetools.github.io/bravetools/docs/gpu-units/), [Docker integration](https://bravetools.github.io/bravetools/docs/docker/), and seamless port-forwarding, just to name a few. To learn more about using Bravetools, please refer to our [Bravetools Documentation](https://bravetools.github.io/bravetools/).
+Because this is just an LXD container, you can access it through the usual `lxc exec` command:
+
+```bash
+$ lxc exec alpine-example python3
+
+Python 3.8.6 (default, Oct  5 2020, 00:23:48) 
+[GCC 10.2.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> 
+```
+
+
+This is a very basic example - Bravertools makes it easy to create very complex System Container environments, abstracting configuration options such as [GPU support](https://bravetools.github.io/bravetools/docs/gpu-units/), [Docker integration](https://bravetools.github.io/bravetools/docs/docker/), and seamless port-forwarding, just to name a few. To learn more about using Bravetools, please refer to our [Bravetools Documentation](https://bravetools.github.io/bravetools/).
 
 ## Installing Bravetools
 
