@@ -103,10 +103,10 @@ func (bh *BraveHost) ImportLocalImage(name string) error {
 	if err != nil {
 		return errors.New(err.Error())
 	}
+	defer f.Close()
 
 	_, err = f.WriteString(imageHash)
 	if err != nil {
-		f.Close()
 		return errors.New(err.Error())
 	}
 
@@ -165,10 +165,10 @@ func (bh *BraveHost) ListLocalImages() error {
 						if err != nil {
 							return errors.New(err.Error())
 						}
+						defer f.Close()
 
 						_, err = f.WriteString(imageHash)
 						if err != nil {
-							f.Close()
 							return errors.New(err.Error())
 						}
 
@@ -261,11 +261,9 @@ func (bh *BraveHost) HostInfo(backend Backend, short bool) error {
 	table.SetBorder(false)
 	table.SetTablePadding("\t")
 	table.SetNoWhiteSpace(true)
-
 	table.Render()
 
 	return nil
-
 }
 
 // ListUnits prints all LXD containers on remote host
@@ -285,32 +283,18 @@ func (bh *BraveHost) ListUnits(backend Backend) error {
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Name", "Status", "IPv4", "Devices"})
-
+	table.SetHeader([]string{"Name", "Status", "IPv4", "Disk", "Proxy"})
 	for _, u := range units {
 		name := u.Name
 		status := u.Status
-		address := ""
-		devices := u.Devices
-		deviceInfo := ""
+		address := u.Address
 
-		deviceSlice := []string{}
-		for key, value := range devices {
-			switch value["type"] {
-			case "disk":
-				deviceInfo = "(disk):" + shared.TruncateStringRight(value["source"], 20) + "-->" + value["path"]
-			case "nic":
-				deviceInfo = "(nic):" + value["nictype"]
-			}
-
-			deviceSlice = append(deviceSlice, key+deviceInfo)
+		disk := ""
+		if u.Disk.Name != "" {
+			disk = u.Disk.Name + ":" + u.Disk.Source + "->" + u.Disk.Path
 		}
 
-		if len(u.State.Network["eth0"].Addresses) > 0 {
-			address = u.State.Network["eth0"].Addresses[0].Address
-		}
-
-		r := []string{name, status, address, strings.Join(deviceSlice, " ")}
+		r := []string{name, status, u.NIC.Name + ":" + address, disk, u.Proxy.Name}
 		table.Append(r)
 	}
 	table.SetRowLine(false)
@@ -330,9 +314,8 @@ func (bh *BraveHost) ListUnits(backend Backend) error {
 	return nil
 }
 
-// UmountDirectory ..
-func (bh *BraveHost) UmountDirectory(unit string, target string) error {
-
+// UmountShare ..
+func (bh *BraveHost) UmountShare(unit string, target string) error {
 	backend := bh.Settings.BackendSettings.Type
 
 	switch backend {
@@ -369,70 +352,82 @@ func (bh *BraveHost) UmountDirectory(unit string, target string) error {
 		}
 	}
 
-	return nil
+	volume, _ := GetVolume(bh.Settings.StoragePool.Name, bh.Remote)
+	if len(volume.UsedBy) == 0 {
+		DeleteVolume(bh.Settings.StoragePool.Name, volume, bh.Remote)
 
+		return nil
+	}
+
+	return nil
 }
 
-// MountDirectory ..
-func (bh *BraveHost) MountDirectory(unit string, source string, destination string) error {
-	directory := filepath.Base(source)
+// MountShare ..
+func (bh *BraveHost) MountShare(source string, destUnit string, destPath string) error {
 	backend := bh.Settings.BackendSettings.Type
-	sourceUnit := ""
+	var sourceUnit string
+	var sourcePath string
 
 	sourceSlice := strings.SplitN(source, ":", -1)
 	if len(sourceSlice) > 2 {
 		return errors.New("Failed to parse source " + source + "Accepted form [UNIT:]<path>")
 	} else if len(sourceSlice) == 2 {
 		sourceUnit = sourceSlice[0]
-		source = sourceSlice[1]
+		sourcePath = sourceSlice[1]
+	} else if len(sourceSlice) == 1 {
+		sourceUnit = ""
+		sourcePath = source
 	}
+
+	sharedDirectory := filepath.Base(sourcePath)
 
 	switch backend {
 	case "multipass":
 
-		if len(sourceUnit) == 0 {
+		if sourceUnit == "" {
 			err := shared.ExecCommand("multipass",
 				"mount",
-				source,
-				bh.Settings.Name+":/home/ubuntu/volumes/"+directory)
+				sourcePath,
+				bh.Settings.Name+":/home/ubuntu/volumes/"+sharedDirectory)
+			if err != nil {
+				return errors.New("Failed to initialize mount on host :" + err.Error())
+			}
+
+			err = MountDirectory(filepath.Join("/home/ubuntu", "volumes", sharedDirectory), destUnit, destPath, bh.Remote)
+			if err != nil {
+				return errors.New("Failed to mount " + sourcePath + " to " + destUnit + ":" + destPath + " : " + err.Error())
+			}
+		} else {
+			err := createSharedVolume(bh.Settings.StoragePool.Name,
+				sharedDirectory,
+				sourceUnit,
+				destUnit,
+				destPath,
+				bh)
 			if err != nil {
 				return err
 			}
-
-			err = MountDirectory(unit, filepath.Join("/home/ubuntu", "volumes", directory), destination, bh.Remote)
-			if err != nil {
-				return errors.New("Failed to mount " + source + " to " + unit + ":" + destination + " : " + err.Error())
-			}
-		} else {
-			err := MountDirectory(unit,
-				// TODO potentially use a variable storage pool obtained from Brave Host
-				filepath.Join("/var", "snap", "lxd", "common", "mntns", "var", "snap",
-					"lxd", "common", "lxd", "storage-pools", "brave", "containers",
-					sourceUnit, "rootfs", source), destination, bh.Remote)
-			if err != nil {
-				return errors.New("Failed to mount " + source + " to " + unit + ":" + destination + " : " + err.Error())
-			}
 		}
 	case "lxd":
-		if len(sourceUnit) == 0 {
-			err := MountDirectory(unit, source, destination, bh.Remote)
+		if sourceUnit == "" {
+			err := MountDirectory(sourcePath, destUnit, destPath, bh.Remote)
 			if err != nil {
-				return errors.New("Failed to mount " + source + " to " + unit + ":" + destination + " : " + err.Error())
+				return errors.New("Failed to mount " + source + " to " + destUnit + ":" + destPath + " : " + err.Error())
 			}
 		} else {
-			err := MountDirectory(unit,
-				// TODO potentially use a variable storage pool obtained from Brave Host
-				filepath.Join("/var", "snap", "lxd", "common", "mntns", "var", "snap",
-					"lxd", "common", "lxd", "storage-pools", "brave", "containers",
-					sourceUnit, "rootfs", source), destination, bh.Remote)
+			err := createSharedVolume(bh.Settings.StoragePool.Name,
+				sharedDirectory,
+				sourceUnit,
+				destUnit,
+				destPath,
+				bh)
 			if err != nil {
-				return errors.New("Failed to mount " + source + " to " + unit + ":" + destination + " : " + err.Error())
+				return err
 			}
 		}
 	}
 
 	return nil
-
 }
 
 // DeleteUnit ..
@@ -474,7 +469,7 @@ func (bh *BraveHost) DeleteUnit(name string) error {
 		return errors.New("Failed to delete unit from database. Name: " + name + " Error: " + err.Error())
 	}
 
-	fmt.Println("Unit deleted: ", name)
+	//fmt.Println("Unit deleted: ", name)
 	return nil
 }
 
@@ -626,8 +621,6 @@ func (bh *BraveHost) BuildUnit(bravefile *shared.Bravefile) error {
 	}
 
 	// Create an image based on running container and export it. Image saved as tar.gz in project local directory.
-	fmt.Println("Publishing image " + bravefile.PlatformService.Name)
-
 	var unitFingerprint string
 	unitFingerprint, err = Publish(bravefile.PlatformService.Name, bravefile.PlatformService.Version, bh.Remote)
 	if err != nil {
@@ -665,12 +658,13 @@ func (bh *BraveHost) BuildUnit(bravefile *shared.Bravefile) error {
 	if err != nil {
 		return errors.New(err.Error())
 	}
+	defer f.Close()
 
 	_, err = f.WriteString(imageHash)
 	if err != nil {
-		f.Close()
 		return errors.New(err.Error())
 	}
+	f.Close()
 
 	err = shared.CopyFile(localImageFile, home+shared.ImageStore+localImageFile)
 	if err != nil {
@@ -794,7 +788,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 		return err
 	}
 
-	if requestedImageSize*4 > (totalDiskSize - usedDiskSize) {
+	if requestedImageSize*5 > (totalDiskSize - usedDiskSize) {
 		return errors.New("Requested unit size exceeds available disk space on bravetools host")
 	}
 
@@ -813,6 +807,29 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 
 	if requestedMemorySize > (totalMemorySize - usedMemorySize) {
 		return errors.New("Requested unit memory (" + unitParams.PlatformService.Resources.RAM + ") exceeds available memory on bravetools host")
+	}
+
+	// Networking Checks
+	hostInfo, err := backend.Info()
+	if err != nil {
+		return errors.New("Failed to connect to host: " + err.Error())
+	}
+
+	hostIP := hostInfo.IPv4
+	ports := unitParams.PlatformService.Ports
+	var hostPorts []string
+	if len(ports) > 0 {
+		for _, p := range ports {
+			ps := strings.Split(p, ":")
+			if len(ps) < 2 {
+				return errors.New("Invalid port forwarding definition. Appropriate format is UNIT_PORT:HOST_PORT")
+			}
+			hostPorts = append(hostPorts, ps[1])
+		}
+	}
+	err = shared.TCPPortStatus(hostIP, hostPorts)
+	if err != nil {
+		return err
 	}
 
 	// Unit Checks
@@ -841,7 +858,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 		return errors.New("Failed to launch unit: " + err.Error())
 	}
 
-	err = AttachNetwork(unitParams.PlatformService.Name, "lxdbr0", "eth0", "eth0", bh.Remote)
+	err = AttachNetwork(unitParams.PlatformService.Name, "bravebr0", "eth0", "eth0", bh.Remote)
 	if err != nil {
 		return errors.New("Failed to attach network: " + err.Error())
 	}
@@ -885,9 +902,9 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 		return errors.New("Failed to restart unit: " + err.Error())
 	}
 
-	fmt.Println("Service started: ", unitParams.PlatformService.Name)
+	//fmt.Println("Service started: ", unitParams.PlatformService.Name)
 
-	ports := unitParams.PlatformService.Ports
+	ports = unitParams.PlatformService.Ports
 	if len(ports) > 0 {
 		for _, p := range ports {
 			ps := strings.Split(p, ":")
@@ -953,7 +970,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 		return errors.New("Failed to serialize unit data")
 	}
 	braveUnit.Data = data
-	log.Println("Inserting unit")
+	//log.Println("Inserting unit")
 	_, err = db.InsertUnitDB(database, braveUnit)
 	if err != nil {
 		DeleteImage(fingerprint, bh.Remote)

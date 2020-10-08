@@ -3,12 +3,12 @@ package platform
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"net"
 	"os"
-	"os/user"
+	"path"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/bravetools/bravetools/shared"
 )
@@ -31,26 +31,39 @@ const (
 	Installed
 )
 
-func lxdCheck(vm Lxd) LxdStatus {
-	r, _ := shared.ExecCommandWReturn(
+func deleteBraveHome() error {
+	userHome, _ := os.UserHomeDir()
+	bravetoolsHome := path.Join(userHome, ".bravetools")
+	err := os.RemoveAll(bravetoolsHome)
+	return err
+}
+
+func checkBravetoolsHome() bool {
+	userHome, _ := os.UserHomeDir()
+	bravetoolsHome := path.Join(userHome, ".bravetools")
+	checkPath, _ := shared.CheckPath(bravetoolsHome)
+	return checkPath
+}
+
+func lxdCheck(vm Lxd) (LxdStatus, string, error) {
+	r, err := shared.ExecCommandWReturn(
 		"which",
-		"lxd")
+		"lxc")
+	if err != nil {
+		return -1, "", err
+	}
 
 	if r == "" {
-		return NotInstalled
-	}
-	if strings.Compare(r, "/snap/bin/lxd") == 1 {
-		if vm.Settings.Status == "inactive" {
-			return NotInitialised
-		}
-
-		return Installed
-	}
-	if strings.Compare(r, "/snap/bin/lxd") != 1 {
-		return Incompatible
+		return NotInstalled, "", nil
 	}
 
-	return -1
+	whichLxc := strings.TrimSpace(r)
+
+	if len(whichLxc) > 0 && vm.Settings.Status == "inactive" {
+		return NotInitialised, whichLxc, nil
+	}
+
+	return Installed, whichLxc, nil
 }
 
 // NewLxd constructor
@@ -62,54 +75,29 @@ func NewLxd(settings HostSettings) *Lxd {
 
 // BraveBackendInit ..
 func (vm Lxd) BraveBackendInit() error {
-	lxdStatus := lxdCheck(vm)
+	lxdStatus, whichLxc, err := lxdCheck(vm)
+	if err != nil {
+		return errors.New("Failed to identify LXD: " + err.Error())
+	}
 
 	switch lxdStatus {
 	case Incompatible:
+		_ = deleteBraveHome()
 		return errors.New("Incompatible LXD version")
 	case NotInstalled:
-		err := shared.ExecCommand(
-			"sudo",
-			"apt",
-			"update")
-		if err != nil {
-			return errors.New("Failed to update workspace: " + err.Error())
-		}
+		_ = deleteBraveHome()
+		return errors.New("LXD not installed")
 
-		err = installLxd(vm)
-		if err != nil {
-			return errors.New("Failed to install LXD: " + err.Error())
-		}
-
-		err = updateStoragePool(vm)
-		if err != nil {
-			return errors.New("Failed to update storage pool: " + err.Error())
-		}
-
-		err = initiateLxd(vm)
-		if err != nil {
-			return errors.New("Failed to initiate Lxd: " + err.Error())
-		}
-
-		err = enableRemote(vm)
-		if err != nil {
-			return errors.New("Failed to enable remote: " + err.Error())
-		}
-
-		return nil
 	case NotInitialised:
-		err := updateStoragePool(vm)
+		err = initiateLxd(vm, whichLxc)
 		if err != nil {
-			return errors.New("Failed to update storage pool: " + err.Error())
+			_ = deleteBraveHome()
+			return errors.New("Failed to initiate LXD: " + err.Error())
 		}
 
-		err = initiateLxd(vm)
+		err = enableRemote(vm, whichLxc)
 		if err != nil {
-			return errors.New("Failed to initiate Lxd: " + err.Error())
-		}
-
-		err = enableRemote(vm)
-		if err != nil {
+			_ = deleteBraveHome()
 			return errors.New("Failed to enable remote: " + err.Error())
 		}
 
@@ -122,72 +110,15 @@ func (vm Lxd) BraveBackendInit() error {
 	}
 }
 
-func installLxd(vm Lxd) error {
-	err := shared.ExecCommand(
-		"sudo",
-		"snap",
-		"install",
-		"--stable",
-		"lxd")
+func initiateLxd(vm Lxd, whichLxc string) error {
+
+	err := checkLXDVersion(whichLxc)
 	if err != nil {
 		return err
 	}
 
-	usr, err := user.Current()
-	if err != nil {
-		return err
-	}
 	err = shared.ExecCommand(
-		"sudo",
-		"usermod",
-		"-aG",
-		"lxd",
-		usr.Username)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func updateStoragePool(vm Lxd) error {
-	timestamp := time.Now()
-	storagePoolName := vm.Settings.StoragePool.Name + "-" + timestamp.Format("20060102150405")
-	vm.Settings.StoragePool.Name = storagePoolName
-
-	err := UpdateBraveSettings(*vm.Settings)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func initiateLxd(vm Lxd) error {
-	var lxdInit = `cat <<EOF | sudo lxd init --preseed
-pools:
-- name: ` + vm.Settings.StoragePool.Name + "\n" +
-		`  driver: zfs
-networks:
-- name: lxdbr0
-  type: bridge
-  config:` + "\n" +
-		"    ipv4.address: " + vm.Settings.Network.Bridge + "/24 \n" +
-		`    ipv4.nat: true
-    ipv6.address: none
-profiles:
-- name: ` + vm.Settings.Profile + "\n" +
-		`  devices:
-    root:
-      path: /
-      pool: ` + vm.Settings.StoragePool.Name + "\n" +
-		`      type: disk
-    eth0:
-      nictype: bridged
-      parent: lxdbr0
-      type: nic
-EOF`
-	err := shared.ExecCommand(
-		shared.SnapLXC,
+		whichLxc,
 		"profile",
 		"create",
 		vm.Settings.Profile)
@@ -196,7 +127,7 @@ EOF`
 	}
 
 	err = shared.ExecCommand(
-		shared.SnapLXC,
+		whichLxc,
 		"storage",
 		"create",
 		vm.Settings.StoragePool.Name,
@@ -206,8 +137,33 @@ EOF`
 		return errors.New("Failed to create storage pool: " + err.Error())
 	}
 
+	bridge := "ipv4.address=" + vm.Settings.Network.Bridge + "/24"
+
+	err = shared.ExecCommand(
+		whichLxc,
+		"network",
+		"create",
+		"bravebr0",
+		"ipv6.address=none",
+		bridge,
+		"ipv4.nat=true")
+	if err != nil {
+		return errors.New("Failed to create network: " + err.Error())
+	}
+
+	err = shared.ExecCommand(
+		whichLxc,
+		"network",
+		"attach-profile",
+		"bravebr0",
+		"brave",
+		"eth0")
+	if err != nil {
+		return errors.New("Failed to attach network to profile: " + err.Error())
+	}
+
 	shared.ExecCommand(
-		shared.SnapLXC,
+		whichLxc,
 		"profile",
 		"device",
 		"add",
@@ -217,14 +173,6 @@ EOF`
 		"path=/",
 		"pool="+vm.Settings.StoragePool.Name)
 
-	err = shared.ExecCommand(
-		"bash",
-		"-c",
-		lxdInit)
-	if err != nil {
-		return errors.New("Failed to initiate workspace: " + err.Error())
-	}
-
 	vm.Settings.Status = "active"
 	err = UpdateBraveSettings(*vm.Settings)
 	if err != nil {
@@ -233,9 +181,45 @@ EOF`
 	return nil
 }
 
-func enableRemote(vm Lxd) error {
+func checkLXDVersion(whichLxc string) error {
+	ver, err := shared.ExecCommandWReturn(
+		whichLxc,
+		"version")
+	if err != nil {
+		return errors.New("Cannot get LXD version")
+	}
+
+	v := strings.Split(ver, "\n")
+	clientVersionString := strings.TrimSpace(strings.ReplaceAll(strings.Split(v[0], ":")[1], ".", ""))
+	serverVersionString := strings.TrimSpace(strings.ReplaceAll(strings.Split(v[0], ":")[1], ".", ""))
+	if len(clientVersionString) == 2 {
+		clientVersionString = clientVersionString + "0"
+	}
+	if len(serverVersionString) == 2 {
+		serverVersionString = serverVersionString + "0"
+	}
+	clientVersion, err := strconv.Atoi(clientVersionString)
+	if err != nil {
+		fmt.Println(err)
+	}
+	serverVersion, err := strconv.Atoi(serverVersionString)
+	if err != nil {
+		fmt.Println(err)
+	}
+	if clientVersion < 303 {
+		fmt.Println("Client version: ", clientVersion)
+		return errors.New("Bravetools supports LXD >= 3.0.3. Found " + clientVersionString)
+	}
+	if serverVersion < 303 {
+		fmt.Println("Server version: ", serverVersion)
+		return errors.New("Bravetools supports LXD >= 3.0.3. Found " + clientVersionString)
+	}
+	return nil
+}
+
+func enableRemote(vm Lxd, whichLxc string) error {
 	err := shared.ExecCommand(
-		shared.SnapLXC,
+		whichLxc,
 		"config",
 		"set",
 		"core.https_address",
@@ -245,7 +229,7 @@ func enableRemote(vm Lxd) error {
 	}
 
 	err = shared.ExecCommand(
-		shared.SnapLXC,
+		strings.TrimSpace(whichLxc),
 		"config",
 		"set",
 		"core.trust_password",
@@ -261,6 +245,11 @@ func enableRemote(vm Lxd) error {
 func (vm Lxd) Info() (Info, error) {
 
 	backendInfo := Info{}
+
+	_, whichLxc, err := lxdCheck(vm)
+	if err != nil {
+		return backendInfo, errors.New("Failed to identify LXD: " + err.Error())
+	}
 
 	name, err := os.Hostname()
 	if err != nil {
@@ -285,8 +274,11 @@ func (vm Lxd) Info() (Info, error) {
 	backendInfo.Disk = []string{}
 	backendInfo.Memory = []string{}
 
-	storageInfo, err := shared.ExecCommandWReturn("bash", "-c",
-		shared.SnapLXC+" storage info "+vm.Settings.StoragePool.Name+" --bytes")
+	storageInfo, err := shared.ExecCommandWReturn(whichLxc,
+		"storage",
+		"info",
+		vm.Settings.StoragePool.Name,
+		"--bytes")
 
 	if err != nil {
 		return backendInfo, errors.New("Unable to access host disk usage: " + err.Error())

@@ -51,12 +51,20 @@ packages:
 ### copy
 This is a specialised entity designed for file and directory transfers between hosts and Brave Images. The Entity supports multiple **Blocks**. Each **Block** contains a source and a target. Optionally, action specifies additional actions to perform once the file or directory has been copied to the image. All actions are executed on an image during build.
 
+To copy a single file, include:
 ```yaml
 copy:
   - source: configuration/init.sh
     target: /root/
     action: |-
       chmod +x init.sh
+```
+
+To copy a directory:
+```yaml
+copy:
+  - source: configuration
+    target: /root/configuration
 ```
 
 ### run

@@ -11,6 +11,16 @@ To get started with Bravetools on Ubuntu, make sure you [meet the prerequisites]
 
 ## Prerequisites
 
+Ensure that your user is part of the `lxd group`:
+```bash
+sudo usermod --append --groups lxd USER
+```
+
+You may also need to install `zfsutils`:
+```bash
+sudo apt install zfsutils-linux
+```
+
 ### OS requirements
 
 To install Bravetools, you need the 64-bit version of one of these Ubuntu
@@ -22,11 +32,7 @@ versions:
 
 ### Software requirements
 
-Default installation of Bravetools runs on top of the [LXD](https://linuxcontainers.org/lxd/introduction/) daemon. It is recommended that `snap` LXD is installed on the base system. If it's not, Bravetools will install and configure it automatically for you at the time of initialisation.
-
-
-> **Note**: 
->LXD up to 3.0.x were published as non-`snap` versions. Bravetools will not work with these distributions. The user is encouraged migrating to  `snap`-LXD before continuing with installation.
+Default installation of Bravetools runs on top of the [LXD](https://linuxcontainers.org/lxd/introduction/) daemon.
 
 ### Supported storage backends
 
@@ -40,5 +46,6 @@ Latest stable release of Bravetools can be installed by:
 git clone https://github.com/beringresearch/bravetools
 cd bravetools
 make ubuntu
-brave init
 ```
+
+If this is your first time setting up Bravetools, run `brave init` to initialise the required profile, storage pool, and LXD bridge.

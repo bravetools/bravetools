@@ -77,7 +77,7 @@ func setBackend(host platform.BraveHost) error {
 	return nil
 }
 
-func createLocalDirectories(userHome string) error {
+func createBraveHome(userHome string) error {
 	err := shared.CreateDirectory(path.Join(userHome, ".bravetools"))
 	err = shared.CreateDirectory(path.Join(userHome, ".bravetools", "certs"))
 	err = shared.CreateDirectory(path.Join(userHome, ".bravetools", "images"))
@@ -88,7 +88,7 @@ func createLocalDirectories(userHome string) error {
 	return nil
 }
 
-func deleteLocalDirectories(userHome string) error {
+func deleteBraveHome(userHome string) error {
 	exists, err := shared.CheckPath(path.Join(userHome, shared.PlatformConfig))
 	if err != nil {
 		return err

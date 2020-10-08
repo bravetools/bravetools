@@ -83,6 +83,19 @@ func (vm Multipass) BraveBackendInit() error {
 	}
 
 	err = shared.ExecCommand("multipass",
+		"exec",
+		vm.Settings.Name,
+		"--",
+		"sudo",
+		"snap",
+		"install",
+		"multipass-sshfs")
+
+	if err != nil {
+		return errors.New("Failed to update workspace: " + err.Error())
+	}
+
+	err = shared.ExecCommand("multipass",
 		"mount",
 		filepath.Join(usr.HomeDir, ".bravetools"),
 		vm.Settings.Name+":/home/ubuntu/.bravetools/")
@@ -169,7 +182,7 @@ pools:
 - name: ` + vm.Settings.StoragePool.Name + "\n" +
 		`  driver: zfs
 networks:
-- name: lxdbr0
+- name: bravebr0
   type: bridge
   config:` + "\n" +
 		"    ipv4.address: " + vm.Settings.Network.Bridge + "/24 \n" +
@@ -184,7 +197,7 @@ profiles:
 		`      type: disk
     eth0:
       nictype: bridged
-      parent: lxdbr0
+      parent: bravebr0
       type: nic
 EOF`
 
@@ -332,7 +345,7 @@ func (vm Multipass) Info() (Info, error) {
 			cmd)
 
 		if err != nil {
-			return backendInfo, errors.New("Unable to access host disk usage")
+			return backendInfo, errors.New("Unable to access host disk usage: " + err.Error())
 		}
 
 		scanner := bufio.NewScanner(strings.NewReader(storageInfo))

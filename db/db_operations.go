@@ -30,7 +30,7 @@ func OpenDB(filepath string) (db *sql.DB, err error) {
 func InitDB(filepath string) error {
 
 	//os.Remove(filepath)
-	log.Println("Creating database. ", filepath)
+	//log.Println("Creating database. ", filepath)
 	file, err := os.Create(filepath)
 	if err != nil {
 		log.Fatal(err)
@@ -77,7 +77,7 @@ func InsertUnitDB(db *sql.DB, unit BraveUnit) (int64, error) {
 		return 0, errors.New("Unit already exists")
 	}
 
-	log.Println("Inserting unit ..")
+	//log.Println("Inserting unit ..")
 	insertUnit := `INSERT INTO units(uid, 
 									name,
 									date,
@@ -96,7 +96,7 @@ func InsertUnitDB(db *sql.DB, unit BraveUnit) (int64, error) {
 		return 0, errors.New("Failed to execute SQL statement " + err.Error())
 	}
 
-	log.Printf("Unit inserted. Unit name: %v", unit.Name)
+	//log.Printf("Unit inserted. Unit name: %v", unit.Name)
 
 	id, _ := r.LastInsertId()
 
@@ -106,7 +106,7 @@ func InsertUnitDB(db *sql.DB, unit BraveUnit) (int64, error) {
 // DeleteUnitDB deletes a unit from database
 func DeleteUnitDB(db *sql.DB, name string) error {
 	defer db.Close()
-	log.Println("Deleting unit ...")
+	//log.Println("Deleting unit ...")
 	var sql = `DELETE FROM units WHERE name=?;`
 	statement, err := db.Prepare(sql)
 	if err != nil {
@@ -122,7 +122,7 @@ func DeleteUnitDB(db *sql.DB, name string) error {
 		return errors.New("No records to delete")
 	}
 
-	log.Println("Unit deleted: ", name)
+	//log.Println("Unit deleted: ", name)
 	return nil
 }
 
