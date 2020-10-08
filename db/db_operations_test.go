@@ -10,7 +10,10 @@ import (
 
 func Test_GetAllUnits(t *testing.T) {
 
-	db := OpenDB("brave_test.db")
+	db, err := OpenDB("brave_test.db")
+	if err != nil {
+		t.Log("Failed to open db")
+	}
 
 	units, err := GetAllUnitsDB(db)
 	if err != nil {
@@ -23,7 +26,10 @@ func Test_GetAllUnits(t *testing.T) {
 
 func Test_GetUnit(t *testing.T) {
 
-	db := OpenDB("brave_test.db")
+	db, err := OpenDB("brave_test.db")
+	if err != nil {
+		t.Log("Failed to open db")
+	}
 
 	unit, err := GetUnitDB(db, "test")
 	if err != nil {
@@ -43,7 +49,10 @@ func Test_GetUnit(t *testing.T) {
 
 func Test_DeleteUnit(t *testing.T) {
 
-	db := OpenDB("brave_test.db")
+	db, err := OpenDB("brave_test.db")
+	if err != nil {
+		t.Log("Failed to open db")
+	}
 
 	err := DeleteUnitDB(db, "test")
 	if err != nil {
@@ -75,7 +84,10 @@ func Test_InsertUnit(t *testing.T) {
 		Data: data,
 	}
 
-	db := OpenDB("brave_test.db")
+	db, err := OpenDB("brave_test.db")
+	if err != nil {
+		t.Log("Failed to open db")
+	}
 
 	id, err := InsertUnitDB(db, unit)
 	if err != nil {

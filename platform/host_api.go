@@ -464,7 +464,10 @@ func (bh *BraveHost) DeleteUnit(name string) error {
 		return errors.New("Failed to get home directory")
 	}
 	dbPath := path.Join(userHome, shared.BraveDB)
-	database := db.OpenDB(dbPath)
+	database, err := db.OpenDB(dbPath)
+	if err != nil {
+		return fmt.Errorf("Failed to open database %s", dbPath)
+	}
 
 	err = db.DeleteUnitDB(database, name)
 	if err != nil {
@@ -927,7 +930,10 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 	}
 
 	log.Println("Connecting to database")
-	database := db.OpenDB(dbPath)
+	database, err := db.OpenDB(dbPath)
+	if err != nil {
+		return fmt.Errorf("Failed to open database %s", dbPath)
+	}
 
 	uuid, _ := uuid.NewUUID()
 	braveUnit.UID = uuid.String()
