@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/user"
 	"path"
 	"strconv"
 	"strings"
@@ -873,9 +874,15 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 		return errors.New("Failed to restart unit: " + err.Error())
 	}
 
+	user, err := user.Current()
+	if err != nil {
+		panic(err)
+	}
+
 	config := map[string]string{
 		"limits.cpu":       unitParams.PlatformService.Resources.CPU,
 		"limits.memory":    unitParams.PlatformService.Resources.RAM,
+		"raw.idmap":        "both " + user.Uid + " " + user.Gid,
 		"security.nesting": "false",
 		"nvidia.runtime":   "false",
 	}
