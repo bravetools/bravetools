@@ -876,7 +876,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 
 	user, err := user.Current()
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	config := map[string]string{
