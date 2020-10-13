@@ -142,7 +142,7 @@ func (bh *BraveHost) ListLocalImages() error {
 				created := int(time.Since(fi.ModTime()).Hours() / 24)
 				var timeUnit string
 				if created > 1 {
-					timeUnit = strconv.Itoa(created) + " days go"
+					timeUnit = strconv.Itoa(created) + " days ago"
 				} else if created == 1 {
 					timeUnit = strconv.Itoa(created) + " day ago"
 				} else {
