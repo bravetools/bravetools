@@ -61,9 +61,18 @@ Exporting image alpine-example
 9691e2cf3a58abd4ca411e8085c3117a
 ```
 
+List all local images and confirm successful build:
+
+```bash
+$ brave images
+
+IMAGE                             CREATED   SIZE  HASH                             
+alpine-example-1.0                just now  19MB  9691e2cf3a58abd4ca411e8085c3117a
+```
+
 Finally, we can deploy this image as a container:
 
-```bash:
+```bash
 $ brave deploy
 
 Importing alpine-example-1.0.tar.gz

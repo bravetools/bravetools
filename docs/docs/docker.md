@@ -24,7 +24,7 @@ service:
   resources:
     ram: 4GB
     cpu: 2
-    gpu: false
+    gpu: "no"
 ```
 
 and then running:
