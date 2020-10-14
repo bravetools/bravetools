@@ -16,7 +16,25 @@ brave init
 
 ## Description
 
-Create a new Bravetools host
+When Bravetools is installed for the first time, Bravetools will set up all required components to connect your host to LXD.
+
+`brave init` will:
+
+* Create `~/.bravetools` directory that stores all your local images, configurations, and a live Unit database
+
+On Mac and Windows platforms:
+
+* Create a new Multipass instance of Ubuntu 18.04
+* Install snap LXD
+* Enable mounting between host and Multipass
+
+On Linux distributions:
+
+* Set up a new LXD profile `brave`
+* Create a new LXD bridge `bravebr0`
+* Create a new storage pool `brave-TIMESTAMP`
+
+These steps ensure that Bravetools establishes a connection with LXD server and runs a self-contained LXD environment that doesn't interfere with any potentially existing profiles and LXD bridges.
 
 ## Options
 
