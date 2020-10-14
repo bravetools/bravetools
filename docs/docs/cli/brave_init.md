@@ -16,7 +16,7 @@ brave init
 
 ## Description
 
-When Bravetools is installed for the first time, Bravetools will set up all required components to connect your host to LXD.
+When Bravetools is installed for the first time, it will set up all required components to connect your host to LXD.
 
 `brave init` will:
 

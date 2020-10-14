@@ -169,15 +169,15 @@ To update existing installation of Bravetools for your platform:
 ```bash
 git clone https://github.com/bravetools/bravetools
 cd bravetools
-make [darwin][ubuntu]
+make [darwin][ubuntu][linux]
 ```
 
 ## Initialise Bravetools
 
-When Bravetools is installed for the first time, Bravetools will set up all required components to connect your host to LXD. This is achieved by running:
+When Bravetools is installed for the first time, it will set up all required components to connect your host to LXD. This is achieved by running:
 
 ```bash
-brave init
+$ brave init
 ```
 
 `brave init` will:
@@ -196,7 +196,7 @@ On Linux distributions:
 * Create a new LXD bridge `bravebr0`
 * Create a new storage pool `brave-TIMESTAMP`
 
-These steps ensure that Bravetools establishes a connection with LXD server and runs a self-contained LXD environment that doesn't interfere with any potentially existing profiles and LXD bridges.
+These steps ensure that Bravetools establishes a connection with LXD server and runs a self-contained LXD environment that doesn't interfere with any potentially existing user profiles and LXD bridges.
 
 ## Quick tour
 
@@ -323,4 +323,10 @@ Available Commands:
 
 Flags:
   -h, --help   help for brave
+```
+
+To get help on any on specific command, run:
+
+```bash
+brave COMMAND -h
 ```
