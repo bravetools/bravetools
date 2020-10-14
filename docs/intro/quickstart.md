@@ -19,7 +19,11 @@ This overview will demonstrate how to quickly create and deploy a Bravetools ima
 
 ## Install Bravetools
 
-Begin by [installing the latest binary](../../installation) of Bravetools.
+Begin by [installing the latest binary](../../installation) of Bravetools. When Bravetools is installed for the first time, your host will need to be configured to interact with LXD either directly (Linux) or via Multipass (Mac, Windows). This is achieved through a single command:
+
+```bash
+brave init
+```
 
 ## Configure an Image
 
