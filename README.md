@@ -25,9 +25,9 @@ Configurable system images have many advantages, but their use has been limited.
     + [Vagrant](#vagrant)
   * [Update Bravetools](#update-bravetools)
 - [Initialise Bravetools](#initialise-bravetools)
+- [Command Reference](#command-reference)
 - [Quick tour](#quick-tour)
 - [Build Documentation](#build-documentation)
-- [Command Reference](#command-reference)
 
 
 ## Installing Bravetools
@@ -198,6 +198,40 @@ On Linux distributions:
 
 These steps ensure that Bravetools establishes a connection with LXD server and runs a self-contained LXD environment that doesn't interfere with any potentially existing user profiles and LXD bridges.
 
+## Command Reference
+
+```
+Usage:
+  brave [command]
+
+Available Commands:
+  base        Build a base unit
+  build       Build an image from a Bravefile
+  configure   Configure local host parameters such as storage
+  deploy      Deploy Unit from image
+  help        Help about any command
+  images      List images
+  import      Import a tarball into local Bravetools image repository
+  info        Display workspace information
+  init        Create a new Bravetools host
+  mount       Mount a directory to a Unit
+  remove      Remove a Unit or an Image
+  start       Start Unit
+  stop        Stop Unit
+  umount      Unmount <disk> from UNIT
+  units       List Units
+  version     Show current bravetools version
+
+Flags:
+  -h, --help   help for brave
+```
+
+To get help on any on specific command, run:
+
+```bash
+brave COMMAND -h
+```
+
 ## Quick tour
 
 Here's a toy example showing how to create a simple container configuration, add some useful packages to it, and deploy your image as a service.
@@ -295,38 +329,3 @@ bundle exec jekyll serve --trace
 ```
 
 and point your browser to http://127.0.0.1:4000/bravetools/.
-
-
-## Command Reference
-
-```
-Usage:
-  brave [command]
-
-Available Commands:
-  base        Build a base unit
-  build       Build an image from a Bravefile
-  configure   Configure local host parameters such as storage
-  deploy      Deploy Unit from image
-  help        Help about any command
-  images      List images
-  import      Import a tarball into local Bravetools image repository
-  info        Display workspace information
-  init        Create a new Bravetools host
-  mount       Mount a directory to a Unit
-  remove      Remove a Unit or an Image
-  start       Start Unit
-  stop        Stop Unit
-  umount      Unmount <disk> from UNIT
-  units       List Units
-  version     Show current bravetools version
-
-Flags:
-  -h, --help   help for brave
-```
-
-To get help on any on specific command, run:
-
-```bash
-brave COMMAND -h
-```
