@@ -367,6 +367,23 @@ func (bh *BraveHost) UmountShare(unit string, target string) error {
 
 // MountShare ..
 func (bh *BraveHost) MountShare(source string, destUnit string, destPath string) error {
+
+	names, err := GetUnits(bh.Remote)
+	if err != nil {
+		return errors.New("Faild to access units")
+	}
+
+	var found = false
+	for _, n := range names {
+		if n.Name == destUnit {
+			found = true
+			break
+		}
+	}
+	if found == false {
+		return errors.New("Unit not found")
+	}
+
 	backend := bh.Settings.BackendSettings.Type
 	var sourceUnit string
 	var sourcePath string
@@ -398,6 +415,12 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 
 			err = MountDirectory(filepath.Join("/home/ubuntu", "volumes", sharedDirectory), destUnit, destPath, bh.Remote)
 			if err != nil {
+				err = shared.ExecCommand("multipass",
+					"umount",
+					bh.Settings.Name+":"+filepath.Join("/home/ubuntu", "volumes", sharedDirectory))
+				if err != nil {
+					return err
+				}
 				return errors.New("Failed to mount " + sourcePath + " to " + destUnit + ":" + destPath + " : " + err.Error())
 			}
 		} else {

@@ -38,7 +38,7 @@ service:
   version: 1.0
   ip: 10.0.0.100
   ports:
-    - 3000:300
+    - 3000:3000
   resources:
     ram: 2GB
     cpu: 1

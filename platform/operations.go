@@ -262,6 +262,7 @@ func MountDirectory(sourcePath string, destUnit string, destPath string, remote 
 	if err != nil {
 		return err
 	}
+
 	inst, etag, err := lxdServer.GetInstance(destUnit)
 	if err != nil {
 		return err
