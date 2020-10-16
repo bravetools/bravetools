@@ -72,10 +72,7 @@ func InitDB(filepath string) error {
 func InsertUnitDB(db *sql.DB, unit BraveUnit) (int64, error) {
 	defer db.Close()
 
-	u, _ := unitByName(db, unit.Name)
-	if u.Name == unit.Name {
-		return 0, errors.New("Unit already exists")
-	}
+	// TODO: duplicate unit names could exist in DB. If unit name required to be unique it should be checked earlier.
 
 	//log.Println("Inserting unit ..")
 	insertUnit := `INSERT INTO units(uid, 

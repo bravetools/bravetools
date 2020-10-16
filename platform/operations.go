@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/bravetools/bravetools/shared"
@@ -262,6 +263,7 @@ func MountDirectory(sourcePath string, destUnit string, destPath string, remote 
 	if err != nil {
 		return err
 	}
+
 	inst, etag, err := lxdServer.GetInstance(destUnit)
 	if err != nil {
 		return err
@@ -866,7 +868,14 @@ func FilePush(name string, sourceFile string, targetPath string, remote Remote) 
 
 	_, targetFile := filepath.Split(sourceFile)
 
-	err = lxdServer.CreateInstanceFile(name, filepath.Join(targetPath, targetFile), args)
+	target := filepath.Join(targetPath, targetFile)
+
+	hostOs := runtime.GOOS
+	if hostOs == "windows" {
+		target = strings.Replace(target, string(filepath.Separator), "/", -1)
+	}
+
+	err = lxdServer.CreateInstanceFile(name, target, args)
 	if err != nil {
 		return err
 	}
@@ -1154,8 +1163,10 @@ func CopyDirectory(name string, src, dst string, remote Remote) error {
 		return errors.New("Failed to read source directory: " + src)
 	}
 	for _, entry := range entries {
-		sourcePath := filepath.Join(src, entry.Name())
+		source := filepath.Join(src, entry.Name())
 		destPath := filepath.Join(dst, entry.Name())
+
+		sourcePath := filepath.FromSlash(source)
 
 		fileInfo, err := os.Stat(sourcePath)
 		if err != nil {
