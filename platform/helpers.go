@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"path"
 	"path/filepath"
 	"strings"
 	"syscall"
@@ -340,30 +341,32 @@ func bravefileCopy(copy []shared.CopyCommand, service string, remote Remote) err
 	dir, _ := os.Getwd()
 	for _, c := range copy {
 		source := c.Source
-		source = dir + "/" + source
+		source = path.Join(dir, source)
+		sourcePath := filepath.FromSlash(source)
+
 		target := c.Target
 		_, err := Exec(service, []string{"mkdir", "-p", target}, remote)
 		if err != nil {
 			return errors.New("Failed to create target directory: " + err.Error())
 		}
 
-		fi, err := os.Lstat(source)
+		fi, err := os.Lstat(sourcePath)
 		if err != nil {
-			return errors.New("Failed to read file " + source + ": " + err.Error())
+			return errors.New("Failed to read file " + sourcePath + ": " + err.Error())
 		}
 
 		if fi.IsDir() {
-			err = Push(service, source, target, remote)
+			err = Push(service, sourcePath, target, remote)
 			if err != nil {
 				return errors.New("Failed to push symlink: " + err.Error())
 			}
 		} else if fi.Mode()&os.ModeSymlink == os.ModeSymlink {
-			err = SymlinkPush(service, source, target, remote)
+			err = SymlinkPush(service, sourcePath, target, remote)
 			if err != nil {
 				return errors.New("Failed to push directory: " + err.Error())
 			}
 		} else {
-			err = FilePush(service, source, target, remote)
+			err = FilePush(service, sourcePath, target, remote)
 			if err != nil {
 				return errors.New("Failed to push file: " + err.Error())
 			}

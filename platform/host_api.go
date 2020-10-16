@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/user"
 	"path"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -339,6 +340,11 @@ func (bh *BraveHost) UmountShare(unit string, target string) error {
 		}
 		output = strings.Trim(output, "\n")
 
+		hostOs := runtime.GOOS
+		if hostOs == "windows" {
+			path = strings.Replace(path, string(filepath.Separator), "/", -1)
+		}
+
 		if output == "exists" {
 			err = shared.ExecCommand("multipass",
 				"umount",
@@ -400,24 +406,32 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 	}
 
 	sharedDirectory := filepath.Base(sourcePath)
+	sharedDirectory = filepath.Join("/home/ubuntu", "volumes", sharedDirectory)
 
 	switch backend {
 	case "multipass":
+
+		hostOs := runtime.GOOS
+		if hostOs == "windows" {
+			sourcePath = filepath.FromSlash(sourcePath)
+			destPath = strings.Replace(destPath, string(filepath.Separator), "/", -1)
+			sharedDirectory = strings.Replace(sharedDirectory, string(filepath.Separator), "/", -1)
+		}
 
 		if sourceUnit == "" {
 			err := shared.ExecCommand("multipass",
 				"mount",
 				sourcePath,
-				bh.Settings.Name+":/home/ubuntu/volumes/"+sharedDirectory)
+				bh.Settings.Name+":"+sharedDirectory)
 			if err != nil {
 				return errors.New("Failed to initialize mount on host :" + err.Error())
 			}
 
-			err = MountDirectory(filepath.Join("/home/ubuntu", "volumes", sharedDirectory), destUnit, destPath, bh.Remote)
+			err = MountDirectory(sharedDirectory, destUnit, destPath, bh.Remote)
 			if err != nil {
 				err = shared.ExecCommand("multipass",
 					"umount",
-					bh.Settings.Name+":"+filepath.Join("/home/ubuntu", "volumes", sharedDirectory))
+					bh.Settings.Name+":"+sharedDirectory)
 				if err != nil {
 					return err
 				}
@@ -902,10 +916,25 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 		return err
 	}
 
+	var uid string
+	var gid string
+
+	hostOs := runtime.GOOS
+	if hostOs == "windows" {
+		uidParts := strings.Split(user.Uid, "-")
+		gidParts := strings.Split(user.Gid, "-")
+
+		uid = uidParts[len(uidParts)-1]
+		gid = gidParts[len(gidParts)-1]
+	} else {
+		uid = user.Uid
+		gid = user.Gid
+	}
+
 	config := map[string]string{
 		"limits.cpu":       unitParams.PlatformService.Resources.CPU,
 		"limits.memory":    unitParams.PlatformService.Resources.RAM,
-		"raw.idmap":        "both " + user.Uid + " " + user.Gid,
+		"raw.idmap":        "both " + uid + " " + gid,
 		"security.nesting": "false",
 		"nvidia.runtime":   "false",
 	}

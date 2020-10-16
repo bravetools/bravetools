@@ -40,5 +40,5 @@ service:
   ports:
     - 3000:3000
   resources:
-    ram: 2GB
+    ram: 1GB
     cpu: 1
