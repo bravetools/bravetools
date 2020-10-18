@@ -829,7 +829,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 	}
 
 	if requestedImageSize*5 > (totalDiskSize - usedDiskSize) {
-		return errors.New("Requested unit size exceeds available disk space on bravetools host")
+		return errors.New("Requested unit size exceeds available disk space on bravetools host. To increase storage pool size modify $HOME/.bravetools/config.yml and run brave configure")
 	}
 
 	usedMemorySize, err := shared.SizeCountToInt(info.Memory[0])
@@ -867,7 +867,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 			hostPorts = append(hostPorts, ps[1])
 		}
 	}
- 
+
 	err = shared.TCPPortStatus(hostIP, hostPorts)
 	if err != nil {
 		return err
@@ -914,7 +914,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 	if err != nil {
 		return errors.New("Failed to restart unit: " + err.Error())
 	}
- 
+
 	user, err := user.Current()
 	if err != nil {
 		return err
@@ -964,8 +964,8 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 		return errors.New("Failed to restart unit: " + err.Error())
 	}
 
-	//fmt.Println("Service started: ", unitParams.PlatformService.Name)	
-  ports = unitParams.PlatformService.Ports
+	//fmt.Println("Service started: ", unitParams.PlatformService.Name)
+	ports = unitParams.PlatformService.Ports
 	if len(ports) > 0 {
 		for _, p := range ports {
 			ps := strings.Split(p, ":")
@@ -977,11 +977,11 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 
 			err := addIPRules(unitParams.PlatformService.Name, ps[1], ps[0], bh)
 			if err != nil {
-				del_err := Delete(unitParams.PlatformService.Name, bh.Remote)
-				if del_err != nil {
-					return errors.New("Failed to delete unit: " + del_err.Error())
+				delErr := Delete(unitParams.PlatformService.Name, bh.Remote)
+				if delErr != nil {
+					return errors.New("Failed to delete unit: " + delErr.Error())
 				}
-        return errors.New("Unable to add Proxy Device: " + err.Error())
+				return errors.New("Unable to add Proxy Device: " + err.Error())
 			}
 		}
 	}
