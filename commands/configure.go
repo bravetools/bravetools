@@ -9,8 +9,8 @@ import (
 
 var configureHost = &cobra.Command{
 	Use:   "configure",
-	Short: "Configure local host parameters such as storage",
-	Long:  `Bravetools reads configuration specifications from ~/.bravetools/config.yaml and configures host accordingly`,
+	Short: "Configure local host parameters",
+	Long:  `Update host configuration using settings in $HOME/.bravetools/config.yaml`,
 	Run:   configure,
 }
 
