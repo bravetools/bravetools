@@ -16,7 +16,7 @@ import (
 
 // OpenDB opens database
 func OpenDB(filepath string) (db *sql.DB, err error) {
-	log.Println("Connecting to SQlite database " + filepath)
+	//log.Println("Connecting to SQlite database " + filepath)
 
 	if !shared.FileExists(filepath) {
 		return nil, fmt.Errorf("Database file %s not present", filepath)
