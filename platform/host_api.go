@@ -867,6 +867,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 			hostPorts = append(hostPorts, ps[1])
 		}
 	}
+ 
 	err = shared.TCPPortStatus(hostIP, hostPorts)
 	if err != nil {
 		return err
@@ -913,7 +914,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 	if err != nil {
 		return errors.New("Failed to restart unit: " + err.Error())
 	}
-
+ 
 	user, err := user.Current()
 	if err != nil {
 		return err
@@ -963,9 +964,8 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 		return errors.New("Failed to restart unit: " + err.Error())
 	}
 
-	//fmt.Println("Service started: ", unitParams.PlatformService.Name)
-
-	ports = unitParams.PlatformService.Ports
+	//fmt.Println("Service started: ", unitParams.PlatformService.Name)	
+  ports = unitParams.PlatformService.Ports
 	if len(ports) > 0 {
 		for _, p := range ports {
 			ps := strings.Split(p, ":")
@@ -977,11 +977,11 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 
 			err := addIPRules(unitParams.PlatformService.Name, ps[1], ps[0], bh)
 			if err != nil {
-				err = Delete(unitParams.PlatformService.Name, bh.Remote)
-				if err != nil {
-					return errors.New("Failed to delete unit: " + err.Error())
+				del_err := Delete(unitParams.PlatformService.Name, bh.Remote)
+				if del_err != nil {
+					return errors.New("Failed to delete unit: " + del_err.Error())
 				}
-				log.Fatal(err)
+        return errors.New("Unable to add Proxy Device: " + err.Error())
 			}
 		}
 	}
@@ -1007,7 +1007,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 		}
 	}
 
-	log.Println("Connecting to database")
+	//log.Println("Connecting to database")
 	database, err := db.OpenDB(dbPath)
 	if err != nil {
 		return fmt.Errorf("Failed to open database %s", dbPath)
