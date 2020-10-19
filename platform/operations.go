@@ -390,11 +390,15 @@ func GetUnits(remote Remote) (units []shared.BraveUnit, err error) {
 		containerState, _, _ := lxdServer.GetContainerState(n)
 		var unit shared.BraveUnit
 		container, _, _ := lxdServer.GetContainer(n)
+
 		devices := container.Devices
 		var diskDevice []shared.DiskDevice
 		var disk shared.DiskDevice
-		var proxyDevice shared.ProxyDevice
+
+		var proxyDevice []shared.ProxyDevice
+		var proxy shared.ProxyDevice
 		var nicDevice shared.NicDevice
+
 		for k, device := range devices {
 			if val, ok := device["type"]; ok {
 				switch val {
@@ -404,9 +408,11 @@ func GetUnits(remote Remote) (units []shared.BraveUnit, err error) {
 					disk.Source = device["source"]
 					diskDevice = append(diskDevice, disk)
 				case "proxy":
-					proxyDevice.Name = k
-					proxyDevice.ConnectIP = device["connect"]
-					proxyDevice.ListenIP = device["listen"]
+					proxy.Name = k
+					proxy.ConnectIP = device["connect"]
+					proxy.ListenIP = device["listen"]
+					proxyDevice = append(proxyDevice, proxy)
+
 				case "nic":
 					nicDevice.Name = k
 					nicDevice.Parent = device["parent"]
