@@ -6,7 +6,7 @@ type BraveUnit struct {
 	Status  string
 	Address string
 	Disk    []DiskDevice
-	Proxy   ProxyDevice
+	Proxy   []ProxyDevice
 	NIC     NicDevice
 }
 

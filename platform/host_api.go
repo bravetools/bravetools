@@ -285,7 +285,7 @@ func (bh *BraveHost) ListUnits(backend Backend) error {
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Name", "Status", "IPv4", "Disk", "Proxy"})
+	table.SetHeader([]string{"Name", "Status", "IPv4", "Volumes", "Ports"})
 	for _, u := range units {
 		name := u.Name
 		status := u.Status
@@ -298,7 +298,16 @@ func (bh *BraveHost) ListUnits(backend Backend) error {
 			}
 		}
 
-		r := []string{name, status, u.NIC.Name + ":" + address, disk, u.Proxy.Name}
+		proxy := ""
+		for _, proxyDevice := range u.Proxy {
+			if proxyDevice.Name != "" {
+				connectIP := strings.Split(proxyDevice.ConnectIP, ":")[2]
+				listenIP := strings.Split(proxyDevice.ListenIP, ":")[2]
+				proxy += connectIP + ":" + listenIP + "\n"
+			}
+		}
+
+		r := []string{name, status, u.NIC.Name + ":" + address, disk, proxy}
 		table.Append(r)
 	}
 	table.SetRowLine(false)
