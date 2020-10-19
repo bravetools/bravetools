@@ -40,9 +40,9 @@ To get started using Bravetools:
 
 | Operating System | Binary | Version |
 |------------------|--------|---------|
-| Ubuntu           | [download](https://github.com/bravetools/bravetools/releases/download/1.54/brave-release-1.54-ubuntu) | release-1.54 |
-| macOS            | [download](https://github.com/bravetools/bravetools/releases/download/1.54/brave-release-1.54-darwin) | release-1.54 |
-| Windows 8/10     | [download](https://github.com/bravetools/bravetools/releases/download/1.54/brave-release-1.54-win.exe)  | release-1.54 |
+| Ubuntu           | [download](https://github.com/bravetools/bravetools/releases/download/1.55/brave-release-1.55-ubuntu) | release-1.55 |
+| macOS            | [download](https://github.com/bravetools/bravetools/releases/download/1.55/brave-release-1.55-darwin) | release-1.55 |
+| Windows 8/10     | [download](https://github.com/bravetools/bravetools/releases/download/1.55/brave-release-1.55-win.exe)  | release-1.55 |
 
 2. Add your user to `lxd group`:
 ```bash
