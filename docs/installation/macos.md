@@ -32,7 +32,7 @@ Latest stable release of Bravetools can be installed by:
 ```bash
 git clone https://github.com/beringresearch/bravetools
 cd bravetools
-make ubuntu
+make darwin
 ```
 
 If this is your first time setting up Bravetools, run `brave init` to initialise the required profile, storage pool, and LXD bridge.
