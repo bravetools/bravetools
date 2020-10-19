@@ -4,25 +4,26 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"os"
+
+	"github.com/bravetools/bravetools/shared"
 
 	// import sqlite driver
 	_ "github.com/mattn/go-sqlite3"
 )
 
 // OpenDB opens database
-func OpenDB(filepath string) *sql.DB {
-	//log.Println("Initialising SQlite database " + filepath)
-	db, err := sql.Open("sqlite3", filepath)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if db == nil {
-		log.Fatalln("db nil")
+func OpenDB(filepath string) (db *sql.DB, err error) {
+	//log.Println("Connecting to SQlite database " + filepath)
+
+	if !shared.FileExists(filepath) {
+		return nil, fmt.Errorf("Database file %s not present", filepath)
 	}
 
-	return db
+	db, err = sql.Open("sqlite3", filepath)
+	return db, err
 }
 
 // InitDB creates an empty database
@@ -37,7 +38,10 @@ func InitDB(filepath string) error {
 	file.Close()
 	log.Println("Database file created")
 
-	db := OpenDB(filepath)
+	db, err := OpenDB(filepath)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	defer db.Close()
 	log.Println("Creating units table ..")
@@ -68,10 +72,7 @@ func InitDB(filepath string) error {
 func InsertUnitDB(db *sql.DB, unit BraveUnit) (int64, error) {
 	defer db.Close()
 
-	u, _ := unitByName(db, unit.Name)
-	if u.Name == unit.Name {
-		return 0, errors.New("Unit already exists")
-	}
+	// TODO: duplicate unit names could exist in DB. If unit name required to be unique it should be checked earlier.
 
 	//log.Println("Inserting unit ..")
 	insertUnit := `INSERT INTO units(uid, 

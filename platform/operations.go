@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/bravetools/bravetools/shared"
@@ -262,6 +263,7 @@ func MountDirectory(sourcePath string, destUnit string, destPath string, remote 
 	if err != nil {
 		return err
 	}
+
 	inst, etag, err := lxdServer.GetInstance(destUnit)
 	if err != nil {
 		return err
@@ -388,21 +390,29 @@ func GetUnits(remote Remote) (units []shared.BraveUnit, err error) {
 		containerState, _, _ := lxdServer.GetContainerState(n)
 		var unit shared.BraveUnit
 		container, _, _ := lxdServer.GetContainer(n)
+
 		devices := container.Devices
-		var diskDevice shared.DiskDevice
-		var proxyDevice shared.ProxyDevice
+		var diskDevice []shared.DiskDevice
+		var disk shared.DiskDevice
+
+		var proxyDevice []shared.ProxyDevice
+		var proxy shared.ProxyDevice
 		var nicDevice shared.NicDevice
+
 		for k, device := range devices {
 			if val, ok := device["type"]; ok {
 				switch val {
 				case "disk":
-					diskDevice.Name = k
-					diskDevice.Path = device["path"]
-					diskDevice.Source = device["source"]
+					disk.Name = k
+					disk.Path = device["path"]
+					disk.Source = device["source"]
+					diskDevice = append(diskDevice, disk)
 				case "proxy":
-					proxyDevice.Name = k
-					proxyDevice.ConnectIP = device["connect"]
-					proxyDevice.ListenIP = device["listen"]
+					proxy.Name = k
+					proxy.ConnectIP = device["connect"]
+					proxy.ListenIP = device["listen"]
+					proxyDevice = append(proxyDevice, proxy)
+
 				case "nic":
 					nicDevice.Name = k
 					nicDevice.Parent = device["parent"]
@@ -471,6 +481,7 @@ func LaunchFromImage(image string, name string, remote Remote) error {
 // Alias: "ubuntu/bionic/amd64"
 // Alias: "alpine/3.9/amd64"
 func Launch(name string, alias string, remote Remote) error {
+	fmt.Println(shared.Info("["+name+"] "+"IMPORT: "), alias)
 	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
 	if err != nil {
 		return err
@@ -489,7 +500,6 @@ func Launch(name string, alias string, remote Remote) error {
 	//TODO: obtain profile from settings
 	req.Profiles = []string{"brave"}
 
-	fmt.Println("Creating " + name)
 	op, err := lxdServer.CreateContainer(req)
 	if err != nil {
 		return errors.New("Failed to create unit: " + err.Error())
@@ -864,7 +874,14 @@ func FilePush(name string, sourceFile string, targetPath string, remote Remote) 
 
 	_, targetFile := filepath.Split(sourceFile)
 
-	err = lxdServer.CreateInstanceFile(name, filepath.Join(targetPath, targetFile), args)
+	target := filepath.Join(targetPath, targetFile)
+
+	hostOs := runtime.GOOS
+	if hostOs == "windows" {
+		target = strings.Replace(target, string(filepath.Separator), "/", -1)
+	}
+
+	err = lxdServer.CreateInstanceFile(name, target, args)
 	if err != nil {
 		return err
 	}
@@ -1152,8 +1169,10 @@ func CopyDirectory(name string, src, dst string, remote Remote) error {
 		return errors.New("Failed to read source directory: " + src)
 	}
 	for _, entry := range entries {
-		sourcePath := filepath.Join(src, entry.Name())
+		source := filepath.Join(src, entry.Name())
 		destPath := filepath.Join(dst, entry.Name())
+
+		sourcePath := filepath.FromSlash(source)
 
 		fileInfo, err := os.Stat(sourcePath)
 		if err != nil {

@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/user"
 	"path"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -142,7 +144,7 @@ func (bh *BraveHost) ListLocalImages() error {
 				created := int(time.Since(fi.ModTime()).Hours() / 24)
 				var timeUnit string
 				if created > 1 {
-					timeUnit = strconv.Itoa(created) + " days go"
+					timeUnit = strconv.Itoa(created) + " days ago"
 				} else if created == 1 {
 					timeUnit = strconv.Itoa(created) + " day ago"
 				} else {
@@ -283,18 +285,29 @@ func (bh *BraveHost) ListUnits(backend Backend) error {
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Name", "Status", "IPv4", "Disk", "Proxy"})
+	table.SetHeader([]string{"Name", "Status", "IPv4", "Volumes", "Ports"})
 	for _, u := range units {
 		name := u.Name
 		status := u.Status
 		address := u.Address
 
 		disk := ""
-		if u.Disk.Name != "" {
-			disk = u.Disk.Name + ":" + u.Disk.Source + "->" + u.Disk.Path
+		for _, diskDevice := range u.Disk {
+			if diskDevice.Name != "" {
+				disk += diskDevice.Name + ":" + diskDevice.Source + "->" + diskDevice.Path + "\n"
+			}
 		}
 
-		r := []string{name, status, u.NIC.Name + ":" + address, disk, u.Proxy.Name}
+		proxy := ""
+		for _, proxyDevice := range u.Proxy {
+			if proxyDevice.Name != "" {
+				connectIP := strings.Split(proxyDevice.ConnectIP, ":")[2]
+				listenIP := strings.Split(proxyDevice.ListenIP, ":")[2]
+				proxy += connectIP + ":" + listenIP + "\n"
+			}
+		}
+
+		r := []string{name, status, address, disk, proxy}
 		table.Append(r)
 	}
 	table.SetRowLine(false)
@@ -336,6 +349,11 @@ func (bh *BraveHost) UmountShare(unit string, target string) error {
 		}
 		output = strings.Trim(output, "\n")
 
+		hostOs := runtime.GOOS
+		if hostOs == "windows" {
+			path = strings.Replace(path, string(filepath.Separator), "/", -1)
+		}
+
 		if output == "exists" {
 			err = shared.ExecCommand("multipass",
 				"umount",
@@ -364,6 +382,23 @@ func (bh *BraveHost) UmountShare(unit string, target string) error {
 
 // MountShare ..
 func (bh *BraveHost) MountShare(source string, destUnit string, destPath string) error {
+
+	names, err := GetUnits(bh.Remote)
+	if err != nil {
+		return errors.New("Faild to access units")
+	}
+
+	var found = false
+	for _, n := range names {
+		if n.Name == destUnit {
+			found = true
+			break
+		}
+	}
+	if found == false {
+		return errors.New("Unit not found")
+	}
+
 	backend := bh.Settings.BackendSettings.Type
 	var sourceUnit string
 	var sourcePath string
@@ -380,21 +415,35 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 	}
 
 	sharedDirectory := filepath.Base(sourcePath)
+	sharedDirectory = filepath.Join("/home/ubuntu", "volumes", sharedDirectory)
 
 	switch backend {
 	case "multipass":
+
+		hostOs := runtime.GOOS
+		if hostOs == "windows" {
+			sourcePath = filepath.FromSlash(sourcePath)
+			destPath = strings.Replace(destPath, string(filepath.Separator), "/", -1)
+			sharedDirectory = strings.Replace(sharedDirectory, string(filepath.Separator), "/", -1)
+		}
 
 		if sourceUnit == "" {
 			err := shared.ExecCommand("multipass",
 				"mount",
 				sourcePath,
-				bh.Settings.Name+":/home/ubuntu/volumes/"+sharedDirectory)
+				bh.Settings.Name+":"+sharedDirectory)
 			if err != nil {
 				return errors.New("Failed to initialize mount on host :" + err.Error())
 			}
 
-			err = MountDirectory(filepath.Join("/home/ubuntu", "volumes", sharedDirectory), destUnit, destPath, bh.Remote)
+			err = MountDirectory(sharedDirectory, destUnit, destPath, bh.Remote)
 			if err != nil {
+				err = shared.ExecCommand("multipass",
+					"umount",
+					bh.Settings.Name+":"+sharedDirectory)
+				if err != nil {
+					return err
+				}
 				return errors.New("Failed to mount " + sourcePath + " to " + destUnit + ":" + destPath + " : " + err.Error())
 			}
 		} else {
@@ -459,7 +508,10 @@ func (bh *BraveHost) DeleteUnit(name string) error {
 		return errors.New("Failed to get home directory")
 	}
 	dbPath := path.Join(userHome, shared.BraveDB)
-	database := db.OpenDB(dbPath)
+	database, err := db.OpenDB(dbPath)
+	if err != nil {
+		return fmt.Errorf("Failed to open database %s", dbPath)
+	}
 
 	err = db.DeleteUnitDB(database, name)
 	if err != nil {
@@ -786,7 +838,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 	}
 
 	if requestedImageSize*5 > (totalDiskSize - usedDiskSize) {
-		return errors.New("Requested unit size exceeds available disk space on bravetools host")
+		return errors.New("Requested unit size exceeds available disk space on bravetools host. To increase storage pool size modify $HOME/.bravetools/config.yml and run brave configure")
 	}
 
 	usedMemorySize, err := shared.SizeCountToInt(info.Memory[0])
@@ -824,6 +876,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 			hostPorts = append(hostPorts, ps[1])
 		}
 	}
+
 	err = shared.TCPPortStatus(hostIP, hostPorts)
 	if err != nil {
 		return err
@@ -871,9 +924,30 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 		return errors.New("Failed to restart unit: " + err.Error())
 	}
 
+	user, err := user.Current()
+	if err != nil {
+		return err
+	}
+
+	var uid string
+	var gid string
+
+	hostOs := runtime.GOOS
+	if hostOs == "windows" {
+		uidParts := strings.Split(user.Uid, "-")
+		gidParts := strings.Split(user.Gid, "-")
+
+		uid = uidParts[len(uidParts)-1]
+		gid = gidParts[len(gidParts)-1]
+	} else {
+		uid = user.Uid
+		gid = user.Gid
+	}
+
 	config := map[string]string{
 		"limits.cpu":       unitParams.PlatformService.Resources.CPU,
 		"limits.memory":    unitParams.PlatformService.Resources.RAM,
+		"raw.idmap":        "both " + uid + " " + gid,
 		"security.nesting": "false",
 		"nvidia.runtime":   "false",
 	}
@@ -900,7 +974,6 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 	}
 
 	//fmt.Println("Service started: ", unitParams.PlatformService.Name)
-
 	ports = unitParams.PlatformService.Ports
 	if len(ports) > 0 {
 		for _, p := range ports {
@@ -913,11 +986,11 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 
 			err := addIPRules(unitParams.PlatformService.Name, ps[1], ps[0], bh)
 			if err != nil {
-				err = Delete(unitParams.PlatformService.Name, bh.Remote)
-				if err != nil {
-					return errors.New("Failed to delete unit: " + err.Error())
+				delErr := Delete(unitParams.PlatformService.Name, bh.Remote)
+				if delErr != nil {
+					return errors.New("Failed to delete unit: " + delErr.Error())
 				}
-				log.Fatal(err)
+				return errors.New("Unable to add Proxy Device: " + err.Error())
 			}
 		}
 	}
@@ -944,7 +1017,10 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 	}
 
 	//log.Println("Connecting to database")
-	database := db.OpenDB(dbPath)
+	database, err := db.OpenDB(dbPath)
+	if err != nil {
+		return fmt.Errorf("Failed to open database %s", dbPath)
+	}
 
 	uuid, _ := uuid.NewUUID()
 	braveUnit.UID = uuid.String()

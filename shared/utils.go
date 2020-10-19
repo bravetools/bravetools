@@ -343,6 +343,15 @@ func CheckPath(path string) (bool, error) {
 	return false, err
 }
 
+//FileExists checks if path exists and ensures that it's a file
+func FileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
+}
+
 // ReadFile ..
 func ReadFile(path string) (*bytes.Buffer, error) {
 	filerc, err := os.Open(path)
