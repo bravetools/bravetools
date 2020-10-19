@@ -307,7 +307,7 @@ func (bh *BraveHost) ListUnits(backend Backend) error {
 			}
 		}
 
-		r := []string{name, status, u.NIC.Name + ":" + address, disk, proxy}
+		r := []string{name, status, address, disk, proxy}
 		table.Append(r)
 	}
 	table.SetRowLine(false)
