@@ -54,7 +54,7 @@ func Test_DeleteUnit(t *testing.T) {
 		t.Log("Failed to open db")
 	}
 
-	err := DeleteUnitDB(db, "test")
+	err = DeleteUnitDB(db, "test")
 	if err != nil {
 		t.Log("Error deleting unit")
 		t.Log("Error: ", err)
