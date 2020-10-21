@@ -594,7 +594,6 @@ func (bh *BraveHost) BuildUnit(bravefile *shared.Bravefile) error {
 		}
 	}
 
-	time.Sleep(10 * time.Second)
 	pMan := bravefile.SystemPackages.Manager
 
 	switch pMan {
@@ -678,7 +677,6 @@ func (bh *BraveHost) BuildUnit(bravefile *shared.Bravefile) error {
 		return errors.New("Failed to publish image: " + err.Error())
 	}
 
-	fmt.Println("Exporting image " + bravefile.PlatformService.Name)
 	err = ExportImage(unitFingerprint, bravefile.PlatformService.Name+"-"+bravefile.PlatformService.Version, bh.Remote)
 	if err != nil {
 		DeleteImage(fingerprint, bh.Remote)
