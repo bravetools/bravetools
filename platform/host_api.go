@@ -598,7 +598,7 @@ func (bh *BraveHost) BuildUnit(bravefile *shared.Bravefile) error {
 
 	switch pMan {
 	case "apk":
-		_, err := Exec(bravefile.PlatformService.Name, []string{"apk", "update"}, bh.Remote)
+		_, err := Exec(bravefile.PlatformService.Name, []string{"apk", "update", "--no-cache"}, bh.Remote)
 		if err != nil {
 			DeleteImage(fingerprint, bh.Remote)
 			Delete(bravefile.PlatformService.Name, bh.Remote)
@@ -665,7 +665,7 @@ func (bh *BraveHost) BuildUnit(bravefile *shared.Bravefile) error {
 	if status > 0 {
 		DeleteImage(fingerprint, bh.Remote)
 		Delete(bravefile.PlatformService.Name, bh.Remote)
-		return errors.New(shared.Fatal("Failed to execute command"))
+		return errors.New(shared.Fatal("Non-zero exit code: " + strconv.Itoa(status)))
 	}
 
 	// Create an image based on running container and export it. Image saved as tar.gz in project local directory.
