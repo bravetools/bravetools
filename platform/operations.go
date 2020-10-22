@@ -442,6 +442,11 @@ func GetUnits(remote Remote) (units []shared.BraveUnit, err error) {
 
 // LaunchFromImage creates new unit based on image
 func LaunchFromImage(image string, name string, remote Remote) error {
+	operation := shared.Info("Launching " + name)
+	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
+	s.Suffix = " " + operation
+	s.Start()
+
 	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
 	if err != nil {
 		return err
@@ -477,6 +482,7 @@ func LaunchFromImage(image string, name string, remote Remote) error {
 		return err
 	}
 
+	s.Stop()
 	return nil
 }
 
