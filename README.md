@@ -3,8 +3,6 @@
 # Bravetools
 Bravetools is an end-to-end System Container management platform. Bravetools makes it easy to configure, build, and deploy reproducible environments either on single machines or large clusters.
 
-![Bravetools](https://github.com/bravetools/bravetools/blob/pretty-print/docs/assets/bravetools-build.gif)
-
 ## Why use Bravetools
 
 Configurable system images have many advantages, but their use has been limited. In our own development practice, we found that there were either no existing tools to automate the full lifecycle of a System Container or they had a steep learning curve. Here are some improvements that our team has noticed when using Bravetools in development and production:
