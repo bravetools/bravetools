@@ -18,6 +18,7 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/briandowns/spinner"
 	"gopkg.in/yaml.v2"
 )
 
@@ -52,22 +53,23 @@ func Color(colorString string) func(...interface{}) string {
 
 func ping(ip string, port string) error {
 	address, err := net.ResolveTCPAddr("tcp", ip+":"+port)
-    if err != nil {
-        return err
-    }
+	if err != nil {
+		return err
+	}
 
 	conn, err := net.DialTCP("tcp", nil, address)
-    if err != nil {
-        return nil
-    }
+	if err != nil {
+		return nil
+	}
 
-    if conn != nil {
-    	defer conn.Close()
-    	return errors.New("Port " + port + " already assigned on host")
-    }
+	if conn != nil {
+		defer conn.Close()
+		return errors.New("Port " + port + " already assigned on host")
+	}
 
-    return err
+	return err
 }
+
 // TCPPortStatus checks if multiple ports are available on the host
 func TCPPortStatus(ip string, ports []string) error {
 	for _, port := range ports {
@@ -310,6 +312,10 @@ func SizeCountToInt(s string) (int64, error) {
 
 // FileHash creates MD5 for a given file
 func FileHash(filePath string) (string, error) {
+	operation := Info("Getting hash")
+	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
+	s.Suffix = " " + operation
+	s.Start()
 	var MD5String string
 
 	file, err := os.Open(filePath)
@@ -327,6 +333,8 @@ func FileHash(filePath string) (string, error) {
 
 	hashInBytes := hash.Sum(nil)[:16]
 	MD5String = hex.EncodeToString(hashInBytes)
+
+	s.Stop()
 
 	return MD5String, nil
 }

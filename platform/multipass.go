@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
 	"os/user"
 	"path/filepath"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	"github.com/bravetools/bravetools/shared"
+	"github.com/briandowns/spinner"
 	"github.com/mitchellh/go-ps"
 )
 
@@ -304,8 +306,14 @@ func (vm Multipass) BraveHostDelete() error {
 
 // Info shows all VMs and their state
 func (vm Multipass) Info() (Info, error) {
+	operation := shared.Info("Gathering multipass settings")
+	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
+	s.Suffix = " " + operation
+	s.Start()
+
 	backendInfo := Info{}
 	_, err := checkMultipass()
+
 	if err != nil {
 		return backendInfo, errors.New("Cannot find backend service")
 	}
@@ -431,6 +439,8 @@ func (vm Multipass) Info() (Info, error) {
 		backendInfo.Disk = []string{"Unknown", "Unknown"}
 		backendInfo.CPU = "Unknown"
 	}
+
+	s.Stop()
 
 	return backendInfo, nil
 }

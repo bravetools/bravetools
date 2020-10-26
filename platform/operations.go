@@ -12,10 +12,13 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/bravetools/bravetools/shared"
 
 	pem "encoding/pem"
+
+	"github.com/briandowns/spinner"
 
 	lxd "github.com/lxc/lxd/client"
 	lxdshared "github.com/lxc/lxd/shared"
@@ -439,6 +442,11 @@ func GetUnits(remote Remote) (units []shared.BraveUnit, err error) {
 
 // LaunchFromImage creates new unit based on image
 func LaunchFromImage(image string, name string, remote Remote) error {
+	operation := shared.Info("Launching " + name)
+	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
+	s.Suffix = " " + operation
+	s.Start()
+
 	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
 	if err != nil {
 		return err
@@ -474,6 +482,7 @@ func LaunchFromImage(image string, name string, remote Remote) error {
 		return err
 	}
 
+	s.Stop()
 	return nil
 }
 
@@ -481,7 +490,10 @@ func LaunchFromImage(image string, name string, remote Remote) error {
 // Alias: "ubuntu/bionic/amd64"
 // Alias: "alpine/3.9/amd64"
 func Launch(name string, alias string, remote Remote) error {
-	fmt.Println(shared.Info("["+name+"] "+"IMPORT: "), alias)
+	operation := shared.Info("Importing " + alias)
+	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
+	s.Suffix = " " + operation
+	s.Start()
 	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
 	if err != nil {
 		return err
@@ -510,6 +522,9 @@ func Launch(name string, alias string, remote Remote) error {
 		return errors.New("Error waiting: " + err.Error())
 	}
 
+	time.Sleep(10 * time.Second)
+
+	s.Stop()
 	return nil
 }
 
@@ -685,6 +700,11 @@ func Stop(name string, remote Remote) error {
 // Publish unit
 // lxc publish -f [remote]:[name] [remote]: --alias [name-version]
 func Publish(name string, version string, remote Remote) (fingerprint string, err error) {
+	operation := shared.Info("Publishing " + name)
+	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
+	s.Suffix = " " + operation
+	s.Start()
+
 	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
 	if err != nil {
 		return "", err
@@ -763,6 +783,7 @@ func Publish(name string, version string, remote Remote) (fingerprint string, er
 
 	}
 
+	s.Stop()
 	return fingerprint, nil
 }
 
@@ -870,7 +891,7 @@ func FilePush(name string, sourceFile string, targetPath string, remote Remote) 
 		},
 	}, args.Content)
 
-	fmt.Printf(shared.Info("Pushing %s to %s (%s)\n"), sourceFile, targetPath, args.Type)
+	fmt.Printf(shared.Info("| Pushing %s to %s (%s)\n"), sourceFile, targetPath, args.Type)
 
 	_, targetFile := filepath.Split(sourceFile)
 
@@ -891,7 +912,11 @@ func FilePush(name string, sourceFile string, targetPath string, remote Remote) 
 
 // ImportImage imports image from current directory
 func ImportImage(imageTar string, nameAndVersion string, remote Remote) (fingerprint string, err error) {
-	fmt.Println("Importing " + filepath.Base(imageTar))
+	operation := shared.Info("Importing " + filepath.Base(imageTar))
+	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
+	s.Suffix = " " + operation
+	s.Start()
+
 	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
 	if err != nil {
 		return "", err
@@ -932,11 +957,17 @@ func ImportImage(imageTar string, nameAndVersion string, remote Remote) (fingerp
 	aliasPost.Target = fingerprint
 	err = lxdServer.CreateImageAlias(aliasPost)
 
+	s.Stop()
+
 	return fingerprint, nil
 }
 
 // ExportImage downloads unit image into current directory
 func ExportImage(fingerprint string, name string, remote Remote) error {
+	operation := shared.Info("Exporting " + name)
+	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
+	s.Suffix = " " + operation
+	s.Start()
 	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
 	if err != nil {
 		return err
@@ -1004,6 +1035,7 @@ func ExportImage(fingerprint string, name string, remote Remote) error {
 		}
 	}
 
+	s.Stop()
 	return nil
 }
 
