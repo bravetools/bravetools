@@ -1,6 +1,6 @@
 VERSION := $(shell cat ./VERSION)
 BINARY_NAME := brave
-GO_LDFLAGS="-s -X github.com/beringresearch/bravetools/shared.braveVersion=$(VERSION)"
+GO_LDFLAGS="-s -X github.com/bravetools/bravetools/shared.braveVersion=$(VERSION)"
 
 ubuntu:
 	@echo "Testing for requirements"
