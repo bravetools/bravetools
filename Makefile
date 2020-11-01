@@ -3,6 +3,8 @@ BINARY_NAME := brave
 GO_LDFLAGS="-s -X github.com/beringresearch/bravetools/shared.braveVersion=$(VERSION)"
 
 ubuntu:
+	@echo "Testing for requirements"
+	scripts/test_ubuntu_prereqs.sh
 	@echo "Building Bravetools ..."
 	go clean
 	go get
