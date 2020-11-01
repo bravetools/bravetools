@@ -4,7 +4,7 @@ GO_LDFLAGS="-s -X github.com/beringresearch/bravetools/shared.braveVersion=$(VER
 
 ubuntu:
 	@echo "Testing for requirements"
-	scripts/test_ubuntu_prereqs.sh
+	./scripts/test_ubuntu_prereqs.bash
 	@echo "Building Bravetools ..."
 	go clean
 	go get
