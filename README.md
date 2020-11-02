@@ -1,6 +1,6 @@
 [![Gitter](https://badges.gitter.im/bravetools/community.svg)](https://gitter.im/bravetools/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![Go Report Card](https://goreportcard.com/badge/github.com/bravetools/bravetools)](https://goreportcard.com/report/github.com/bravetools/bravetools)
 
-![](https://github.com/bravetools/bravetools/blob/master/docs/assets/cli-bravetools-demo.gif | width=400)
+![](https://github.com/bravetools/bravetools/blob/master/docs/assets/cli-bravetools-demo.gif)
 
 # Bravetools
 Bravetools is an end-to-end System Container management platform. Bravetools makes it easy to configure, build, and deploy reproducible environments either on single machines or large clusters.
