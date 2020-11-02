@@ -21,3 +21,8 @@ then
 	exit 1 ;
 fi
 
+if [[ "" == $(which zfs) ]]
+then
+  echo 'ZFS not found. Run `sudo apt install zfsutils-linux`';
+  exit 1;
+fi
