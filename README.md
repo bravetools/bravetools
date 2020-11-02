@@ -3,7 +3,7 @@
 ![](https://github.com/bravetools/bravetools/blob/master/docs/assets/cli-bravetools-demo.gif)
 
 # Bravetools
-Bravetools is an end-to-end System Container management platform. Bravetools makes it easy to configure, build, and deploy reproducible environments either on single machines or large clusters.
+Bravetools is an end-to-end System Container management utility. Bravetools makes it easy to configure, build, and deploy reproducible environments either on single machines or large clusters.
 
 ## Why use Bravetools
 
