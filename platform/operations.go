@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -528,6 +529,42 @@ func Launch(name string, alias string, remote Remote) error {
 	return nil
 }
 
+func retry(attempts int, sleep time.Duration, f func() error) (err error) {
+	for i := 0; ; i++ {
+		err = f()
+		if err == nil {
+			return
+		}
+
+		if i >= (attempts - 1) {
+			break
+		}
+
+		time.Sleep(sleep)
+		log.Println("retrying:", err)
+	}
+	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
+}
+
+func isIPv4(ip string) bool {
+	parts := strings.Split(ip, ".")
+
+	if len(parts) < 4 {
+		return false
+	}
+
+	for _, x := range parts {
+		if i, err := strconv.Atoi(x); err == nil {
+			if i < 0 || i > 255 {
+				return false
+			}
+		} else {
+			return false
+		}
+	}
+	return true
+}
+
 // Exec runs command inside unit
 func Exec(name string, command []string, remote Remote) (int, error) {
 	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
@@ -535,16 +572,30 @@ func Exec(name string, command []string, remote Remote) (int, error) {
 		return 0, err
 	}
 
+	err = retry(5, 2*time.Second, func() (err error) {
+		c, _, err := lxdServer.GetContainerState(name)
+		ip := c.Network["eth0"].Addresses[0].Address
+		isIP := isIPv4(ip)
+		if isIP == false {
+			return errors.New("getting IPv6 info")
+		}
+		return
+	})
+	if err != nil {
+		fmt.Println("Error: ", err)
+		return 100, err
+	}
+
 	fmt.Println(shared.Info("["+name+"] "+"RUN: "), command)
 
-	req := api.InstanceExecPost{
+	req := api.ContainerExecPost{
 		Command:      command,
 		WaitForWS:    true,
 		RecordOutput: true,
 		Interactive:  false,
 	}
 
-	args := lxd.InstanceExecArgs{
+	args := lxd.ContainerExecArgs{
 		Stdin:    os.Stdin,
 		Stdout:   os.Stdout,
 		Stderr:   os.Stderr,
@@ -552,7 +603,7 @@ func Exec(name string, command []string, remote Remote) (int, error) {
 		DataDone: make(chan bool),
 	}
 
-	op, err := lxdServer.ExecInstance(name, req, &args)
+	op, err := lxdServer.ExecContainer(name, req, &args)
 
 	if err != nil {
 		return 1, errors.New("Error getting current state: " + err.Error())

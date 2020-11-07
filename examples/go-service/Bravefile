@@ -1,5 +1,5 @@
 base:
-  image: ubuntu/bionic
+  image: ubuntu/xenial
   location: public
 
 packages:
@@ -36,7 +36,7 @@ service:
   image: go-service-1.0
   name: go-service
   version: 1.0
-  ip: 10.0.0.100
+  ip: 10.0.0.5
   ports:
     - 3000:3000
   resources:

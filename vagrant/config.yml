@@ -1,0 +1,19 @@
+name: brave
+trust: brave
+profile: brave
+storage:
+  type: zfs
+  name: brave
+  size: 8GB
+network:
+  bridge: 20.0.0.1
+backendsettings:
+  type: lxd
+  resources:
+    name: ""
+    os: ""
+    cpu: ""
+    ram: ""
+    hd: ""
+    ip: 0.0.0.0
+status: inactive

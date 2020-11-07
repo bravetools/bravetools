@@ -245,15 +245,6 @@ func listHostImages(remote Remote) ([]api.Image, error) {
 	return images, nil
 }
 
-func listHostUnits(remote Remote) ([]shared.BraveUnit, error) {
-	units, err := GetUnits(remote)
-	if err != nil {
-		return nil, errors.New("Failed to access host units: " + err.Error())
-	}
-
-	return units, nil
-}
-
 func getInterfaceName() ([]string, error) {
 	interfaces, err := net.Interfaces()
 	if err != nil {
@@ -304,23 +295,6 @@ func getMPInterfaceName(bh *BraveHost) ([]string, error) {
 	ifaces = append(ifaces, ifaceName)
 
 	return ifaces, nil
-}
-
-// Get IP address of a running unit
-func getUnitIPAddress(name string, remote Remote) (string, error) {
-	unitList, err := listHostUnits(remote)
-
-	if err != nil {
-		return "", errors.New("Failed to list units: " + err.Error())
-	}
-
-	for _, u := range unitList {
-		if u.Name == name {
-			return u.Address, nil
-		}
-	}
-
-	return "", nil
 }
 
 // ProcessInterruptHandler monitors for Ctrl+C keypress in Terminal
@@ -431,6 +405,26 @@ func addIPRules(ct string, hostPort string, ctPort string, bh *BraveHost) error 
 	err := AddDevice(ct, name, config, bh.Remote)
 	if err != nil {
 		return errors.New("failed to add proxy settings for unit " + err.Error())
+	}
+
+	return nil
+}
+
+func checkUnits(unitName string, bh *BraveHost) error {
+	// Unit Checks
+	unitList, err := GetUnits(bh.Remote)
+	if err != nil {
+		return err
+	}
+
+	var unitNames []string
+	for _, u := range unitList {
+		unitNames = append(unitNames, u.Name)
+	}
+
+	unitExists := shared.StringInSlice(unitName, unitNames)
+	if unitExists {
+		return errors.New("Unit " + unitName + " already exists on host")
 	}
 
 	return nil

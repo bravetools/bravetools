@@ -168,7 +168,8 @@ func UpdateBraveSettings(settings HostSettings) error {
 
 // ConfigureHost configures local bravetools host and updates resources
 func ConfigureHost(settings HostSettings, remote Remote) error {
-	units, err := listHostUnits(remote)
+
+	units, err := GetUnits(remote)
 	if err != nil {
 		return errors.New("Failed to list units: " + err.Error())
 	}

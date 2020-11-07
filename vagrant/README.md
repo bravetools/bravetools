@@ -10,16 +10,13 @@ $ vagrant up
 $ vagrant ssh
 ```
 
-2. Uninstall current version of LXD/LXC (Bravetools uses LXD from Canonical Snapstore. It will be installed during `brave init`)
+2. Build **Bravetools** for Ubuntu
 
 ```
 $ sudo apt remove lxd
 $ sudo apt autoremove
-```
+$ sudo snap install lxd
 
-3. Build **Bravetools** for Ubuntu
-
-```
 $ cd $HOME/workspace/src/github.com/bravetools/bravetools
 $ make ubuntu
 ```
@@ -27,5 +24,6 @@ $ make ubuntu
 4. Install **Bravetools** 
 
 ```
-$ brave init
+$ cd $HOME/workspace/src/github.com/bravetools/bravetools/vagrant
+$ brave init --config config.yml
 ```
