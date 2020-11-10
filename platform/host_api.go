@@ -857,12 +857,27 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 		gid = user.Gid
 	}
 
-	config := map[string]string{
-		"limits.cpu":       unitParams.PlatformService.Resources.CPU,
-		"limits.memory":    unitParams.PlatformService.Resources.RAM,
-		"raw.idmap":        "both " + uid + " " + gid,
-		"security.nesting": "false",
-		"nvidia.runtime":   "false",
+	vm := *NewLxd(bh.Settings)
+	_, whichLxc, err := lxdCheck(vm)
+	clientVersion, _, err := checkLXDVersion(whichLxc)
+
+	// uid and gid mapping is not allowed in non-snap LXD. Shares can be created, but they are read-only in a unit.
+	var config map[string]string
+	if clientVersion <= 303 {
+		config = map[string]string{
+			"limits.cpu":       unitParams.PlatformService.Resources.CPU,
+			"limits.memory":    unitParams.PlatformService.Resources.RAM,
+			"security.nesting": "false",
+			"nvidia.runtime":   "false",
+		}
+	} else {
+		config = map[string]string{
+			"limits.cpu":       unitParams.PlatformService.Resources.CPU,
+			"limits.memory":    unitParams.PlatformService.Resources.RAM,
+			"raw.idmap":        "both " + uid + " " + gid,
+			"security.nesting": "false",
+			"nvidia.runtime":   "false",
+		}
 	}
 
 	if unitParams.PlatformService.Docker == "yes" {
