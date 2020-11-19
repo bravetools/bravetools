@@ -279,7 +279,7 @@ func (bh *BraveHost) ListUnits(backend Backend) error {
 		return errors.New("Cannot connect to Bravetools remote, ensure it is up and running")
 	}
 
-	units, err := listHostUnits(bh.Remote)
+	units, err := GetUnits(bh.Remote)
 	if err != nil {
 		return errors.New("Failed to list units: " + err.Error())
 	}
@@ -483,7 +483,7 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 func (bh *BraveHost) DeleteUnit(name string) error {
 	var unitNames []string
 
-	unitList, err := listHostUnits(bh.Remote)
+	unitList, err := GetUnits(bh.Remote)
 	if err != nil {
 		return errors.New("Failed to list existing units: " + err.Error())
 	}
@@ -524,9 +524,7 @@ func (bh *BraveHost) DeleteUnit(name string) error {
 
 // BuildUnit creates unit based on Bravefile
 func (bh *BraveHost) BuildUnit(bravefile *shared.Bravefile) error {
-	var err error
 	var fingerprint string
-	var unitNames []string
 
 	if strings.ContainsAny(bravefile.PlatformService.Name, "/_. !@£$%^&*(){}:;`~,?") {
 		return errors.New("Image names should not contain special characters")
@@ -536,18 +534,9 @@ func (bh *BraveHost) BuildUnit(bravefile *shared.Bravefile) error {
 		return errors.New("Service Name is empty")
 	}
 
-	unitList, err := listHostUnits(bh.Remote)
+	err := checkUnits(bravefile.PlatformService.Name, bh)
 	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, u := range unitList {
-		unitNames = append(unitNames, u.Name)
-	}
-
-	unitExists := shared.StringInSlice(bravefile.PlatformService.Name, unitNames)
-	if unitExists {
-		return errors.New("Unit " + bravefile.PlatformService.Name + " already exists on host")
+		return err
 	}
 
 	images, err := listHostImages(bh.Remote)
@@ -635,6 +624,7 @@ func (bh *BraveHost) BuildUnit(bravefile *shared.Bravefile) error {
 		}
 		args = append(args, "--yes")
 		status, err := Exec(bravefile.PlatformService.Name, args, bh.Remote)
+
 		if err != nil {
 			DeleteImage(fingerprint, bh.Remote)
 			Delete(bravefile.PlatformService.Name, bh.Remote)
@@ -806,9 +796,7 @@ func (bh *BraveHost) StartUnit(name string, backend Backend) error {
 
 // InitUnit starts unit from supplied image
 func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) error {
-	var err error
 	var fingerprint string
-	var unitNames []string
 
 	homeDir, _ := os.UserHomeDir()
 	if unitParams.PlatformService.Image == "" {
@@ -816,83 +804,10 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 	}
 	image := homeDir + shared.ImageStore + unitParams.PlatformService.Image + ".tar.gz"
 
-	fi, err := os.Stat(image)
-	if err != nil {
-		return err
-	}
-
-	requestedImageSize := fi.Size()
-
 	// Resource checks
-	info, err := backend.Info()
-
-	usedDiskSize, err := shared.SizeCountToInt(info.Disk[0])
+	err := CheckResources(image, backend, unitParams, bh)
 	if err != nil {
 		return err
-	}
-	totalDiskSize, err := shared.SizeCountToInt(info.Disk[1])
-	if err != nil {
-		return err
-	}
-
-	if requestedImageSize*5 > (totalDiskSize - usedDiskSize) {
-		return errors.New("Requested unit size exceeds available disk space on bravetools host. To increase storage pool size modify $HOME/.bravetools/config.yml and run brave configure")
-	}
-
-	usedMemorySize, err := shared.SizeCountToInt(info.Memory[0])
-	if err != nil {
-		return err
-	}
-	totalMemorySize, err := shared.SizeCountToInt(info.Memory[1])
-	if err != nil {
-		return err
-	}
-	requestedMemorySize, err := shared.SizeCountToInt(unitParams.PlatformService.Resources.RAM)
-	if err != nil {
-		return err
-	}
-
-	if requestedMemorySize > (totalMemorySize - usedMemorySize) {
-		return errors.New("Requested unit memory (" + unitParams.PlatformService.Resources.RAM + ") exceeds available memory on bravetools host")
-	}
-
-	// Networking Checks
-	hostInfo, err := backend.Info()
-	if err != nil {
-		return errors.New("Failed to connect to host: " + err.Error())
-	}
-
-	hostIP := hostInfo.IPv4
-	ports := unitParams.PlatformService.Ports
-	var hostPorts []string
-	if len(ports) > 0 {
-		for _, p := range ports {
-			ps := strings.Split(p, ":")
-			if len(ps) < 2 {
-				return errors.New("Invalid port forwarding definition. Appropriate format is UNIT_PORT:HOST_PORT")
-			}
-			hostPorts = append(hostPorts, ps[1])
-		}
-	}
-
-	err = shared.TCPPortStatus(hostIP, hostPorts)
-	if err != nil {
-		return err
-	}
-
-	// Unit Checks
-	unitList, err := listHostUnits(bh.Remote)
-	if err != nil {
-		return err
-	}
-
-	for _, u := range unitList {
-		unitNames = append(unitNames, u.Name)
-	}
-
-	unitExists := shared.StringInSlice(unitParams.PlatformService.Name, unitNames)
-	if unitExists {
-		return errors.New("Unit " + unitParams.PlatformService.Name + " already exists on host")
 	}
 
 	fingerprint, err = ImportImage(image, unitParams.PlatformService.Name, bh.Remote)
@@ -942,12 +857,27 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 		gid = user.Gid
 	}
 
-	config := map[string]string{
-		"limits.cpu":       unitParams.PlatformService.Resources.CPU,
-		"limits.memory":    unitParams.PlatformService.Resources.RAM,
-		"raw.idmap":        "both " + uid + " " + gid,
-		"security.nesting": "false",
-		"nvidia.runtime":   "false",
+	vm := *NewLxd(bh.Settings)
+	_, whichLxc, err := lxdCheck(vm)
+	clientVersion, _, err := checkLXDVersion(whichLxc)
+
+	// uid and gid mapping is not allowed in non-snap LXD. Shares can be created, but they are read-only in a unit.
+	var config map[string]string
+	if clientVersion <= 303 {
+		config = map[string]string{
+			"limits.cpu":       unitParams.PlatformService.Resources.CPU,
+			"limits.memory":    unitParams.PlatformService.Resources.RAM,
+			"security.nesting": "false",
+			"nvidia.runtime":   "false",
+		}
+	} else {
+		config = map[string]string{
+			"limits.cpu":       unitParams.PlatformService.Resources.CPU,
+			"limits.memory":    unitParams.PlatformService.Resources.RAM,
+			"raw.idmap":        "both " + uid + " " + gid,
+			"security.nesting": "false",
+			"nvidia.runtime":   "false",
+		}
 	}
 
 	if unitParams.PlatformService.Docker == "yes" {
@@ -971,8 +901,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 		return errors.New("Failed to restart unit: " + err.Error())
 	}
 
-	//fmt.Println("Service started: ", unitParams.PlatformService.Name)
-	ports = unitParams.PlatformService.Ports
+	ports := unitParams.PlatformService.Ports
 	if len(ports) > 0 {
 		for _, p := range ports {
 			ps := strings.Split(p, ":")
