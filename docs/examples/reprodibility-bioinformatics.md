@@ -2,7 +2,7 @@
 layout: default
 title: Reproducible Bioinformatics
 parent: Examples
-nav_order: 1
+nav_order: 2
 description: "Using Bravetools to create and ship reproducible environments"
 ---
 
