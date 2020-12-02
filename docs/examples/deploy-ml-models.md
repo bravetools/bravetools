@@ -32,14 +32,14 @@ gpt2-deploy
 |	supervisord.conf
 ```
 
-* `Bravefile` - provides an end-to-end description of our service build and deploy procedures.
+* `Bravefile` - provides an end-to-end description of our service, including build and deploy procedures.
 * `gpt2_run.py` - a small streamlit application that allows us to interact with GPT2.
-* `supervisord.conf` - configuration script that controls and monitors our streamlit app.
+* `supervisord.conf` - configuration script that controls and monitors the streamlit app.
 
 All files can be downloaded from [our repository](https://github.com/beringresearch/bravefiles/blob/master/apps/gpt2-streamlit).
 
 ### Application Script
-[`gpt2_run.py`](https://github.com/beringresearch/bravefiles/blob/master/apps/gpt2-streamlit/gpt2_run.py) script uses the [Huggingface Transformers](https://huggingface.co/transformers/) library to deploy a pre-trained GPT2 model. Streamlit will then launch a web server, allowing client-side interaction with the model.
+[`gpt2_run.py`](https://github.com/beringresearch/bravefiles/blob/master/apps/gpt2-streamlit/gpt2_run.py) script uses the [Huggingface Transformers](https://huggingface.co/transformers/) library to deploy a pre-trained GPT2 model using a streamlit web server, allowing client-side interaction with the model.
 
 ### Supervisor Configuration
 We'll need a nice way to monitor and control our streamlit application. Supervisor is a great tool for the job, requiring just a few lines to set up. Let's take a look at the top section of our [supervisor configuration file](https://github.com/beringresearch/bravefiles/blob/master/apps/gpt2-streamlit/supervisord.conf):
