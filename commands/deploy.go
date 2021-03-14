@@ -82,10 +82,10 @@ func deploy(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	err = host.DeleteHostImages()
-	if err != nil {
-		log.Fatal(err)
-	}
+	// err = host.DeleteHostImages()
+	// if err != nil {
+	// 	 log.Fatal(err)
+	// }
 
 	err = host.InitUnit(backend, bravefile)
 	if err != nil {
@@ -97,8 +97,8 @@ func deploy(cmd *cobra.Command, args []string) {
 		log.Fatal(err)
 	}
 
-	err = host.DeleteHostImages()
-	if err != nil {
-		log.Fatal(err)
-	}
+	//err = host.DeleteHostImages()
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
 }

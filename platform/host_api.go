@@ -539,17 +539,17 @@ func (bh *BraveHost) BuildUnit(bravefile *shared.Bravefile) error {
 		return err
 	}
 
-	images, err := listHostImages(bh.Remote)
+	_, err = listHostImages(bh.Remote)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if len(images) > 0 {
-		err = deleteHostImages(bh.Remote)
-		if err != nil {
-			return err
-		}
-	}
+	//if len(images) > 0 {
+	//	err = deleteHostImages(bh.Remote)
+	//	if err != nil {
+	//		return err
+	//	}
+	//}
 
 	processInterruptHandler(fingerprint, bravefile, bh)
 
