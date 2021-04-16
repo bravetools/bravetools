@@ -10,7 +10,7 @@ import (
 
 var braveImportImage = &cobra.Command{
 	Use:   "import NAME",
-	Short: "Import a tarball into local Bravetools image repository",
+	Short: "Import an LXD image tarball into local Bravetools image repository",
 	Long:  ``,
 	Run:   importImage,
 }
