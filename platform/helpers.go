@@ -430,8 +430,9 @@ func checkUnits(unitName string, bh *BraveHost) error {
 	return nil
 }
 
-func getImageFingerprint(slice1 []api.Image, slice2 []api.Image) []string {
+func getImageFingerprint(slice1 []api.Image, slice2 []api.Image) string {
 	var diff []string
+	var fingerprint string
 
 	// Loop two times, first to find slice1 strings not in slice2,
 	// second loop to find slice2 strings not in slice1
@@ -455,5 +456,9 @@ func getImageFingerprint(slice1 []api.Image, slice2 []api.Image) []string {
 		}
 	}
 
-	return diff
+	if len(diff) > 0 {
+		fingerprint = diff[0]
+	}
+
+	return fingerprint
 }

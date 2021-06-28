@@ -532,7 +532,7 @@ func Launch(name string, alias string, remote Remote) (fingerprint string, err e
 
 	updatedHostImageList, _ := listHostImages(remote)
 
-	fingerprint = getImageFingerprint(hostImageList, updatedHostImageList)[0]
+	fingerprint = getImageFingerprint(hostImageList, updatedHostImageList)
 
 	return fingerprint, nil
 }
