@@ -490,14 +490,17 @@ func LaunchFromImage(image string, name string, remote Remote) error {
 // Launch starts a new unit based on standard image from linuxcontainers.org
 // Alias: "ubuntu/bionic/amd64"
 // Alias: "alpine/3.9/amd64"
-func Launch(name string, alias string, remote Remote) error {
+func Launch(name string, alias string, remote Remote) (fingerprint string, err error) {
 	operation := shared.Info("Importing " + alias)
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
 	s.Suffix = " " + operation
+
 	s.Start()
+
+	hostImageList, _ := listHostImages(remote)
 	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	req := api.ContainersPost{
@@ -515,18 +518,23 @@ func Launch(name string, alias string, remote Remote) error {
 
 	op, err := lxdServer.CreateContainer(req)
 	if err != nil {
-		return errors.New("Failed to create unit: " + err.Error())
+		return "", errors.New("Failed to create unit: " + err.Error())
 	}
 
 	err = op.Wait()
 	if err != nil {
-		return errors.New("Error waiting: " + err.Error())
+		return "", errors.New("Error waiting: " + err.Error())
 	}
 
 	time.Sleep(10 * time.Second)
 
 	s.Stop()
-	return nil
+
+	updatedHostImageList, _ := listHostImages(remote)
+
+	fingerprint = getImageFingerprint(hostImageList, updatedHostImageList)[0]
+
+	return fingerprint, nil
 }
 
 func retry(attempts int, sleep time.Duration, f func() error) (err error) {

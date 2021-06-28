@@ -558,7 +558,7 @@ func (bh *BraveHost) BuildUnit(bravefile *shared.Bravefile) error {
 
 	switch bravefile.Base.Location {
 	case "public":
-		err = importLXD(bravefile, bh.Remote)
+		fingerprint, err = importLXD(bravefile, bh.Remote)
 		if err != nil {
 			log.Fatal(err)
 		}

@@ -103,13 +103,13 @@ func createSharedVolume(storagePoolName string,
 	return nil
 }
 
-func importLXD(bravefile *shared.Bravefile, remote Remote) error {
-	err := Launch(bravefile.PlatformService.Name, bravefile.Base.Image, remote)
+func importLXD(bravefile *shared.Bravefile, remote Remote) (fingerprint string, err error) {
+	fingerprint, err = Launch(bravefile.PlatformService.Name, bravefile.Base.Image, remote)
 	if err != nil {
-		return errors.New("Failed to launch base unit: " + err.Error())
+		return "", errors.New("Failed to launch base unit: " + err.Error())
 	}
 
-	return nil
+	return fingerprint, nil
 }
 
 func importGitHub(bravefile *shared.Bravefile, bh *BraveHost) error {
@@ -428,4 +428,32 @@ func checkUnits(unitName string, bh *BraveHost) error {
 	}
 
 	return nil
+}
+
+func getImageFingerprint(slice1 []api.Image, slice2 []api.Image) []string {
+	var diff []string
+
+	// Loop two times, first to find slice1 strings not in slice2,
+	// second loop to find slice2 strings not in slice1
+	for i := 0; i < 2; i++ {
+		for _, s1 := range slice1 {
+			found := false
+			for _, s2 := range slice2 {
+				if s1.Fingerprint == s2.Fingerprint {
+					found = true
+					break
+				}
+			}
+			// String not found. We add it to return slice
+			if !found {
+				diff = append(diff, s1.Fingerprint)
+			}
+		}
+		// Swap the slices, only if it was the first loop
+		if i == 0 {
+			slice1, slice2 = slice2, slice1
+		}
+	}
+
+	return diff
 }
