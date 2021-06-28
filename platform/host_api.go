@@ -78,22 +78,25 @@ func (bh *BraveHost) AddRemote() error {
 }
 
 // ImportLocalImage import tarball into local images folder
-func (bh *BraveHost) ImportLocalImage(name string) error {
+func (bh *BraveHost) ImportLocalImage(sourcePath string) error {
 	home, _ := os.UserHomeDir()
+
+	_, imageName := filepath.Split(sourcePath)
+
 	imagePath := home + shared.ImageStore
-	hashFile := imagePath + name + ".md5"
+	hashFile := imagePath + imageName + ".md5"
 
-	_, err := os.Stat(home + shared.ImageStore + name)
+	_, err := os.Stat(home + shared.ImageStore + imageName)
 	if !os.IsNotExist(err) {
-		return errors.New("Image " + name + " already exists in local image storage")
+		return errors.New("Image " + imageName + " already exists in local image store")
 	}
 
-	err = shared.CopyFile(name, imagePath+name)
+	err = shared.CopyFile(sourcePath, imagePath+imageName)
 	if err != nil {
-		return errors.New("Failed to copy image archive to local image storage: " + err.Error())
+		return errors.New("Failed to copy image archive to local image store: " + err.Error())
 	}
 
-	imageHash, err := shared.FileHash(name)
+	imageHash, err := shared.FileHash(sourcePath)
 	if err != nil {
 		return errors.New("Failed to generate image hash: " + err.Error())
 	}
