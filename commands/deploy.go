@@ -16,7 +16,8 @@ In cases where IPv4 address is not provided, a random ephemeral IP address will 
 deployment options e.g. CPU and RAM should be configured through a configuration file.`,
 	Run: deploy,
 }
-var unitConfig, unitIP, unitPort, name string
+var unitConfig, unitIP, name string
+var unitPort []string
 
 func init() {
 	includeDeployFlags(braveDeploy)
@@ -25,7 +26,7 @@ func init() {
 func includeDeployFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&unitConfig, "config", "", "", "Path to Unit configuration file [OPTIONAL]")
 	cmd.Flags().StringVarP(&unitIP, "ip", "i", "", "IPv4 address (e.g., 10.0.0.20) [OPTIONAL]")
-	cmd.Flags().StringVarP(&unitPort, "port", "p", "", "Publish Unit port to host [OPTIONAL]")
+	cmd.Flags().StringSliceVarP(&unitPort, "port", "p", []string{}, "Publish Unit port to host [OPTIONAL]")
 	cmd.Flags().StringVarP(&name, "name", "n", "", "Assign name to deployed Unit")
 }
 
@@ -73,12 +74,10 @@ func deploy(cmd *cobra.Command, args []string) {
 			bravefile.PlatformService.IP = unitIP
 		}
 
-		var ports []string
-		if unitPort != "" {
+		if len(unitPort) != 0 {
 			//TODO: this implements a single pair of ports to be assigned from command line.
 			// If multiple pairs of ports are passed they should be iterated and added into array.
-			ports = append(ports, unitPort)
-			bravefile.PlatformService.Ports = ports
+			bravefile.PlatformService.Ports = unitPort
 		}
 	}
 
