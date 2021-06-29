@@ -946,7 +946,6 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 		}
 	}
 
-	//log.Println("Connecting to database")
 	database, err := db.OpenDB(dbPath)
 	if err != nil {
 		return fmt.Errorf("Failed to open database %s", dbPath)
@@ -970,13 +969,15 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 		return errors.New("Failed to serialize unit data")
 	}
 	braveUnit.Data = data
-	//log.Println("Inserting unit")
+
 	_, err = db.InsertUnitDB(database, braveUnit)
 	if err != nil {
 		DeleteImage(fingerprint, bh.Remote)
 		Delete(unitParams.PlatformService.Name, bh.Remote)
 		return errors.New("Failed to insert unit to database: " + err.Error())
 	}
+
+	DeleteImage(fingerprint, bh.Remote)
 
 	return nil
 }
