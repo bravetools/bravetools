@@ -542,23 +542,23 @@ func (bh *BraveHost) BuildUnit(bravefile *shared.Bravefile) error {
 		return err
 	}
 
-	images, err := listHostImages(bh.Remote)
+	_, err = listHostImages(bh.Remote)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if len(images) > 0 {
-		err = deleteHostImages(bh.Remote)
-		if err != nil {
-			return err
-		}
-	}
+	//if len(images) > 0 {
+	//	err = deleteHostImages(bh.Remote)
+	//	if err != nil {
+	//		return err
+	//	}
+	//}
 
 	processInterruptHandler(fingerprint, bravefile, bh)
 
 	switch bravefile.Base.Location {
 	case "public":
-		err = importLXD(bravefile, bh.Remote)
+		fingerprint, err = importLXD(bravefile, bh.Remote)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -946,7 +946,6 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 		}
 	}
 
-	//log.Println("Connecting to database")
 	database, err := db.OpenDB(dbPath)
 	if err != nil {
 		return fmt.Errorf("Failed to open database %s", dbPath)
@@ -970,13 +969,15 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 		return errors.New("Failed to serialize unit data")
 	}
 	braveUnit.Data = data
-	//log.Println("Inserting unit")
+
 	_, err = db.InsertUnitDB(database, braveUnit)
 	if err != nil {
 		DeleteImage(fingerprint, bh.Remote)
 		Delete(unitParams.PlatformService.Name, bh.Remote)
 		return errors.New("Failed to insert unit to database: " + err.Error())
 	}
+
+	DeleteImage(fingerprint, bh.Remote)
 
 	return nil
 }
