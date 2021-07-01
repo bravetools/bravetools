@@ -594,7 +594,7 @@ func Exec(name string, command []string, remote Remote) (int, error) {
 		return 100, err
 	}
 
-	fmt.Println(shared.Info("["+name+"] "+"RUN: "), command)
+	fmt.Println(shared.Info("["+name+"] "+"RUN: "), shared.Warn(command))
 
 	req := api.ContainerExecPost{
 		Command:      command,
