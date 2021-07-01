@@ -8,11 +8,12 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+
 	//"sort"
 	"strings"
 	"time"
 
-	"github.com/beringresearch/bravetools/commands"
+	"github.com/bravetools/bravetools/commands"
 	"github.com/spf13/cobra"
 )
 
