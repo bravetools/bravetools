@@ -826,22 +826,26 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 
 	err = AttachNetwork(unitParams.PlatformService.Name, "bravebr0", "eth0", "eth0", bh.Remote)
 	if err != nil {
+		DeleteImage(fingerprint, bh.Remote)
 		return errors.New("Failed to attach network: " + err.Error())
 	}
 
 	err = ConfigDevice(unitParams.PlatformService.Name, "eth0", unitParams.PlatformService.IP, bh.Remote)
 	if err != nil {
+		DeleteImage(fingerprint, bh.Remote)
 		return errors.New("Failed to set IP: " + err.Error())
 	}
 
 	err = Stop(unitParams.PlatformService.Name, bh.Remote)
 	err = Start(unitParams.PlatformService.Name, bh.Remote)
 	if err != nil {
+		DeleteImage(fingerprint, bh.Remote)
 		return errors.New("Failed to restart unit: " + err.Error())
 	}
 
 	user, err := user.Current()
 	if err != nil {
+		DeleteImage(fingerprint, bh.Remote)
 		return err
 	}
 
@@ -895,12 +899,14 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 
 	err = SetConfig(unitParams.PlatformService.Name, config, bh.Remote)
 	if err != nil {
+		DeleteImage(fingerprint, bh.Remote)
 		return errors.New("Error configuring unit: " + err.Error())
 	}
 
 	err = Stop(unitParams.PlatformService.Name, bh.Remote)
 	err = Start(unitParams.PlatformService.Name, bh.Remote)
 	if err != nil {
+		DeleteImage(fingerprint, bh.Remote)
 		return errors.New("Failed to restart unit: " + err.Error())
 	}
 
@@ -916,8 +922,10 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 
 			err := addIPRules(unitParams.PlatformService.Name, ps[1], ps[0], bh)
 			if err != nil {
+				DeleteImage(fingerprint, bh.Remote)
 				delErr := Delete(unitParams.PlatformService.Name, bh.Remote)
 				if delErr != nil {
+					DeleteImage(fingerprint, bh.Remote)
 					return errors.New("Failed to delete unit: " + delErr.Error())
 				}
 				return errors.New("Unable to add Proxy Device: " + err.Error())
@@ -930,6 +938,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 	var braveUnit db.BraveUnit
 	userHome, err := os.UserHomeDir()
 	if err != nil {
+		DeleteImage(fingerprint, bh.Remote)
 		return errors.New("Failed to get home directory")
 	}
 	dbPath := path.Join(userHome, shared.BraveDB)
@@ -948,6 +957,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 
 	database, err := db.OpenDB(dbPath)
 	if err != nil {
+		DeleteImage(fingerprint, bh.Remote)
 		return fmt.Errorf("Failed to open database %s", dbPath)
 	}
 
