@@ -549,6 +549,7 @@ func retry(attempts int, sleep time.Duration, f func() error) (err error) {
 		}
 
 		time.Sleep(sleep)
+		log.SetOutput(os.Stdout)
 		log.Println("retrying:", err)
 	}
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
