@@ -59,7 +59,7 @@ func buildBase(cmd *cobra.Command, args []string) {
 		log.Fatal(err)
 	}
 
-	err = host.BuildUnit(bravefile)
+	err = host.BuildImage(bravefile)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -525,8 +525,8 @@ func (bh *BraveHost) DeleteUnit(name string) error {
 	return nil
 }
 
-// BuildUnit creates unit based on Bravefile
-func (bh *BraveHost) BuildUnit(bravefile *shared.Bravefile) error {
+// BuildImage creates an image based on Bravefile
+func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 	var fingerprint string
 
 	if strings.ContainsAny(bravefile.PlatformService.Name, "/_. !@£$%^&*(){}:;`~,?") {
