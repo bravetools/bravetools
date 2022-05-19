@@ -577,13 +577,13 @@ func (bh *BraveHost) BuildUnit(bravefile *shared.Bravefile) error {
 		if err != nil {
 			log.Fatal(err)
 		}
-	default:
-		if bravefile.Base.Location == "local" {
-			err = importLocal(bravefile, bh.Remote)
-			if err != nil {
-				log.Fatal(err)
-			}
+	case "local":
+		err = importLocal(bravefile, bh.Remote)
+		if err != nil {
+			log.Fatal(err)
 		}
+	default:
+		return fmt.Errorf("base image location %q not supported", bravefile.Base.Location)
 	}
 
 	pMan := bravefile.SystemPackages.Manager
