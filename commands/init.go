@@ -48,7 +48,6 @@ func serverInit(cmd *cobra.Command, args []string) {
 	remote := host.Remote
 	_, err := platform.GetBraveProfile(remote)
 	if err != nil {
-		//fmt.Println("Brave profile: ", err)
 		braveProfile = false
 	}
 	if err == nil {
@@ -110,7 +109,6 @@ func serverInit(cmd *cobra.Command, args []string) {
 		err = backend.BraveBackendInit()
 		if err != nil {
 			fmt.Println("Error initializing Bravetools backend: ", err)
-			//log.Fatal(shared.REMOVELIN)
 		}
 
 		loadConfig()

@@ -184,8 +184,8 @@ pools:
 - name: ` + vm.Settings.StoragePool.Name + "\n" +
 		`  driver: zfs
 networks:
-- name: bravebr0
-  type: bridge
+- name: ` + vm.Settings.Profile + "br0\n" +
+		`  type: bridge
   config:` + "\n" +
 		"    ipv4.address: " + vm.Settings.Network.Bridge + "/24 \n" +
 		`    ipv4.nat: true
@@ -199,8 +199,8 @@ profiles:
 		`      type: disk
     eth0:
       nictype: bridged
-      parent: bravebr0
-      type: nic
+      parent: ` + vm.Settings.Profile + "br0\n" +
+		`  type: nic
 EOF`
 
 	err = shared.ExecCommand("multipass",
