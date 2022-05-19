@@ -26,7 +26,7 @@ base:
 Three types of image locations are supported:
 
 1. ``public`` - specifies that images are to be pulled from the [linuxcontainers](https://images.linuxcontainers.org) repository. Accepted image name syntax is ``Distribution/Release/Architecture``.
-2. ``private`` - images stored locally. Naming follows the convention ``image-name-version``.
+2. ``local`` - images stored locally. Naming follows the convention ``image-name-version``.
 3. ``github`` - images that can be built and imported on the fly from Bravefiles stored inside GitHub directories. Naming convention is ``username/repository/directory``. Bravetools will search for a Bravefiles inside the ``/directory`` location.
 
 In cases where Bravefiles are ingested from GitHub, a local copy of the resulting image will be kept. The local image copy will be re-used next time you run ``brave build``.
