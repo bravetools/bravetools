@@ -99,6 +99,7 @@ func serverInit(cmd *cobra.Command, args []string) {
 		if err != nil {
 			log.Fatal(err.Error())
 		}
+
 		log.Fatal("error initializing Bravetools backend: ", err)
 	}
 

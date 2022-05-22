@@ -19,6 +19,9 @@ func CheckResources(image string, backend Backend, unitParams *shared.Bravefile,
 	requestedImageSize := fi.Size()
 
 	info, err := backend.Info()
+	if err != nil {
+		return err
+	}
 
 	usedDiskSize, err := shared.SizeCountToInt(info.Disk[0])
 	if err != nil {
@@ -30,7 +33,7 @@ func CheckResources(image string, backend Backend, unitParams *shared.Bravefile,
 	}
 
 	if requestedImageSize*5 > (totalDiskSize - usedDiskSize) {
-		return errors.New("Requested unit size exceeds available disk space on bravetools host. To increase storage pool size modify $HOME/.bravetools/config.yml and run brave configure")
+		return errors.New("requested unit size exceeds available disk space on bravetools host. To increase storage pool size modify $HOME/.bravetools/config.yml and run brave configure")
 	}
 
 	usedMemorySize, err := shared.SizeCountToInt(info.Memory[0])
@@ -63,7 +66,7 @@ func CheckResources(image string, backend Backend, unitParams *shared.Bravefile,
 		for _, p := range ports {
 			ps := strings.Split(p, ":")
 			if len(ps) < 2 {
-				return errors.New("Invalid port forwarding definition. Appropriate format is UNIT_PORT:HOST_PORT")
+				return errors.New("invalid port forwarding definition. Appropriate format is UNIT_PORT:HOST_PORT")
 			}
 			hostPorts = append(hostPorts, ps[1])
 		}

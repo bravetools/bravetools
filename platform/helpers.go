@@ -3,13 +3,11 @@ package platform
 import (
 	"errors"
 	"fmt"
-	"net"
 	"os"
 	"os/signal"
 	"os/user"
 	"path"
 	"path/filepath"
-	"strings"
 	"syscall"
 
 	"github.com/bravetools/bravetools/shared"
@@ -162,74 +160,74 @@ func importLocal(bravefile *shared.Bravefile, remote Remote) error {
 	fingerprint, err := ImportImage(filepath.Join(location, bravefile.Base.Image)+".tar.gz", bravefile.Base.Image, remote)
 
 	if err != nil {
-		return errors.New("Failed to import image: " + err.Error())
+		return errors.New("failed to import image: " + err.Error())
 	}
 
 	err = LaunchFromImage(bravefile.Base.Image, bravefile.PlatformService.Name, remote)
 	if err != nil {
 		DeleteImage(fingerprint, remote)
-		return errors.New("Failed to launch unit: " + err.Error())
+		return errors.New("failed to launch unit: " + err.Error())
 	}
 
 	err = Start(bravefile.PlatformService.Name, remote)
 	if err != nil {
 		Delete(bravefile.PlatformService.Name, remote)
-		return errors.New("Failed to start a unit: " + err.Error())
+		return errors.New("failed to start a unit: " + err.Error())
 	}
 
 	return nil
 }
 
-func copyTo(source string, settings HostSettings) error {
+// func copyTo(source string, settings HostSettings) error {
 
-	backend := settings.BackendSettings.Type
-	switch backend {
-	case "multipass":
-		err := shared.ExecCommand("multipass",
-			"transfer",
-			source,
-			settings.BackendSettings.Resources.Name+":")
-		if err != nil {
-			return err
-		}
-	case "lxd":
-		hd, _ := os.UserHomeDir()
-		shared.CopyFile(source, hd)
-	}
+// 	backend := settings.BackendSettings.Type
+// 	switch backend {
+// 	case "multipass":
+// 		err := shared.ExecCommand("multipass",
+// 			"transfer",
+// 			source,
+// 			settings.BackendSettings.Resources.Name+":")
+// 		if err != nil {
+// 			return err
+// 		}
+// 	case "lxd":
+// 		hd, _ := os.UserHomeDir()
+// 		shared.CopyFile(source, hd)
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
-// run script on host
-func run(scriptPath string, settings HostSettings) error {
+// // run script on host
+// func run(scriptPath string, settings HostSettings) error {
 
-	backend := settings.BackendSettings.Type
+// 	backend := settings.BackendSettings.Type
 
-	switch backend {
-	case "multipass":
-		err := shared.ExecCommand("multipass",
-			"exec",
-			settings.BackendSettings.Resources.Name,
-			"--",
-			"/bin/bash",
-			scriptPath)
-		if err != nil {
-			return err
-		}
-	case "lxd":
-		err := shared.ExecCommand(
-			"sudo",
-			"/bin/bash",
-			scriptPath)
-		if err != nil {
-			return err
-		}
-	default:
-		return errors.New("cannot find backend")
-	}
+// 	switch backend {
+// 	case "multipass":
+// 		err := shared.ExecCommand("multipass",
+// 			"exec",
+// 			settings.BackendSettings.Resources.Name,
+// 			"--",
+// 			"/bin/bash",
+// 			scriptPath)
+// 		if err != nil {
+// 			return err
+// 		}
+// 	case "lxd":
+// 		err := shared.ExecCommand(
+// 			"sudo",
+// 			"/bin/bash",
+// 			scriptPath)
+// 		if err != nil {
+// 			return err
+// 		}
+// 	default:
+// 		return errors.New("cannot find backend")
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 func deleteHostImages(remote Remote) error {
 	images, err := GetImages(remote)
@@ -256,57 +254,57 @@ func listHostImages(remote Remote) ([]api.Image, error) {
 	return images, nil
 }
 
-func getInterfaceName() ([]string, error) {
-	interfaces, err := net.Interfaces()
-	if err != nil {
-		return nil, errors.New("failed to get network interfaces: " + err.Error())
-	}
+// func getInterfaceName() ([]string, error) {
+// 	interfaces, err := net.Interfaces()
+// 	if err != nil {
+// 		return nil, errors.New("failed to get network interfaces: " + err.Error())
+// 	}
 
-	var ifaceNames []string
-	for _, i := range interfaces {
-		addrs, _ := i.Addrs()
-		name := i.Name
+// 	var ifaceNames []string
+// 	for _, i := range interfaces {
+// 		addrs, _ := i.Addrs()
+// 		name := i.Name
 
-		for _, addr := range addrs {
-			var ip net.IP
-			switch v := addr.(type) {
-			case *net.IPNet:
-				ip = v.IP
-				if !ip.IsLoopback() && ip.To4() != nil {
-					addr := strings.Split(ip.String(), ".")
-					if addr[3] != "1" {
-						ifaceNames = append(ifaceNames, name)
-					}
-				}
-			}
-		}
-	}
+// 		for _, addr := range addrs {
+// 			var ip net.IP
+// 			switch v := addr.(type) {
+// 			case *net.IPNet:
+// 				ip = v.IP
+// 				if !ip.IsLoopback() && ip.To4() != nil {
+// 					addr := strings.Split(ip.String(), ".")
+// 					if addr[3] != "1" {
+// 						ifaceNames = append(ifaceNames, name)
+// 					}
+// 				}
+// 			}
+// 		}
+// 	}
 
-	return ifaceNames, err
-}
+// 	return ifaceNames, err
+// }
 
-func getMPInterfaceName(bh *BraveHost) ([]string, error) {
+// func getMPInterfaceName(bh *BraveHost) ([]string, error) {
 
-	grep := `ip -4 route ls | grep default | grep -Po '(?<=dev )(\S+)'`
+// 	grep := `ip -4 route ls | grep default | grep -Po '(?<=dev )(\S+)'`
 
-	ifaceName, err := shared.ExecCommandWReturn(
-		"multipass",
-		"exec",
-		bh.Settings.BackendSettings.Resources.Name,
-		"--",
-		"bash",
-		"-c",
-		grep)
-	if err != nil {
-		return nil, errors.New("failed to get network interface name: " + err.Error())
-	}
+// 	ifaceName, err := shared.ExecCommandWReturn(
+// 		"multipass",
+// 		"exec",
+// 		bh.Settings.BackendSettings.Resources.Name,
+// 		"--",
+// 		"bash",
+// 		"-c",
+// 		grep)
+// 	if err != nil {
+// 		return nil, errors.New("failed to get network interface name: " + err.Error())
+// 	}
 
-	ifaceName = strings.TrimRight(ifaceName, "\r\n")
-	var ifaces []string
-	ifaces = append(ifaces, ifaceName)
+// 	ifaceName = strings.TrimRight(ifaceName, "\r\n")
+// 	var ifaces []string
+// 	ifaces = append(ifaces, ifaceName)
 
-	return ifaces, nil
-}
+// 	return ifaces, nil
+// }
 
 // ProcessInterruptHandler monitors for Ctrl+C keypress in Terminal
 func processInterruptHandler(fingerprint string, bravefile *shared.Bravefile, bh *BraveHost) {
