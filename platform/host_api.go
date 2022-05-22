@@ -827,7 +827,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 		return errors.New("Failed to launch unit: " + err.Error())
 	}
 
-	err = AttachNetwork(unitParams.PlatformService.Name, "bravebr0", "eth0", "eth0", bh.Remote)
+	err = AttachNetwork(unitParams.PlatformService.Name, bh.Settings.Name+"br0", "eth0", "eth0", bh.Remote)
 	if err != nil {
 		DeleteImage(fingerprint, bh.Remote)
 		return errors.New("Failed to attach network: " + err.Error())
