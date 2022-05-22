@@ -44,6 +44,9 @@ func buildBase(cmd *cobra.Command, args []string) {
 
 	// Resource checks
 	info, err := backend.Info()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	usedDiskSize, err := shared.SizeCountToInt(info.Disk[0])
 	if err != nil {
@@ -55,7 +58,7 @@ func buildBase(cmd *cobra.Command, args []string) {
 	}
 
 	if (totalDiskSize - usedDiskSize) < 5000000000 {
-		err = errors.New("Not enough free storage on disk")
+		err = errors.New("not enough free storage on disk")
 		log.Fatal(err)
 	}
 

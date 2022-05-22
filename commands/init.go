@@ -1,13 +1,11 @@
 package commands
 
 import (
-	"bufio"
 	"fmt"
 	"log"
 	"os"
 	"path"
 	"runtime"
-	"strings"
 
 	"github.com/bravetools/bravetools/db"
 	"github.com/bravetools/bravetools/platform"
@@ -29,159 +27,132 @@ func init() {
 }
 
 func includeInitFlags(cmd *cobra.Command) {
-	cmd.PersistentFlags().StringVarP(&hostConfigPath, "config", "", "", "Path to the host configuration file [OPTIONAL]")
-	cmd.PersistentFlags().StringVarP(&storage, "storage", "s", "", "Host storage size [OPTIONAL]")
-	cmd.PersistentFlags().StringVarP(&ram, "memory", "m", "", "Host memory size [OPTIONAL]")
-	cmd.PersistentFlags().StringVarP(&network, "network", "n", "", "Host network IP range [OPTIONAL]")
-	cmd.PersistentFlags().StringVarP(&backendType, "backend", "b", "", "Backend type (multipass or lxd) [OPTIONAL]")
+	cmd.PersistentFlags().StringVarP(&hostConfigPath, "config", "c", "", "Path to the host configuration file [OPTIONAL]")
+	cmd.PersistentFlags().StringVarP(&storage, "storage", "s", "12", "Host storage size in GB[OPTIONAL]. default: 12")
+	cmd.PersistentFlags().StringVarP(&ram, "memory", "m", "4GB", "Host memory size [OPTIONAL]. default 4GB")
+	cmd.PersistentFlags().StringVarP(&network, "network", "n", "10.0.0.1", "Host network IP range [OPTIONAL]. default: 10.0.0.1")
 }
 
 func serverInit(cmd *cobra.Command, args []string) {
-	userHome, _ := os.UserHomeDir()
 	params := make(map[string]string)
+	userHome, _ := os.UserHomeDir()
 
-	braveHome := false
 	if _, err := os.Stat(path.Join(userHome, ".bravetools")); !os.IsNotExist(err) {
-		braveHome = true
+		log.Fatal("$HOME/.bravetools directory exists. Run rm -r $HOME/.bravetools to create a fresh install")
 	}
 
-	braveProfile := true
-	remote := host.Remote
-	_, err := platform.GetBraveProfile(remote)
+	hostOs := runtime.GOOS
+	switch hostOs {
+	case "linux":
+		backendType = "lxd"
+	case "darwin":
+		backendType = "multipass"
+	case "windows":
+		backendType = "multipass"
+	default:
+		err := deleteBraveHome(userHome)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+		log.Fatal("unsupported hos OS: ", hostOs)
+	}
+
+	log.Println("Initialising a new Bravetools configuration")
+	fmt.Println("Host OS: ", hostOs)
+	fmt.Println("Backend: ", backendType)
+	fmt.Println("Storage (GB): ", storage)
+	fmt.Println("Memory: ", ram)
+	fmt.Println("Network: ", network)
+
+	// Create $HOME/.bravetools
+	err := createBraveHome(userHome)
 	if err != nil {
-		braveProfile = false
-	}
-	if err == nil {
-		braveProfile = true
+		log.Fatal(err.Error())
 	}
 
-	if backendType == "" {
-		hostOs := runtime.GOOS
-		switch hostOs {
-		case "linux":
-			backendType = "lxd"
-		case "darwin":
-			backendType = "multipass"
-		case "windows":
-			backendType = "multipass"
-		default:
+	params["storage"] = storage
+	params["ram"] = ram
+	params["network"] = network
+	params["backend"] = backendType
+
+	if hostConfigPath != "" {
+		// TODO: validate configuration. Now assume that path ends with config.yml
+		err = shared.CopyFile(hostConfigPath, path.Join(userHome, ".bravetools", "config.yml"))
+		if err != nil {
 			err := deleteBraveHome(userHome)
 			if err != nil {
 				log.Fatal(err.Error())
 			}
-			fmt.Println(runtime.GOOS)
-			fmt.Println("Unsupported OS")
+			log.Fatal(err)
 		}
+		loadConfig()
+	} else {
+		userHome, _ := os.UserHomeDir()
+		platform.SetupHostConfiguration(params, userHome)
+		loadConfig()
 	}
 
-	if braveHome == false && braveProfile == false {
-		err = createBraveHome(userHome)
+	log.Println("Initialising Bravetools backend")
+	err = backend.BraveBackendInit()
+	if err != nil {
+		err := deleteBraveHome(userHome)
 		if err != nil {
 			log.Fatal(err.Error())
 		}
+		log.Fatal("error initializing Bravetools backend: ", err)
+	}
 
-		if storage == "" {
-			storage = "12"
-		}
-		params["storage"] = storage
-		if ram == "" {
-			ram = "4GB"
-		}
-		params["ram"] = ram
-		if network == "" {
-			network = "10.0.0.1"
-		}
-		params["network"] = network
-		params["backend"] = backendType
+	loadConfig()
 
-		if hostConfigPath != "" {
-			// TODO: validate configuration. Now assume that path ends with config.yml
-			err = shared.CopyFile(hostConfigPath, path.Join(userHome, ".bravetools", "config.yml"))
-			if err != nil {
-				log.Fatal(err)
-			}
-			loadConfig()
-		} else {
-			userHome, _ := os.UserHomeDir()
-			platform.SetupHostConfiguration(params, userHome)
-			loadConfig()
-		}
+	if backendType == "multipass" {
+		info, err := backend.Info()
 
-		err = backend.BraveBackendInit()
 		if err != nil {
-			log.Fatal("Error initializing Bravetools backend: ", err)
-		}
-
-		loadConfig()
-
-		if backendType == "multipass" {
-			info, err := backend.Info()
-
+			err := deleteBraveHome(userHome)
 			if err != nil {
-				log.Fatal(err)
+				log.Fatal(err.Error())
 			}
-
-			settings := host.Settings
-			settings.BackendSettings.Resources.IP = info.IPv4
-			err = platform.UpdateBraveSettings(settings)
-
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			loadConfig()
-		}
-
-		err = host.AddRemote()
-		if err != nil {
 			log.Fatal(err)
 		}
 
-		dbPath := path.Join(userHome, shared.BraveDB)
+		settings := host.Settings
+		settings.BackendSettings.Resources.IP = info.IPv4
+		err = platform.UpdateBraveSettings(settings)
 
-		_, err = os.Stat(dbPath)
-		if os.IsNotExist(err) {
-			err = db.InitDB(dbPath)
-
+		if err != nil {
+			err := deleteBraveHome(userHome)
 			if err != nil {
-				log.Fatal("failed to initialize database: ", err)
+				log.Fatal(err.Error())
 			}
+			log.Fatal(err)
 		}
 
-	} else {
-		scanner := bufio.NewScanner(os.Stdin)
-		for {
-			fmt.Println(shared.REINIT)
-			scanner.Scan()
-			in := scanner.Text()
-			in = strings.ToLower(in)
-			if in == "yes" || in == "y" {
-				if backendType == "multipass" {
-					log.Fatal(shared.REMOVEMP)
-				} else {
-					p := path.Join(userHome, ".bravetools/")
+		loadConfig()
+	}
 
-					if braveHome == false {
-						log.Fatal(shared.REMOVELIN)
-					} else {
+	log.Println("Registering a Remote")
+	err = host.AddRemote()
+	if err != nil {
+		err := deleteBraveHome(userHome)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+		log.Fatal(err)
+	}
 
-						err1 := os.RemoveAll(p)
-						err2 := platform.DeleteProfile(host.Settings.Profile, remote)
-						err3 := platform.DeleteStoragePool(host.Settings.StoragePool.Name, remote)
-						err4 := platform.DeleteNetwork(host.Settings.Name+"br0", remote)
+	dbPath := path.Join(userHome, shared.BraveDB)
 
-						if err1 != nil || err2 != nil || err3 != nil || err4 != nil {
-							log.Fatal(shared.REMOVELIN)
-						}
-					}
-				}
+	log.Println("Initialising Bravetools unit database")
+	_, err = os.Stat(dbPath)
+	if os.IsNotExist(err) {
+		err = db.InitDB(dbPath)
 
-				break
-			} else if in == "no" || in == "n" {
-				break
-			} else {
-				continue
+		if err != nil {
+			err := deleteBraveHome(userHome)
+			if err != nil {
+				log.Fatal(err.Error())
 			}
+			log.Fatal("failed to initialize database: ", err)
 		}
 	}
 }

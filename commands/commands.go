@@ -51,7 +51,7 @@ func init() {
 		log.Fatal(err.Error())
 	}
 
-	if exists == true {
+	if exists {
 		bravefile = shared.NewBravefile()
 		loadConfig()
 	}
@@ -59,7 +59,7 @@ func init() {
 
 func checkBackend() {
 	if host.Settings.Name == "" {
-		fmt.Println("Brave host is not initialized. Run \"brave init\"")
+		fmt.Println("brave host is not initialized. Run \"brave init\"")
 		os.Exit(1)
 	}
 }
@@ -79,8 +79,20 @@ func setBackend(host platform.BraveHost) error {
 
 func createBraveHome(userHome string) error {
 	err := shared.CreateDirectory(path.Join(userHome, ".bravetools"))
+	if err != nil {
+		return err
+	}
+
 	err = shared.CreateDirectory(path.Join(userHome, ".bravetools", "certs"))
+	if err != nil {
+		return err
+	}
+
 	err = shared.CreateDirectory(path.Join(userHome, ".bravetools", "images"))
+	if err != nil {
+		return err
+	}
+
 	err = shared.CreateDirectory(path.Join(userHome, ".bravetools", "servercerts"))
 	if err != nil {
 		return err
@@ -94,7 +106,7 @@ func deleteBraveHome(userHome string) error {
 		return err
 	}
 
-	if exists == true {
+	if exists {
 		err = os.RemoveAll(path.Join(userHome, shared.PlatformConfig))
 		if err != nil {
 			return err
