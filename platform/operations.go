@@ -492,7 +492,7 @@ func LaunchFromImage(image string, name string, remote Remote) error {
 // Alias: "alpine/3.9/amd64"
 func Launch(name string, alias string, remote Remote) (fingerprint string, err error) {
 	operation := shared.Info("Importing " + alias)
-	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
+	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stdout))
 	s.Suffix = " " + operation
 
 	s.Start()
@@ -549,6 +549,7 @@ func retry(attempts int, sleep time.Duration, f func() error) (err error) {
 		}
 
 		time.Sleep(sleep)
+		log.SetOutput(os.Stdout)
 		log.Println("retrying:", err)
 	}
 	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
