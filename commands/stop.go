@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -18,7 +17,7 @@ var braveStop = &cobra.Command{
 func stop(cmd *cobra.Command, args []string) {
 	checkBackend()
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "Missing name - please provide unit name")
+		log.Fatal("missing name - please provide unit name")
 		return
 	}
 

@@ -1,9 +1,7 @@
 package commands
 
 import (
-	"fmt"
 	"log"
-	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -27,7 +25,7 @@ func includeRemoveFlags(cmd *cobra.Command) {
 func remove(cmd *cobra.Command, args []string) {
 	checkBackend()
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "Missing name - please provide unit name")
+		log.Fatal("missing name - please provide unit name")
 		return
 	}
 

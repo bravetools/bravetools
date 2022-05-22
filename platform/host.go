@@ -179,11 +179,11 @@ func ConfigureHost(settings HostSettings, remote Remote) error {
 
 	units, err := GetUnits(remote)
 	if err != nil {
-		return errors.New("Failed to list units: " + err.Error())
+		return errors.New("failed to list units: " + err.Error())
 	}
 
 	if len(units) > 0 {
-		return errors.New("One or more units rely on the existing storage pool. Delete all units and try again")
+		return errors.New("one or more units rely on the existing storage pool. Delete all units and try again")
 	}
 
 	timestamp := time.Now()
@@ -195,13 +195,13 @@ func ConfigureHost(settings HostSettings, remote Remote) error {
 	err = CreateStoragePool(storagePoolName, storagePoolSize, remote)
 	if err != nil {
 		cleanUnusedStoragePool(storagePoolName, remote)
-		return errors.New("Failed to create new storage pool: " + err.Error())
+		return errors.New("failed to create new storage pool: " + err.Error())
 	}
 
 	err = SetActiveStoragePool(storagePoolName, remote)
 	if err != nil {
 		cleanUnusedStoragePool(storagePoolName, remote)
-		return errors.New("Failed to activate storage pool: " + err.Error())
+		return errors.New("failed to activate storage pool: " + err.Error())
 	}
 
 	settings.StoragePool.Name = storagePoolName
@@ -209,7 +209,7 @@ func ConfigureHost(settings HostSettings, remote Remote) error {
 
 	err = DeleteStoragePool(currentStoragePoolName, remote)
 	if err != nil {
-		return errors.New("Failed to delete storage pool: " + err.Error())
+		return errors.New("failed to delete storage pool: " + err.Error())
 	}
 
 	return nil
@@ -237,7 +237,7 @@ func loadHostSettings(userHome string) (HostSettings, error) {
 
 	f, err := os.Open(path.Join(userHome, shared.PlatformConfig))
 	if err != nil {
-		return settings, errors.New("Failed to load platform configuration: " + err.Error())
+		return settings, errors.New("failed to load platform configuration: " + err.Error())
 	}
 	defer f.Close()
 	_, err = io.Copy(&buf, f)
@@ -247,7 +247,7 @@ func loadHostSettings(userHome string) (HostSettings, error) {
 
 	err = yaml.Unmarshal(buf.Bytes(), &settings)
 	if err != nil {
-		return settings, errors.New("Failed to parse configuration yaml: " + err.Error())
+		return settings, errors.New("failed to parse configuration yaml: " + err.Error())
 	}
 
 	return settings, nil
@@ -256,7 +256,7 @@ func loadHostSettings(userHome string) (HostSettings, error) {
 func loadKey(path string) (string, error) {
 	buf, err := shared.ReadFile(path)
 	if err != nil {
-		return "", errors.New("Cannot load client key")
+		return "", errors.New("cannot load client key")
 	}
 	key := buf.String()
 	return key, nil
@@ -265,7 +265,7 @@ func loadKey(path string) (string, error) {
 func loadCert(path string) (string, error) {
 	buf, err := shared.ReadFile(path)
 	if err != nil {
-		return "", errors.New("Cannot load client certificate")
+		return "", errors.New("cannot load client certificate")
 	}
 	cert := buf.String()
 	return cert, nil

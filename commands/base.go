@@ -2,9 +2,7 @@ package commands
 
 import (
 	"errors"
-	"fmt"
 	"log"
-	"os"
 	"strings"
 
 	"github.com/bravetools/bravetools/shared"
@@ -25,7 +23,7 @@ func buildBase(cmd *cobra.Command, args []string) {
 	var err error
 
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "Missing name - please provide a base name")
+		log.Fatal("missing name - please provide a base name")
 		return
 	}
 

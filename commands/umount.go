@@ -1,9 +1,7 @@
 package commands
 
 import (
-	"fmt"
 	"log"
-	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -19,13 +17,13 @@ var umountDir = &cobra.Command{
 func umount(cmd *cobra.Command, args []string) {
 	checkBackend()
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "Missing UNIT:<disk>")
+		log.Fatal("missing UNIT:<disk>")
 		return
 	}
 
 	remote := strings.SplitN(args[0], ":", -1)
 	if len(remote) == 1 {
-		log.Fatal("Target directory should be specified as UNIT:<disk>")
+		log.Fatal("target directory should be specified as UNIT:<disk>")
 	}
 
 	err := host.UmountShare(remote[0], remote[1])

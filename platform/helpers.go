@@ -100,7 +100,7 @@ func createSharedVolume(storagePoolName string,
 				"delete",
 				storagePoolName,
 				sharedDirectory)
-			return errors.New("Failed to mount to source: " + err.Error())
+			return errors.New("failed to mount to source: " + err.Error())
 		}
 	}
 
@@ -108,7 +108,7 @@ func createSharedVolume(storagePoolName string,
 	err = AddDevice(destUnit, sharedDirectory, shareSettings, bh.Remote)
 	if err != nil {
 		bh.UmountShare(sourceUnit, sharedDirectory)
-		return errors.New("Failed to mount to destination: " + err.Error())
+		return errors.New("failed to mount to destination: " + err.Error())
 	}
 
 	return nil
@@ -117,7 +117,7 @@ func createSharedVolume(storagePoolName string,
 func importLXD(bravefile *shared.Bravefile, remote Remote) (fingerprint string, err error) {
 	fingerprint, err = Launch(bravefile.PlatformService.Name, bravefile.Base.Image, remote)
 	if err != nil {
-		return "", errors.New("Failed to launch base unit: " + err.Error())
+		return "", errors.New("failed to launch base unit: " + err.Error())
 	}
 
 	return fingerprint, nil
@@ -225,7 +225,7 @@ func run(scriptPath string, settings HostSettings) error {
 			return err
 		}
 	default:
-		return errors.New("Cannot find backend")
+		return errors.New("cannot find backend")
 	}
 
 	return nil
@@ -259,7 +259,7 @@ func listHostImages(remote Remote) ([]api.Image, error) {
 func getInterfaceName() ([]string, error) {
 	interfaces, err := net.Interfaces()
 	if err != nil {
-		return nil, errors.New("Failed to get network interfaces: " + err.Error())
+		return nil, errors.New("failed to get network interfaces: " + err.Error())
 	}
 
 	var ifaceNames []string
@@ -298,7 +298,7 @@ func getMPInterfaceName(bh *BraveHost) ([]string, error) {
 		"-c",
 		grep)
 	if err != nil {
-		return nil, errors.New("Failed to get network interface name: " + err.Error())
+		return nil, errors.New("failed to get network interface name: " + err.Error())
 	}
 
 	ifaceName = strings.TrimRight(ifaceName, "\r\n")
@@ -379,9 +379,10 @@ func bravefileRun(run []shared.RunCommand, service string, remote Remote) (statu
 
 		args := []string{command}
 		if len(c.Args) > 0 {
-			for _, a := range c.Args {
-				args = append(args, a)
-			}
+			args = append(args, c.Args...)
+			// for _, a := range c.Args {
+			// 	args = append(args, a)
+			// }
 		}
 		if c.Content != "" {
 			content = c.Content

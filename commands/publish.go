@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -18,8 +17,7 @@ var bravePublish = &cobra.Command{
 func publish(cmd *cobra.Command, args []string) {
 	checkBackend()
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "Missing name - please provide unit name")
-		return
+		log.Fatal("missing name - please provide unit name")
 	}
 
 	name := args[0]

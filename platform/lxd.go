@@ -77,13 +77,13 @@ func NewLxd(settings HostSettings) *Lxd {
 func (vm Lxd) BraveBackendInit() error {
 	lxdStatus, whichLxc, err := lxdCheck(vm)
 	if err != nil {
-		return errors.New("Failed to identify LXD: " + err.Error())
+		return errors.New("failed to identify LXD: " + err.Error())
 	}
 
 	switch lxdStatus {
 	case Incompatible:
 		_ = deleteBraveHome()
-		return errors.New("Incompatible LXD version")
+		return errors.New("incompatible LXD version")
 	case NotInstalled:
 		_ = deleteBraveHome()
 		return errors.New("LXD not installed")
@@ -92,18 +92,18 @@ func (vm Lxd) BraveBackendInit() error {
 		err = initiateLxd(vm, whichLxc)
 		if err != nil {
 			_ = deleteBraveHome()
-			return errors.New("Failed to initiate LXD: " + err.Error())
+			return errors.New("failed to initiate LXD: " + err.Error())
 		}
 
 		err = enableRemote(vm, whichLxc)
 		if err != nil {
 			_ = deleteBraveHome()
-			return errors.New("Failed to enable remote: " + err.Error())
+			return errors.New("failed to enable remote: " + err.Error())
 		}
 
 		return nil
 	case Installed:
-		return errors.New("Bravetools is already initialised. Run \"brave configure\" if you'd like to tweak configuration")
+		return errors.New("bravetools is already initialised. Run \"brave configure\" if you'd like to tweak configuration")
 
 	default:
 		return nil
@@ -186,7 +186,7 @@ func checkLXDVersion(whichLxc string) (clientVersion int, serverVersion int, err
 		whichLxc,
 		"version")
 	if err != nil {
-		return clientVersion, serverVersion, errors.New("Cannot get LXD version")
+		return clientVersion, serverVersion, errors.New("cannot get LXD version")
 	}
 
 	v := strings.Split(ver, "\n")
@@ -306,7 +306,14 @@ func (vm Lxd) Info() (Info, error) {
 	usedDisk = usedDisk[1 : len(usedDisk)-1]
 	totalDisk = totalDisk[1 : len(totalDisk)-1]
 	usedDiskInt, err := strconv.ParseInt(usedDisk, 0, 64)
+	if err != nil {
+		return backendInfo, err
+	}
+
 	totalDiskInt, err := strconv.ParseInt(totalDisk, 0, 64)
+	if err != nil {
+		return backendInfo, err
+	}
 
 	usedDisk = shared.FormatByteCountSI(usedDiskInt)
 	totalDisk = shared.FormatByteCountSI(totalDiskInt)
@@ -318,16 +325,23 @@ func (vm Lxd) Info() (Info, error) {
 
 	totalMem, err := shared.ExecCommandWReturn("bash", "-c", totalMemCmd)
 	if err != nil {
-		return backendInfo, errors.New("Cannot assess total RAM count")
+		return backendInfo, errors.New("cannot assess total RAM count")
 	}
 	availableMem, err := shared.ExecCommandWReturn("bash", "-c", availableMemCmd)
 
 	if err != nil {
-		return backendInfo, errors.New("Cannot assess available RAM count")
+		return backendInfo, errors.New("cannot assess available RAM count")
 	}
 
 	totalMemInt, err := strconv.ParseInt(strings.TrimSpace(totalMem), 0, 64)
+	if err != nil {
+		return backendInfo, err
+	}
 	availableMemInt, err := strconv.ParseInt(strings.TrimSpace(availableMem), 0, 64)
+	if err != nil {
+		return backendInfo, err
+	}
+
 	usedMemInt := totalMemInt - availableMemInt
 
 	totalMem = shared.FormatByteCountSI(totalMemInt * 1000)
@@ -340,7 +354,7 @@ func (vm Lxd) Info() (Info, error) {
 		"-c",
 		cpuCmd)
 	if err != nil {
-		return backendInfo, errors.New("Cannot assess CPU count")
+		return backendInfo, errors.New("cannot assess CPU count")
 	}
 
 	backendInfo.CPU = cpu

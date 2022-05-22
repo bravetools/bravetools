@@ -1,9 +1,7 @@
 package commands
 
 import (
-	"fmt"
 	"log"
-	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -19,8 +17,7 @@ var mountDir = &cobra.Command{
 func mount(cmd *cobra.Command, args []string) {
 	checkBackend()
 	if len(args) < 2 {
-		fmt.Fprintln(os.Stderr, "Missing <source> UNIT:<target>")
-		return
+		log.Fatal("missing <source> UNIT:<target>")
 	}
 
 	remote := strings.SplitN(args[1], ":", -1)

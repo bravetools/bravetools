@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -61,14 +60,12 @@ func deploy(cmd *cobra.Command, args []string) {
 		bravefile.PlatformService.Resources.RAM = unitRAM
 
 		if len(args) == 0 {
-			fmt.Fprintln(os.Stderr, "Missing name - please provide image name")
-			return
+			log.Fatal("missing name - please provide image name")
 		}
 		bravefile.PlatformService.Image = args[0]
 
 		if name == "" {
-			fmt.Fprintln(os.Stderr, "Missing Unit name")
-			return
+			log.Fatal("missing Unit name")
 		}
 		bravefile.PlatformService.Name = name
 
