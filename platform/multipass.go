@@ -48,7 +48,7 @@ func checkMultipass() (bool, error) {
 	}
 
 	if !found {
-		return false, errors.New("Install multipass")
+		return false, errors.New("install multipass")
 	}
 
 	return true, nil
@@ -152,6 +152,9 @@ func (vm Multipass) BraveBackendInit() error {
 		"install",
 		"--stable",
 		"lxd")
+	if err != nil {
+		return errors.New("unable to install LXD: " + err.Error())
+	}
 
 	err = shared.ExecCommand("multipass",
 		"exec",
@@ -200,7 +203,7 @@ profiles:
     eth0:
       nictype: bridged
       parent: ` + vm.Settings.Profile + "br0\n" +
-		`  type: nic
+		`      type: nic
 EOF`
 
 	err = shared.ExecCommand("multipass",
@@ -315,12 +318,12 @@ func (vm Multipass) Info() (Info, error) {
 	_, err := checkMultipass()
 
 	if err != nil {
-		return backendInfo, errors.New("Cannot find backend service")
+		return backendInfo, errors.New("annot find backend service")
 	}
 
 	out, err := exec.Command("multipass", "info", vm.Settings.Name).Output()
 	if err != nil {
-		return backendInfo, errors.New("Error starting workspace")
+		return backendInfo, errors.New("error starting workspace")
 	}
 
 	info := strings.Split(string(out), "\n")
