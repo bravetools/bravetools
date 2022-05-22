@@ -178,6 +178,9 @@ func (bh *BraveHost) ListLocalImages() error {
 						}
 
 						hash, err = ioutil.ReadFile(hashFileName)
+						if err != nil {
+							return errors.New(err.Error())
+						}
 					} else {
 						return errors.New("Couldn't load image hash: " + err.Error())
 					}
@@ -244,7 +247,7 @@ func (bh *BraveHost) HostInfo(backend Backend, short bool) error {
 	}
 
 	if info.State == "Stopped" {
-		return errors.New("Cannot connect to Bravetools remote, ensure it is up and running")
+		return errors.New("cannot connect to Bravetools remote, ensure it is up and running")
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
@@ -279,7 +282,7 @@ func (bh *BraveHost) ListUnits(backend Backend) error {
 	}
 
 	if info.State == "Stopped" {
-		return errors.New("Cannot connect to Bravetools remote, ensure it is up and running")
+		return errors.New("cannot connect to Bravetools remote, ensure it is up and running")
 	}
 
 	units, err := GetUnits(bh.Remote)
@@ -530,11 +533,11 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 	var fingerprint string
 
 	if strings.ContainsAny(bravefile.PlatformService.Name, "/_. !@£$%^&*(){}:;`~,?") {
-		return errors.New("Image names should not contain special characters")
+		return errors.New("image names should not contain special characters")
 	}
 
 	if bravefile.PlatformService.Name == "" {
-		return errors.New("Service Name is empty")
+		return errors.New("service Name is empty")
 	}
 
 	err := checkUnits(bravefile.PlatformService.Name, bh)

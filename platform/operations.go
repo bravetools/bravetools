@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/user"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -75,9 +76,17 @@ func SetActiveStoragePool(name string, remote Remote) error {
 	if err != nil {
 		return err
 	}
-	profile, etag, err := lxdServer.GetProfile("brave")
+
+	user, err := user.Current()
 	if err != nil {
-		return errors.New("Unable to load brave profile: " + err.Error())
+		log.Fatalf(err.Error())
+	}
+
+	username := user.Username
+
+	profile, etag, err := lxdServer.GetProfile(username)
+	if err != nil {
+		return errors.New("Unable to load profile: " + err.Error())
 	}
 
 	device := map[string]string{}
@@ -88,9 +97,9 @@ func SetActiveStoragePool(name string, remote Remote) error {
 
 	profile.Devices["root"] = device
 
-	err = lxdServer.UpdateProfile("brave", profile.Writable(), etag)
+	err = lxdServer.UpdateProfile(username, profile.Writable(), etag)
 	if err != nil {
-		return errors.New("Failed to update brave profile with storage pool configuration: " + err.Error())
+		return errors.New("Failed to update profile with storage pool configuration: " + err.Error())
 	}
 
 	return nil
@@ -358,12 +367,18 @@ func GetBraveProfile(remote Remote) (braveProfile shared.BraveProfile, err error
 	}
 	srv, _, err := lxdServer.GetServer()
 	if err != nil {
-		fmt.Println("LXD server error: ", err)
+		log.Fatal("LXD server error: " + err.Error())
 	}
 	braveProfile.LxdVersion = srv.Environment.ServerVersion
 	pNames, _ := lxdServer.GetProfileNames()
+
+	profileName, err := getCurrentUsername()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
 	for _, pName := range pNames {
-		if pName == "brave" {
+		if pName == profileName {
 			braveProfile.Name = pName
 			profile, _, _ := lxdServer.GetProfile(pName)
 			for k, v := range profile.ProfilePut.Devices {
@@ -377,7 +392,7 @@ func GetBraveProfile(remote Remote) (braveProfile shared.BraveProfile, err error
 			return braveProfile, nil
 		}
 	}
-	return braveProfile, errors.New("Profile not found")
+	return braveProfile, errors.New("profile not found")
 }
 
 // GetUnits returns all running units
@@ -463,8 +478,11 @@ func LaunchFromImage(image string, name string, remote Remote) error {
 	}
 	req.Source.Alias = name
 
-	//TODO: obtain profile from settings
-	req.Profiles = []string{"brave"}
+	profileName, err := getCurrentUsername()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	req.Profiles = []string{profileName}
 
 	image = alias.Target
 	imgInfo, _, err := lxdServer.GetImage(image)
@@ -513,8 +531,11 @@ func Launch(name string, alias string, remote Remote) (fingerprint string, err e
 		},
 	}
 
-	//TODO: obtain profile from settings
-	req.Profiles = []string{"brave"}
+	profileName, err := getCurrentUsername()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	req.Profiles = []string{profileName}
 
 	op, err := lxdServer.CreateContainer(req)
 	if err != nil {
