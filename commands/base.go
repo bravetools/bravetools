@@ -2,9 +2,7 @@ package commands
 
 import (
 	"errors"
-	"fmt"
 	"log"
-	"os"
 	"strings"
 
 	"github.com/bravetools/bravetools/shared"
@@ -25,7 +23,7 @@ func buildBase(cmd *cobra.Command, args []string) {
 	var err error
 
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "Missing name - please provide a base name")
+		log.Fatal("missing name - please provide a base name")
 		return
 	}
 
@@ -44,6 +42,9 @@ func buildBase(cmd *cobra.Command, args []string) {
 
 	// Resource checks
 	info, err := backend.Info()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	usedDiskSize, err := shared.SizeCountToInt(info.Disk[0])
 	if err != nil {
@@ -55,7 +56,7 @@ func buildBase(cmd *cobra.Command, args []string) {
 	}
 
 	if (totalDiskSize - usedDiskSize) < 5000000000 {
-		err = errors.New("Not enough free storage on disk")
+		err = errors.New("not enough free storage on disk")
 		log.Fatal(err)
 	}
 

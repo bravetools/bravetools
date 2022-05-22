@@ -122,7 +122,7 @@ func CreateStoragePool(name string, size string, remote Remote) error {
 
 	err = lxdServer.CreateStoragePool(req)
 	if err != nil {
-		return errors.New("Failed to create storage pool: " + err.Error())
+		return errors.New("failed to create storage pool: " + err.Error())
 	}
 
 	return nil
@@ -137,6 +137,9 @@ func AddRemote(braveHost *BraveHost) error {
 
 	// Generate client certificates
 	err = lxdshared.FindOrGenCert(certf, keyf, true, false)
+	if err != nil {
+		return err
+	}
 
 	// Check if the system CA worked for the TLS connection
 	var certificate *x509.Certificate
@@ -154,7 +157,7 @@ func AddRemote(braveHost *BraveHost) error {
 	dnam := userHome + "/.bravetools/" + "servercerts"
 	err = os.MkdirAll(dnam, 0750)
 	if err != nil {
-		return fmt.Errorf(("Could not create server cert dir"))
+		return errors.New("could not create server cert dir")
 	}
 
 	certf = fmt.Sprintf("%s/%s.crt", dnam, braveHost.Settings.Name)
@@ -214,6 +217,9 @@ func RemoveRemote(name string) error {
 // DeleteDevice unmounts a disk
 func DeleteDevice(name string, target string, remote Remote) (string, error) {
 	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
+	if err != nil {
+		return "", err
+	}
 
 	inst, etag, err := lxdServer.GetInstance(name)
 	if err != nil {
@@ -285,7 +291,7 @@ func MountDirectory(sourcePath string, destUnit string, destPath string, remote 
 	devname := "disk" + shared.RandomSequence(2)
 	_, ok := inst.Devices[devname]
 	if ok {
-		return errors.New("Unable to mount directory as duplicate device found")
+		return errors.New("unable to mount directory as duplicate device found")
 	}
 
 	device := map[string]string{}
@@ -606,7 +612,7 @@ func Exec(name string, command []string, remote Remote) (int, error) {
 		c, _, err := lxdServer.GetContainerState(name)
 		ip := c.Network["eth0"].Addresses[0].Address
 		isIP := isIPv4(ip)
-		if isIP == false {
+		if !isIP {
 			return errors.New("getting IPv6 info")
 		}
 		return
@@ -1195,6 +1201,9 @@ func AttachNetwork(name string, bridge string, nic1 string, nic2 string, remote 
 	inst.Devices[nic1] = device
 
 	op, err := lxdServer.UpdateInstance(name, inst.Writable(), etag)
+	if err != nil {
+		return err
+	}
 
 	err = op.Wait()
 	if err != nil {
@@ -1218,7 +1227,7 @@ func ConfigDevice(name string, nic string, ip string, remote Remote) error {
 	}
 	dev, ok := inst.Devices[nic]
 	if !ok {
-		return errors.New("The device doesn't exisit")
+		return errors.New("device doesn't exisit")
 	}
 
 	dev["ipv4.address"] = ip
@@ -1319,6 +1328,9 @@ func CopyFiles(name string, src, dst string, remote Remote) error {
 	var readCloser io.ReadCloser
 
 	fInfo, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
 
 	mode, uid, gid := lxdshared.GetOwnerMode(fInfo)
 	args := lxd.InstanceFileArgs{
@@ -1339,12 +1351,12 @@ func CopyFiles(name string, src, dst string, remote Remote) error {
 
 	contentLength, err := args.Content.Seek(0, io.SeekEnd)
 	if err != nil {
-		return errors.New("Failed to get length of the source file")
+		return errors.New("failed to get length of the source file")
 	}
 
 	_, err = args.Content.Seek(0, io.SeekStart)
 	if err != nil {
-		return errors.New("Failed to get source file start")
+		return errors.New("failed to get source file start")
 	}
 
 	args.Content = lxdshared.NewReadSeeker(&ioprogress.ProgressReader{

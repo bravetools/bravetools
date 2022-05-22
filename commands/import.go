@@ -1,9 +1,7 @@
 package commands
 
 import (
-	"fmt"
 	"log"
-	"os"
 
 	"github.com/spf13/cobra"
 )
@@ -18,7 +16,7 @@ var braveImportImage = &cobra.Command{
 func importImage(cmd *cobra.Command, args []string) {
 	checkBackend()
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "Missing name - please provide tarball name")
+		log.Fatal("missing name - please provide tarball name")
 		return
 	}
 

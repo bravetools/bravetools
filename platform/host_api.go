@@ -401,7 +401,7 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 			break
 		}
 	}
-	if found == false {
+	if !found {
 		return errors.New("unit not found")
 	}
 
@@ -601,9 +601,10 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		}
 
 		args := []string{"apk", "--no-cache", "add"}
-		for _, p := range bravefile.SystemPackages.System {
-			args = append(args, p)
-		}
+		args = append(args, bravefile.SystemPackages.System...)
+		// for _, p := range bravefile.SystemPackages.System {
+		// 	args = append(args, p)
+		// }
 		status, err := Exec(bravefile.PlatformService.Name, args, bh.Remote)
 		if err != nil {
 			DeleteImage(fingerprint, bh.Remote)
@@ -625,9 +626,10 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		}
 
 		args := []string{"apt", "install"}
-		for _, p := range bravefile.SystemPackages.System {
-			args = append(args, p)
-		}
+		args = append(args, bravefile.SystemPackages.System...)
+		// for _, p := range bravefile.SystemPackages.System {
+		// 	args = append(args, p)
+		// }
 		args = append(args, "--yes")
 		status, err := Exec(bravefile.PlatformService.Name, args, bh.Remote)
 
@@ -806,7 +808,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 
 	homeDir, _ := os.UserHomeDir()
 	if unitParams.PlatformService.Image == "" {
-		return errors.New("Unit image name cannot be empty")
+		return errors.New("unit image name cannot be empty")
 	}
 	image := homeDir + shared.ImageStore + unitParams.PlatformService.Image + ".tar.gz"
 
@@ -818,28 +820,33 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 
 	fingerprint, err = ImportImage(image, unitParams.PlatformService.Name, bh.Remote)
 	if err != nil {
-		return errors.New("Failed to import image: " + err.Error())
+		return errors.New("failed to import image: " + err.Error())
 	}
 
 	err = LaunchFromImage(unitParams.PlatformService.Name, unitParams.PlatformService.Name, bh.Remote)
 	if err != nil {
 		DeleteImage(fingerprint, bh.Remote)
-		return errors.New("Failed to launch unit: " + err.Error())
+		return errors.New("failed to launch unit: " + err.Error())
 	}
 
 	err = AttachNetwork(unitParams.PlatformService.Name, bh.Settings.Name+"br0", "eth0", "eth0", bh.Remote)
 	if err != nil {
 		DeleteImage(fingerprint, bh.Remote)
-		return errors.New("Failed to attach network: " + err.Error())
+		return errors.New("failed to attach network: " + err.Error())
 	}
 
 	err = ConfigDevice(unitParams.PlatformService.Name, "eth0", unitParams.PlatformService.IP, bh.Remote)
 	if err != nil {
 		DeleteImage(fingerprint, bh.Remote)
-		return errors.New("Failed to set IP: " + err.Error())
+		return errors.New("failed to set IP: " + err.Error())
 	}
 
 	err = Stop(unitParams.PlatformService.Name, bh.Remote)
+	if err != nil {
+		DeleteImage(fingerprint, bh.Remote)
+		return errors.New("failed to stop unit: " + err.Error())
+	}
+
 	err = Start(unitParams.PlatformService.Name, bh.Remote)
 	if err != nil {
 		DeleteImage(fingerprint, bh.Remote)
@@ -869,7 +876,16 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 
 	vm := *NewLxd(bh.Settings)
 	_, whichLxc, err := lxdCheck(vm)
+	if err != nil {
+		DeleteImage(fingerprint, bh.Remote)
+		return err
+	}
+
 	clientVersion, _, err := checkLXDVersion(whichLxc)
+	if err != nil {
+		DeleteImage(fingerprint, bh.Remote)
+		return err
+	}
 
 	// uid and gid mapping is not allowed in non-snap LXD. Shares can be created, but they are read-only in a unit.
 	var config map[string]string
@@ -898,6 +914,10 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 		config["nvidia.runtime"] = "true"
 		device := map[string]string{"type": "gpu"}
 		err = AddDevice(unitParams.PlatformService.Name, "gpu", device, bh.Remote)
+		if err != nil {
+			DeleteImage(fingerprint, bh.Remote)
+			return errors.New("failed to add GPU device: " + err.Error())
+		}
 	}
 
 	err = SetConfig(unitParams.PlatformService.Name, config, bh.Remote)
@@ -907,6 +927,11 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 	}
 
 	err = Stop(unitParams.PlatformService.Name, bh.Remote)
+	if err != nil {
+		DeleteImage(fingerprint, bh.Remote)
+		return errors.New("failed to stop unit: " + err.Error())
+	}
+
 	err = Start(unitParams.PlatformService.Name, bh.Remote)
 	if err != nil {
 		DeleteImage(fingerprint, bh.Remote)
@@ -920,7 +945,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 			if len(ps) < 2 {
 				DeleteImage(fingerprint, bh.Remote)
 				Delete(unitParams.PlatformService.Name, bh.Remote)
-				return errors.New("Invalid port forwarding definition. Appropriate format is UNIT_PORT:HOST_PORT")
+				return errors.New("invalid port forwarding definition. Appropriate format is UNIT_PORT:HOST_PORT")
 			}
 
 			err := addIPRules(unitParams.PlatformService.Name, ps[1], ps[0], bh)
@@ -929,9 +954,9 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 				delErr := Delete(unitParams.PlatformService.Name, bh.Remote)
 				if delErr != nil {
 					DeleteImage(fingerprint, bh.Remote)
-					return errors.New("Failed to delete unit: " + delErr.Error())
+					return errors.New("failed to delete unit: " + delErr.Error())
 				}
-				return errors.New("Unable to add Proxy Device: " + err.Error())
+				return errors.New("unable to add Proxy Device: " + err.Error())
 			}
 		}
 	}
@@ -942,14 +967,14 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 	userHome, err := os.UserHomeDir()
 	if err != nil {
 		DeleteImage(fingerprint, bh.Remote)
-		return errors.New("Failed to get home directory")
+		return errors.New("failed to get home directory")
 	}
 	dbPath := path.Join(userHome, shared.BraveDB)
 
 	database, err := db.OpenDB(dbPath)
 	if err != nil {
 		DeleteImage(fingerprint, bh.Remote)
-		return fmt.Errorf("Failed to open database %s", dbPath)
+		return fmt.Errorf("failed to open database %s", dbPath)
 	}
 
 	uuid, _ := uuid.NewUUID()
@@ -967,7 +992,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 	if err != nil {
 		DeleteImage(fingerprint, bh.Remote)
 		Delete(unitParams.PlatformService.Name, bh.Remote)
-		return errors.New("Failed to serialize unit data")
+		return errors.New("failed to serialize unit data")
 	}
 	braveUnit.Data = data
 
@@ -975,7 +1000,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 	if err != nil {
 		DeleteImage(fingerprint, bh.Remote)
 		Delete(unitParams.PlatformService.Name, bh.Remote)
-		return errors.New("Failed to insert unit to database: " + err.Error())
+		return errors.New("failed to insert unit to database: " + err.Error())
 	}
 
 	DeleteImage(fingerprint, bh.Remote)

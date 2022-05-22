@@ -74,14 +74,14 @@ func (vm Multipass) BraveBackendInit() error {
 		vm.Settings.BackendSettings.Resources.Name,
 		vm.Settings.BackendSettings.Resources.OS)
 	if err != nil {
-		return errors.New("Failed to create workspace: " + err.Error())
+		return errors.New("failed to create workspace: " + err.Error())
 	}
 
 	time.Sleep(10 * time.Second)
 
 	usr, err := user.Current()
 	if err != nil {
-		return errors.New("Unable to fetch current user information: " + err.Error())
+		return errors.New("unable to fetch current user information: " + err.Error())
 	}
 
 	err = shared.ExecCommand("multipass",
@@ -381,7 +381,14 @@ func (vm Multipass) Info() (Info, error) {
 		usedDisk = usedDisk[1 : len(usedDisk)-1]
 		totalDisk = totalDisk[1 : len(totalDisk)-1]
 		usedDiskInt, err := strconv.ParseInt(usedDisk, 0, 64)
+		if err != nil {
+			return backendInfo, err
+		}
+
 		totalDiskInt, err := strconv.ParseInt(totalDisk, 0, 64)
+		if err != nil {
+			return backendInfo, err
+		}
 
 		usedDisk = shared.FormatByteCountSI(usedDiskInt)
 		totalDisk = shared.FormatByteCountSI(totalDiskInt)
@@ -397,7 +404,7 @@ func (vm Multipass) Info() (Info, error) {
 			"--",
 			"bash", "-c", totalMemCmd)
 		if err != nil {
-			return backendInfo, errors.New("Cannot assess total RAM count")
+			return backendInfo, errors.New("cannot assess total RAM count")
 		}
 
 		totalMem = strings.Split(strings.TrimSpace(strings.Split(totalMem, ":")[1]), " ")[0]
@@ -409,13 +416,21 @@ func (vm Multipass) Info() (Info, error) {
 			"bash", "-c", availableMemCmd)
 
 		if err != nil {
-			return backendInfo, errors.New("Cannot assess available RAM count")
+			return backendInfo, errors.New("cannot assess available RAM count")
 		}
 
 		availableMem = strings.Split(strings.TrimSpace(strings.Split(availableMem, ":")[1]), " ")[0]
 
 		totalMemInt, err := strconv.Atoi(totalMem)
+		if err != nil {
+			return backendInfo, err
+		}
+
 		availableMemInt, err := strconv.Atoi(availableMem)
+		if err != nil {
+			return backendInfo, err
+		}
+
 		usedMemInt := totalMemInt - availableMemInt
 
 		totalMem = shared.FormatByteCountSI(int64(totalMemInt * 1000))
@@ -433,7 +448,7 @@ func (vm Multipass) Info() (Info, error) {
 			cpuCount)
 
 		if err != nil {
-			return backendInfo, errors.New("Cannot assess CPU count")
+			return backendInfo, errors.New("cannot assess CPU count")
 		}
 
 		backendInfo.CPU = cpu
