@@ -74,10 +74,6 @@ func serverInit(cmd *cobra.Command, args []string) {
 	}
 
 	if braveHome == false && braveProfile == false {
-		err = createBraveHome(userHome)
-		if err != nil {
-			log.Fatal(err.Error())
-		}
 
 		if storage == "" {
 			storage = "12"
@@ -135,6 +131,12 @@ func serverInit(cmd *cobra.Command, args []string) {
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		err = createBraveHome(userHome)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+
 	} else {
 		scanner := bufio.NewScanner(os.Stdin)
 		for {
