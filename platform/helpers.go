@@ -80,7 +80,7 @@ func createSharedVolume(storagePoolName string,
 				"delete",
 				storagePoolName,
 				sharedDirectory)
-			return errors.New("Failed to mount to the source: " + err.Error())
+			return errors.New("Failed to mount to source: " + err.Error())
 		case "lxd":
 			shared.ExecCommand(
 				"lxc",
@@ -89,7 +89,7 @@ func createSharedVolume(storagePoolName string,
 				"delete",
 				storagePoolName,
 				sharedDirectory)
-			return errors.New("Failed to mount to the source: " + err.Error())
+			return errors.New("Failed to mount to source: " + err.Error())
 		}
 	}
 
@@ -97,7 +97,7 @@ func createSharedVolume(storagePoolName string,
 	err = AddDevice(destUnit, sharedDirectory, shareSettings, bh.Remote)
 	if err != nil {
 		bh.UmountShare(sourceUnit, sharedDirectory)
-		return errors.New("Failed to mount to the destination: " + err.Error())
+		return errors.New("Failed to mount to destination: " + err.Error())
 	}
 
 	return nil

@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/user"
 	"path"
 	"strconv"
 	"time"
@@ -94,13 +95,20 @@ func SetupHostConfiguration(params map[string]string, userHome string) {
 	poolSizeInt, _ := strconv.Atoi(params["storage"])
 	poolSizeInt = poolSizeInt - 2
 
+	user, err := user.Current()
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+
+	hostName := user.Username
+
 	timestamp := time.Now()
-	storagePoolName := "brave-" + timestamp.Format("20060102150405")
+	storagePoolName := hostName + "-" + timestamp.Format("20060102150405")
 
 	settings = HostSettings{
-		Name:    "brave",
-		Trust:   "brave",
-		Profile: "brave",
+		Name:    hostName,
+		Trust:   hostName,
+		Profile: hostName,
 		StoragePool: Storage{
 			Type: "zfs",
 			Name: storagePoolName,
@@ -116,7 +124,7 @@ func SetupHostConfiguration(params map[string]string, userHome string) {
 		backendSettings := BackendSettings{
 			Type: "multipass",
 			Resources: BackendResources{
-				Name: "brave",
+				Name: hostName,
 				OS:   "bionic",
 				CPU:  "2",
 				RAM:  params["ram"],
@@ -179,7 +187,7 @@ func ConfigureHost(settings HostSettings, remote Remote) error {
 	}
 
 	timestamp := time.Now()
-	storagePoolName := "brave-" + timestamp.Format("20060102150405")
+	storagePoolName := settings.Name + "-" + timestamp.Format("20060102150405")
 	storagePoolSize := settings.StoragePool.Size
 
 	currentStoragePoolName := settings.StoragePool.Name

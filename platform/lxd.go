@@ -143,7 +143,7 @@ func initiateLxd(vm Lxd, whichLxc string) error {
 		whichLxc,
 		"network",
 		"create",
-		"bravebr0",
+		vm.Settings.Profile+"br0",
 		"ipv6.address=none",
 		bridge,
 		"ipv4.nat=true")
@@ -155,8 +155,8 @@ func initiateLxd(vm Lxd, whichLxc string) error {
 		whichLxc,
 		"network",
 		"attach-profile",
-		"bravebr0",
-		"brave",
+		vm.Settings.Profile+"br0",
+		vm.Settings.Profile,
 		"eth0")
 	if err != nil {
 		return errors.New("Failed to attach network to profile: " + err.Error())
