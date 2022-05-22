@@ -946,18 +946,6 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 	}
 	dbPath := path.Join(userHome, shared.BraveDB)
 
-	_, err = os.Stat(dbPath)
-	if os.IsNotExist(err) {
-
-		err = db.InitDB(dbPath)
-
-		if err != nil {
-			DeleteImage(fingerprint, bh.Remote)
-			Delete(unitParams.PlatformService.Name, bh.Remote)
-			return errors.New("Failed to initialize database: " + err.Error())
-		}
-	}
-
 	database, err := db.OpenDB(dbPath)
 	if err != nil {
 		DeleteImage(fingerprint, bh.Remote)

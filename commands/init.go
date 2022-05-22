@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/bravetools/bravetools/db"
 	"github.com/bravetools/bravetools/platform"
 	"github.com/bravetools/bravetools/shared"
 	"github.com/spf13/cobra"
@@ -74,6 +75,10 @@ func serverInit(cmd *cobra.Command, args []string) {
 	}
 
 	if braveHome == false && braveProfile == false {
+		err = createBraveHome(userHome)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
 
 		if storage == "" {
 			storage = "12"
@@ -104,7 +109,7 @@ func serverInit(cmd *cobra.Command, args []string) {
 
 		err = backend.BraveBackendInit()
 		if err != nil {
-			fmt.Println("Error initializing Bravetools backend: ", err)
+			log.Fatal("Error initializing Bravetools backend: ", err)
 		}
 
 		loadConfig()
@@ -132,9 +137,15 @@ func serverInit(cmd *cobra.Command, args []string) {
 			log.Fatal(err)
 		}
 
-		err = createBraveHome(userHome)
-		if err != nil {
-			log.Fatal(err.Error())
+		dbPath := path.Join(userHome, shared.BraveDB)
+
+		_, err = os.Stat(dbPath)
+		if os.IsNotExist(err) {
+			err = db.InitDB(dbPath)
+
+			if err != nil {
+				log.Fatal("failed to initialize database: ", err)
+			}
 		}
 
 	} else {
