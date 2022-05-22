@@ -391,7 +391,7 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 
 	names, err := GetUnits(bh.Remote)
 	if err != nil {
-		return errors.New("Faild to access units")
+		return errors.New("faild to access units")
 	}
 
 	var found = false
@@ -402,7 +402,7 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 		}
 	}
 	if found == false {
-		return errors.New("Unit not found")
+		return errors.New("unit not found")
 	}
 
 	backend := bh.Settings.BackendSettings.Type
@@ -511,12 +511,12 @@ func (bh *BraveHost) DeleteUnit(name string) error {
 
 	userHome, err := os.UserHomeDir()
 	if err != nil {
-		return errors.New("Failed to get home directory")
+		return errors.New("failed to get home directory")
 	}
 	dbPath := path.Join(userHome, shared.BraveDB)
 	database, err := db.OpenDB(dbPath)
 	if err != nil {
-		return fmt.Errorf("Failed to open database %s", dbPath)
+		return fmt.Errorf("failed to open database %s", dbPath)
 	}
 
 	err = db.DeleteUnitDB(database, name)
