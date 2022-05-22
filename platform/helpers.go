@@ -125,7 +125,7 @@ func importGitHub(bravefile *shared.Bravefile, bh *BraveHost) error {
 	remoteServiceName := remoteBravefile.PlatformService.Name + "-" + remoteBravefile.PlatformService.Version
 
 	if _, err := os.Stat(filepath.Join(imageLocation, remoteServiceName+".tar.gz")); os.IsNotExist(err) {
-		err = bh.BuildUnit(remoteBravefile)
+		err = bh.BuildImage(remoteBravefile)
 		if err != nil {
 			return err
 		}
