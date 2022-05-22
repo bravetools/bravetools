@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/bravetools/bravetools/db"
 	"github.com/bravetools/bravetools/platform"
 	"github.com/bravetools/bravetools/shared"
 	"github.com/spf13/cobra"
@@ -108,7 +109,7 @@ func serverInit(cmd *cobra.Command, args []string) {
 
 		err = backend.BraveBackendInit()
 		if err != nil {
-			fmt.Println("Error initializing Bravetools backend: ", err)
+			log.Fatal("Error initializing Bravetools backend: ", err)
 		}
 
 		loadConfig()
@@ -135,6 +136,18 @@ func serverInit(cmd *cobra.Command, args []string) {
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		dbPath := path.Join(userHome, shared.BraveDB)
+
+		_, err = os.Stat(dbPath)
+		if os.IsNotExist(err) {
+			err = db.InitDB(dbPath)
+
+			if err != nil {
+				log.Fatal("failed to initialize database: ", err)
+			}
+		}
+
 	} else {
 		scanner := bufio.NewScanner(os.Stdin)
 		for {
