@@ -178,6 +178,9 @@ func (bh *BraveHost) ListLocalImages() error {
 						}
 
 						hash, err = ioutil.ReadFile(hashFileName)
+						if err != nil {
+							return errors.New(err.Error())
+						}
 					} else {
 						return errors.New("Couldn't load image hash: " + err.Error())
 					}
@@ -244,7 +247,7 @@ func (bh *BraveHost) HostInfo(backend Backend, short bool) error {
 	}
 
 	if info.State == "Stopped" {
-		return errors.New("Cannot connect to Bravetools remote, ensure it is up and running")
+		return errors.New("cannot connect to Bravetools remote, ensure it is up and running")
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
@@ -279,7 +282,7 @@ func (bh *BraveHost) ListUnits(backend Backend) error {
 	}
 
 	if info.State == "Stopped" {
-		return errors.New("Cannot connect to Bravetools remote, ensure it is up and running")
+		return errors.New("cannot connect to Bravetools remote, ensure it is up and running")
 	}
 
 	units, err := GetUnits(bh.Remote)
@@ -388,7 +391,7 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 
 	names, err := GetUnits(bh.Remote)
 	if err != nil {
-		return errors.New("Faild to access units")
+		return errors.New("faild to access units")
 	}
 
 	var found = false
@@ -399,7 +402,7 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 		}
 	}
 	if found == false {
-		return errors.New("Unit not found")
+		return errors.New("unit not found")
 	}
 
 	backend := bh.Settings.BackendSettings.Type
@@ -508,12 +511,12 @@ func (bh *BraveHost) DeleteUnit(name string) error {
 
 	userHome, err := os.UserHomeDir()
 	if err != nil {
-		return errors.New("Failed to get home directory")
+		return errors.New("failed to get home directory")
 	}
 	dbPath := path.Join(userHome, shared.BraveDB)
 	database, err := db.OpenDB(dbPath)
 	if err != nil {
-		return fmt.Errorf("Failed to open database %s", dbPath)
+		return fmt.Errorf("failed to open database %s", dbPath)
 	}
 
 	err = db.DeleteUnitDB(database, name)
@@ -530,11 +533,11 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 	var fingerprint string
 
 	if strings.ContainsAny(bravefile.PlatformService.Name, "/_. !@£$%^&*(){}:;`~,?") {
-		return errors.New("Image names should not contain special characters")
+		return errors.New("image names should not contain special characters")
 	}
 
 	if bravefile.PlatformService.Name == "" {
-		return errors.New("Service Name is empty")
+		return errors.New("service Name is empty")
 	}
 
 	err := checkUnits(bravefile.PlatformService.Name, bh)
@@ -824,7 +827,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 		return errors.New("Failed to launch unit: " + err.Error())
 	}
 
-	err = AttachNetwork(unitParams.PlatformService.Name, "bravebr0", "eth0", "eth0", bh.Remote)
+	err = AttachNetwork(unitParams.PlatformService.Name, bh.Settings.Name+"br0", "eth0", "eth0", bh.Remote)
 	if err != nil {
 		DeleteImage(fingerprint, bh.Remote)
 		return errors.New("Failed to attach network: " + err.Error())

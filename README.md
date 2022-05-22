@@ -195,7 +195,7 @@ On Mac and Windows platforms:
 On Linux distributions:
 
 * Set up a new LXD profile `brave`
-* Create a new LXD bridge `bravebr0`
+* Create a new LXD bridge `{$USER}br0`
 * Create a new storage pool `brave-TIMESTAMP`
 
 These steps ensure that Bravetools establishes a connection with LXD server and runs a self-contained LXD environment that doesn't interfere with any potentially existing user profiles and LXD bridges.

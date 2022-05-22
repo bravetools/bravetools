@@ -155,7 +155,7 @@ func serverInit(cmd *cobra.Command, args []string) {
 						err1 := os.RemoveAll(p)
 						err2 := platform.DeleteProfile(host.Settings.Profile, remote)
 						err3 := platform.DeleteStoragePool(host.Settings.StoragePool.Name, remote)
-						err4 := platform.DeleteNetwork("bravebr0", remote)
+						err4 := platform.DeleteNetwork(host.Settings.Name+"br0", remote)
 
 						if err1 != nil || err2 != nil || err3 != nil || err4 != nil {
 							log.Fatal(shared.REMOVELIN)

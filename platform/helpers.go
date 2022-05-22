@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"os/user"
 	"path"
 	"path/filepath"
 	"strings"
@@ -16,6 +17,16 @@ import (
 )
 
 // Private Helpers
+
+func getCurrentUsername() (string, error) {
+	user, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+
+	username := user.Username
+	return username, nil
+}
 
 func createSharedVolume(storagePoolName string,
 	sharedDirectory string,
