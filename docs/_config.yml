@@ -50,7 +50,7 @@ aux_links_new_tab: false
 # Back to top link
 back_to_top: true
 back_to_top_text: "Back to top"
-footer_content: "Copyright &copy; 2021 Bering Limited."
+footer_content: "Copyright &copy; 2022 Bering Limited."
 
 gh_edit_link: true # show or hide edit this page link
 gh_edit_link_text: "Edit this page on GitHub."
