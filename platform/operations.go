@@ -657,8 +657,8 @@ func Exec(name string, command []string, remote Remote) (int, error) {
 	return status, nil
 }
 
-// Delete unit
-func Delete(name string, remote Remote) error {
+// Delete deletes a unit on a LXD remote
+func DeleteUnit(name string, remote Remote) error {
 	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
 	if err != nil {
 		return err
@@ -676,7 +676,7 @@ func Delete(name string, remote Remote) error {
 		}
 	}
 	if len(devices) > 0 {
-		return errors.New("Cannot delete unit " + name + " due to mounted disks. Umount them and try again")
+		return errors.New("cannot delete unit " + name + " due to mounted disks. Umount them and try again")
 	}
 
 	if unit.Status == "Running" {
@@ -694,13 +694,13 @@ func Delete(name string, remote Remote) error {
 
 		err = op.Wait()
 		if err != nil {
-			return errors.New("Stopping the instance failed: " + err.Error())
+			return errors.New("stopping the instance failed: " + err.Error())
 		}
 	}
 
 	op, err := lxdServer.DeleteContainer(name)
 	if err != nil {
-		return errors.New("Fail to delete unit: " + err.Error())
+		return errors.New("fail to delete unit: " + err.Error())
 	}
 
 	err = op.Wait()
@@ -1127,7 +1127,7 @@ func ExportImage(fingerprint string, name string, remote Remote) error {
 }
 
 // DeleteImageName delete unit image by name
-func DeleteImageName(name string, remote Remote) error {
+func DeleteImageByName(name string, remote Remote) error {
 	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
 	if err != nil {
 		return err
@@ -1142,9 +1142,9 @@ func DeleteImageName(name string, remote Remote) error {
 	return nil
 }
 
-// DeleteImage delete unit image
+// DeleteImageFingerprint delete unit image
 // lxc image delete [remote]:[name]
-func DeleteImage(fingerprint string, remote Remote) error {
+func DeleteImageByFingerprint(fingerprint string, remote Remote) error {
 	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
 	if err != nil {
 		return err
