@@ -303,7 +303,7 @@ Confirm that the service is up and running:
 
 ```bash
 NAME            STATUS  IPV4              DISK  PROXY
-alpine-example  Running eth0:10.0.0.117                                      
+alpine-example  Running 10.0.0.117                                      
 ```
 
 Because this is just an LXD container, you can access it through the usual `lxc exec` command:

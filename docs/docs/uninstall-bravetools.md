@@ -2,7 +2,7 @@
 layout: default
 title: Uninstall Bravetools
 parent: Docs
-nav_order: 3
+nav_order: 5
 description: "Instructions to uninstall Bravetools"
 ---
 
