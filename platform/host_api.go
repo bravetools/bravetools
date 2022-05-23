@@ -30,7 +30,7 @@ func (bh *BraveHost) DeleteImageByName(name string) error {
 	if len(images) > 0 {
 		err := DeleteImageByName(name, bh.Remote)
 		if err != nil {
-			return errors.New("Image: " + err.Error())
+			return errors.New("image: " + err.Error())
 		}
 	}
 
@@ -41,7 +41,7 @@ func (bh *BraveHost) DeleteImageByName(name string) error {
 func (bh *BraveHost) DeleteImageByFingerprint(fingerprint string) error {
 	err := DeleteImageByFingerprint(fingerprint, bh.Remote)
 	if err != nil {
-		return errors.New("Failed to delete image: " + err.Error())
+		return errors.New("failed to delete image: " + err.Error())
 	}
 
 	return nil
@@ -63,15 +63,15 @@ func (bh *BraveHost) AddRemote() error {
 
 	err := RemoveRemote(bh.Settings.Name)
 	if err != nil {
-		fmt.Println("No Brave host. Continue adding a new host ..")
+		fmt.Println("no Brave host. Continue adding a new host ..")
 	}
 	err = AddRemote(bh)
 	if err != nil {
-		return errors.New("Failed to add remote host: " + err.Error())
+		return errors.New("failed to add remote host: " + err.Error())
 	}
 
 	if err != nil {
-		log.Fatal("Failed to access user home directory: ", err.Error())
+		log.Fatal("failed to access user home directory: ", err.Error())
 	}
 
 	return nil
@@ -88,17 +88,17 @@ func (bh *BraveHost) ImportLocalImage(sourcePath string) error {
 
 	_, err := os.Stat(home + shared.ImageStore + imageName)
 	if !os.IsNotExist(err) {
-		return errors.New("Image " + imageName + " already exists in local image store")
+		return errors.New("image " + imageName + " already exists in local image store")
 	}
 
 	err = shared.CopyFile(sourcePath, imagePath+imageName)
 	if err != nil {
-		return errors.New("Failed to copy image archive to local image store: " + err.Error())
+		return errors.New("failed to copy image archive to local image store: " + err.Error())
 	}
 
 	imageHash, err := shared.FileHash(sourcePath)
 	if err != nil {
-		return errors.New("Failed to generate image hash: " + err.Error())
+		return errors.New("failed to generate image hash: " + err.Error())
 	}
 
 	fmt.Println(imageHash)
@@ -126,7 +126,7 @@ func (bh *BraveHost) ListLocalImages() error {
 	// We're only interested in images and not MD5 checksums
 	images, err := shared.WalkMatch(imagePath, "*.tar.gz")
 	if err != nil {
-		return errors.New("Failed to access images folder: " + err.Error())
+		return errors.New("failed to access images folder: " + err.Error())
 	}
 
 	if len(images) > 0 {
@@ -137,7 +137,7 @@ func (bh *BraveHost) ListLocalImages() error {
 			fi, err := os.Stat(i)
 			if strings.Index(fi.Name(), ".") != 0 {
 				if err != nil {
-					return errors.New("Failed to get image size: " + err.Error())
+					return errors.New("failed to get image size: " + err.Error())
 				}
 
 				name := strings.Split(fi.Name(), ".tar.gz")[0]
@@ -163,7 +163,7 @@ func (bh *BraveHost) ListLocalImages() error {
 
 						imageHash, err := shared.FileHash(localImageFile)
 						if err != nil {
-							return errors.New("Failed to generate image hash: " + err.Error())
+							return errors.New("failed to generate image hash: " + err.Error())
 						}
 
 						f, err := os.Create(hashFileName)
@@ -182,7 +182,7 @@ func (bh *BraveHost) ListLocalImages() error {
 							return errors.New(err.Error())
 						}
 					} else {
-						return errors.New("Couldn't load image hash: " + err.Error())
+						return errors.New("couldn't load image hash: " + err.Error())
 					}
 				}
 
@@ -238,7 +238,7 @@ func (bh *BraveHost) DeleteLocalImage(name string) error {
 func (bh *BraveHost) HostInfo(backend Backend, short bool) error {
 	info, err := backend.Info()
 	if err != nil {
-		return errors.New("Failed to connect to host: " + err.Error())
+		return errors.New("failed to connect to host: " + err.Error())
 	}
 
 	if short {
@@ -351,7 +351,7 @@ func (bh *BraveHost) UmountShare(unit string, target string) error {
 			"--", "bash", "-c",
 			cmd)
 		if err != nil {
-			return errors.New("Could not check directory: " + err.Error())
+			return errors.New("could not check directory: " + err.Error())
 		}
 		output = strings.Trim(output, "\n")
 
@@ -372,7 +372,7 @@ func (bh *BraveHost) UmountShare(unit string, target string) error {
 	case "lxd":
 		_, err := DeleteDevice(unit, target, bh.Remote)
 		if err != nil {
-			return errors.New("Failed to umount " + target + ": " + err.Error())
+			return errors.New("failed to umount " + target + ": " + err.Error())
 		}
 	}
 
@@ -597,7 +597,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		if err != nil {
 			DeleteImageByFingerprint(fingerprint, bh.Remote)
 			DeleteUnit(bravefile.PlatformService.Name, bh.Remote)
-			return errors.New("Failed to update repositories: " + err.Error())
+			return errors.New("failed to update repositories: " + err.Error())
 		}
 
 		args := []string{"apk", "--no-cache", "add"}
@@ -609,12 +609,12 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		if err != nil {
 			DeleteImageByFingerprint(fingerprint, bh.Remote)
 			DeleteUnit(bravefile.PlatformService.Name, bh.Remote)
-			return errors.New("Failed to install packages: " + err.Error())
+			return errors.New("failed to install packages: " + err.Error())
 		}
 		if status > 0 {
 			DeleteImageByFingerprint(fingerprint, bh.Remote)
 			DeleteUnit(bravefile.PlatformService.Name, bh.Remote)
-			return errors.New(shared.Fatal("Failed to install packages"))
+			return errors.New(shared.Fatal("failed to install packages"))
 		}
 
 	case "apt":
@@ -622,7 +622,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		if err != nil {
 			DeleteImageByFingerprint(fingerprint, bh.Remote)
 			DeleteUnit(bravefile.PlatformService.Name, bh.Remote)
-			return errors.New("Failed to update repositories: " + err.Error())
+			return errors.New("failed to update repositories: " + err.Error())
 		}
 
 		args := []string{"apt", "install"}
@@ -636,12 +636,12 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		if err != nil {
 			DeleteImageByFingerprint(fingerprint, bh.Remote)
 			DeleteUnit(bravefile.PlatformService.Name, bh.Remote)
-			return errors.New("Failed to install packages: " + err.Error())
+			return errors.New("failed to install packages: " + err.Error())
 		}
 		if status > 0 {
 			DeleteImageByFingerprint(fingerprint, bh.Remote)
 			DeleteUnit(bravefile.PlatformService.Name, bh.Remote)
-			return errors.New(shared.Fatal("Failed to install packages"))
+			return errors.New(shared.Fatal("failed to install packages"))
 		}
 	}
 
