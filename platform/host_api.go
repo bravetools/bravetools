@@ -602,19 +602,20 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 
 		args := []string{"apk", "--no-cache", "add"}
 		args = append(args, bravefile.SystemPackages.System...)
-		// for _, p := range bravefile.SystemPackages.System {
-		// 	args = append(args, p)
-		// }
-		status, err := Exec(bravefile.PlatformService.Name, args, bh.Remote)
-		if err != nil {
-			DeleteImageByFingerprint(fingerprint, bh.Remote)
-			DeleteUnit(bravefile.PlatformService.Name, bh.Remote)
-			return errors.New("failed to install packages: " + err.Error())
-		}
-		if status > 0 {
-			DeleteImageByFingerprint(fingerprint, bh.Remote)
-			DeleteUnit(bravefile.PlatformService.Name, bh.Remote)
-			return errors.New(shared.Fatal("failed to install packages"))
+
+		if len(args) > 3 {
+			status, err := Exec(bravefile.PlatformService.Name, args, bh.Remote)
+
+			if err != nil {
+				DeleteImageByFingerprint(fingerprint, bh.Remote)
+				DeleteUnit(bravefile.PlatformService.Name, bh.Remote)
+				return errors.New("failed to install packages: " + err.Error())
+			}
+			if status > 0 {
+				DeleteImageByFingerprint(fingerprint, bh.Remote)
+				DeleteUnit(bravefile.PlatformService.Name, bh.Remote)
+				return errors.New(shared.Fatal("failed to install packages"))
+			}
 		}
 
 	case "apt":
@@ -626,22 +627,21 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		}
 
 		args := []string{"apt", "install"}
-		args = append(args, bravefile.SystemPackages.System...)
-		// for _, p := range bravefile.SystemPackages.System {
-		// 	args = append(args, p)
-		// }
-		args = append(args, "--yes")
-		status, err := Exec(bravefile.PlatformService.Name, args, bh.Remote)
+		if len(args) > 2 {
+			args = append(args, bravefile.SystemPackages.System...)
+			args = append(args, "--yes")
+			status, err := Exec(bravefile.PlatformService.Name, args, bh.Remote)
 
-		if err != nil {
-			DeleteImageByFingerprint(fingerprint, bh.Remote)
-			DeleteUnit(bravefile.PlatformService.Name, bh.Remote)
-			return errors.New("failed to install packages: " + err.Error())
-		}
-		if status > 0 {
-			DeleteImageByFingerprint(fingerprint, bh.Remote)
-			DeleteUnit(bravefile.PlatformService.Name, bh.Remote)
-			return errors.New(shared.Fatal("failed to install packages"))
+			if err != nil {
+				DeleteImageByFingerprint(fingerprint, bh.Remote)
+				DeleteUnit(bravefile.PlatformService.Name, bh.Remote)
+				return errors.New("failed to install packages: " + err.Error())
+			}
+			if status > 0 {
+				DeleteImageByFingerprint(fingerprint, bh.Remote)
+				DeleteUnit(bravefile.PlatformService.Name, bh.Remote)
+				return errors.New(shared.Fatal("failed to install packages"))
+			}
 		}
 	}
 
