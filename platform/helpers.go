@@ -165,13 +165,13 @@ func importLocal(bravefile *shared.Bravefile, remote Remote) error {
 
 	err = LaunchFromImage(bravefile.Base.Image, bravefile.PlatformService.Name, remote)
 	if err != nil {
-		DeleteImage(fingerprint, remote)
+		DeleteImageByFingerprint(fingerprint, remote)
 		return errors.New("failed to launch unit: " + err.Error())
 	}
 
 	err = Start(bravefile.PlatformService.Name, remote)
 	if err != nil {
-		Delete(bravefile.PlatformService.Name, remote)
+		DeleteUnit(bravefile.PlatformService.Name, remote)
 		return errors.New("failed to start a unit: " + err.Error())
 	}
 
@@ -236,7 +236,7 @@ func deleteHostImages(remote Remote) error {
 	}
 
 	for _, i := range images {
-		err := DeleteImage(i.Fingerprint, remote)
+		err := DeleteImageByFingerprint(i.Fingerprint, remote)
 		if err != nil {
 			return errors.New("Failed to delete image: " + i.Fingerprint)
 		}
@@ -313,8 +313,8 @@ func processInterruptHandler(fingerprint string, bravefile *shared.Bravefile, bh
 	go func() {
 		<-c
 		fmt.Println("Interrupting build and cleaning artefacts")
-		DeleteImage(fingerprint, bh.Remote)
-		Delete(bravefile.PlatformService.Name, bh.Remote)
+		DeleteImageByFingerprint(fingerprint, bh.Remote)
+		DeleteUnit(bravefile.PlatformService.Name, bh.Remote)
 
 		os.Exit(0)
 	}()

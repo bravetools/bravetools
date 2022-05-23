@@ -40,7 +40,7 @@ func remove(cmd *cobra.Command, args []string) {
 			log.Fatal(err)
 		}
 
-		err = host.DeleteImageName(args[0])
+		err = host.DeleteImageByName(args[0])
 		if err != nil {
 			log.Fatal(err)
 		}
