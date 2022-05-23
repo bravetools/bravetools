@@ -627,8 +627,9 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		}
 
 		args := []string{"apt", "install"}
+		args = append(args, bravefile.SystemPackages.System...)
+
 		if len(args) > 2 {
-			args = append(args, bravefile.SystemPackages.System...)
 			args = append(args, "--yes")
 			status, err := Exec(bravefile.PlatformService.Name, args, bh.Remote)
 
