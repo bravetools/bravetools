@@ -39,10 +39,5 @@ func remove(cmd *cobra.Command, args []string) {
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		err = host.DeleteImageByName(args[0])
-		if err != nil {
-			log.Fatal(err)
-		}
 	}
 }
