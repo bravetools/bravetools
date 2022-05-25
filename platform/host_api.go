@@ -571,15 +571,13 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 			log.Fatal(err)
 		}
 	case "github":
-		err = importGitHub(bravefile, bh)
+		path := "github.com/" + bravefile.Base.Image
+		remoteBravefile, err := shared.GetBravefileFromGitHub(path)
 		if err != nil {
 			log.Fatal(err)
 		}
+		return bh.BuildImage(remoteBravefile)
 
-		err = Start(bravefile.PlatformService.Name, bh.Remote)
-		if err != nil {
-			log.Fatal(err)
-		}
 	case "local":
 		err = importLocal(bravefile, bh.Remote)
 		if err != nil {
