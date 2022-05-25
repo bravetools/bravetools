@@ -121,14 +121,14 @@ func importLXD(bravefile *shared.Bravefile, remote Remote) (fingerprint string, 
 	return fingerprint, nil
 }
 
-func importGitHub(bravefile *shared.Bravefile, bh *BraveHost) error {
+func importGitHub(bravefile *shared.Bravefile, bh *BraveHost) (fingerprint string, err error) {
 	home, _ := os.UserHomeDir()
 	imageLocation := filepath.Join(home, shared.ImageStore)
 
 	path := "github.com/" + bravefile.Base.Image
 	remoteBravefile, err := shared.GetBravefileFromGitHub(path)
 	if err != nil {
-		return err
+		return fingerprint, err
 	}
 
 	remoteServiceName := remoteBravefile.PlatformService.Name + "-" + remoteBravefile.PlatformService.Version
@@ -136,7 +136,7 @@ func importGitHub(bravefile *shared.Bravefile, bh *BraveHost) error {
 	if _, err := os.Stat(filepath.Join(imageLocation, remoteServiceName+".tar.gz")); os.IsNotExist(err) {
 		err = bh.BuildImage(remoteBravefile)
 		if err != nil {
-			return err
+			return fingerprint, err
 		}
 	} else {
 		fmt.Println("Found local image " + remoteServiceName + ". Skipping GitHub build")
@@ -145,37 +145,34 @@ func importGitHub(bravefile *shared.Bravefile, bh *BraveHost) error {
 	remoteBravefile.Base.Image = remoteServiceName
 	remoteBravefile.PlatformService.Name = bravefile.PlatformService.Name
 
-	err = importLocal(remoteBravefile, bh.Remote)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	fingerprint, err = importLocal(remoteBravefile, bh.Remote)
+	return fingerprint, err
 }
 
-func importLocal(bravefile *shared.Bravefile, remote Remote) error {
+func importLocal(bravefile *shared.Bravefile, remote Remote) (fingerprint string, err error) {
 	home, _ := os.UserHomeDir()
 	location := filepath.Join(home, shared.ImageStore)
 
-	fingerprint, err := ImportImage(filepath.Join(location, bravefile.Base.Image)+".tar.gz", bravefile.Base.Image, remote)
+	fingerprint, err = ImportImage(filepath.Join(location, bravefile.Base.Image)+".tar.gz", bravefile.Base.Image, remote)
 
 	if err != nil {
-		return errors.New("failed to import image: " + err.Error())
+		return fingerprint, errors.New("failed to import image: " + err.Error())
 	}
 
 	err = LaunchFromImage(bravefile.Base.Image, bravefile.PlatformService.Name, remote)
 	if err != nil {
 		DeleteImageByFingerprint(fingerprint, remote)
-		return errors.New("failed to launch unit: " + err.Error())
+		return fingerprint, errors.New("failed to launch unit: " + err.Error())
 	}
 
 	err = Start(bravefile.PlatformService.Name, remote)
 	if err != nil {
 		DeleteUnit(bravefile.PlatformService.Name, remote)
-		return errors.New("failed to start a unit: " + err.Error())
+		DeleteImageByFingerprint(fingerprint, remote)
+		return fingerprint, errors.New("failed to start a unit: " + err.Error())
 	}
 
-	return nil
+	return fingerprint, nil
 }
 
 // func copyTo(source string, settings HostSettings) error {

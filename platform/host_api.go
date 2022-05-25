@@ -571,7 +571,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 			log.Fatal(err)
 		}
 	case "github":
-		err = importGitHub(bravefile, bh)
+		fingerprint, err = importGitHub(bravefile, bh)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -581,7 +581,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 			log.Fatal(err)
 		}
 	case "local":
-		err = importLocal(bravefile, bh.Remote)
+		fingerprint, err = importLocal(bravefile, bh.Remote)
 		if err != nil {
 			log.Fatal(err)
 		}
