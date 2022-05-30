@@ -319,17 +319,22 @@ func listHostImages(remote Remote) ([]api.Image, error) {
 // }
 
 // ProcessInterruptHandler monitors for Ctrl+C keypress in Terminal
-func processInterruptHandler(fingerprint string, bravefile *shared.Bravefile, bh *BraveHost) {
+func processInterruptHandler(originalHostImageList []api.Image, bravefile *shared.Bravefile, bh *BraveHost) {
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
 		fmt.Println("Interrupting build and cleaning artefacts")
-		DeleteImageByFingerprint(fingerprint, bh.Remote)
-		DeleteUnit(bravefile.PlatformService.Name, bh.Remote)
-
+		cleanupBuild(originalHostImageList, bravefile, bh)
 		os.Exit(0)
 	}()
+}
+
+func cleanupBuild(originalHostImageList []api.Image, bravefile *shared.Bravefile, bh *BraveHost) {
+	updatedHostImageList, _ := listHostImages(bh.Remote)
+	fingerprint := getImageFingerprint(originalHostImageList, updatedHostImageList)
+	DeleteImageByFingerprint(fingerprint, bh.Remote)
+	DeleteUnit(bravefile.PlatformService.Name, bh.Remote)
 }
 
 func bravefileCopy(copy []shared.CopyCommand, service string, remote Remote) error {
