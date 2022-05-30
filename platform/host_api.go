@@ -549,36 +549,32 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 	}
 
 	processInterruptHandler(originalHostImageList, bravefile, bh)
+	defer cleanupBuild(originalHostImageList, bravefile, bh)
 
 	switch bravefile.Base.Location {
 	case "public":
 		_, err = importLXD(bravefile, bh.Remote)
 		if err != nil {
-			cleanupBuild(originalHostImageList, bravefile, bh)
 			return err
 		}
 
 		err = Start(bravefile.PlatformService.Name, bh.Remote)
 		if err != nil {
-			cleanupBuild(originalHostImageList, bravefile, bh)
 			return err
 		}
 	case "github":
 		_, err = importGitHub(bravefile, bh)
 		if err != nil {
-			cleanupBuild(originalHostImageList, bravefile, bh)
 			return err
 		}
 
 		err = Start(bravefile.PlatformService.Name, bh.Remote)
 		if err != nil {
-			cleanupBuild(originalHostImageList, bravefile, bh)
 			return err
 		}
 	case "local":
 		_, err = importLocal(bravefile, bh.Remote)
 		if err != nil {
-			cleanupBuild(originalHostImageList, bravefile, bh)
 			return err
 		}
 	default:
@@ -596,7 +592,6 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 	case "apk":
 		_, err := Exec(bravefile.PlatformService.Name, []string{"apk", "update", "--no-cache"}, bh.Remote)
 		if err != nil {
-			cleanupBuild(originalHostImageList, bravefile, bh)
 			return errors.New("failed to update repositories: " + err.Error())
 		}
 
@@ -607,11 +602,9 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 			status, err := Exec(bravefile.PlatformService.Name, args, bh.Remote)
 
 			if err != nil {
-				cleanupBuild(originalHostImageList, bravefile, bh)
 				return errors.New("failed to install packages: " + err.Error())
 			}
 			if status > 0 {
-				cleanupBuild(originalHostImageList, bravefile, bh)
 				return errors.New(shared.Fatal("failed to install packages"))
 			}
 		}
@@ -619,7 +612,6 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 	case "apt":
 		_, err := Exec(bravefile.PlatformService.Name, []string{"apt", "update"}, bh.Remote)
 		if err != nil {
-			cleanupBuild(originalHostImageList, bravefile, bh)
 			return errors.New("failed to update repositories: " + err.Error())
 		}
 
@@ -631,11 +623,9 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 			status, err := Exec(bravefile.PlatformService.Name, args, bh.Remote)
 
 			if err != nil {
-				cleanupBuild(originalHostImageList, bravefile, bh)
 				return errors.New("failed to install packages: " + err.Error())
 			}
 			if status > 0 {
-				cleanupBuild(originalHostImageList, bravefile, bh)
 				return errors.New(shared.Fatal("failed to install packages"))
 			}
 		}
@@ -646,39 +636,38 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 	// Go through "Copy" section
 	err = bravefileCopy(bravefile.Copy, bravefile.PlatformService.Name, bh.Remote)
 	if err != nil {
-		cleanupBuild(originalHostImageList, bravefile, bh)
 		return err
 	}
 
 	// Go through "Run" section
 	status, err := bravefileRun(bravefile.Run, bravefile.PlatformService.Name, bh.Remote)
 	if err != nil {
-		cleanupBuild(originalHostImageList, bravefile, bh)
 		return errors.New("failed to execute command: " + err.Error())
 	}
 	if status > 0 {
-		cleanupBuild(originalHostImageList, bravefile, bh)
 		return errors.New(shared.Fatal("non-zero exit code: " + strconv.Itoa(status)))
 	}
 
 	// Create an image based on running container and export it. Image saved as tar.gz in project local directory.
 	unitFingerprint, err := Publish(bravefile.PlatformService.Name, bravefile.PlatformService.Version, bh.Remote)
 	if err != nil {
-		cleanupBuild(originalHostImageList, bravefile, bh)
 		return errors.New("failed to publish image: " + err.Error())
 	}
 
 	err = ExportImage(unitFingerprint, bravefile.PlatformService.Name+"-"+bravefile.PlatformService.Version, bh.Remote)
 	if err != nil {
-		cleanupBuild(originalHostImageList, bravefile, bh)
 		return errors.New("failed to export image: " + err.Error())
 	}
-
-	cleanupBuild(originalHostImageList, bravefile, bh)
 
 	home, _ := os.UserHomeDir()
 	localImageFile := bravefile.PlatformService.Name + "-" + bravefile.PlatformService.Version + ".tar.gz"
 	localHashFile := localImageFile + ".md5"
+
+	defer func() {
+		if err = os.Remove(localImageFile); err != nil {
+			fmt.Println("failed to clean up image archive: " + err.Error())
+		}
+	}()
 
 	imageHash, err := shared.FileHash(localImageFile)
 	if err != nil {
@@ -692,13 +681,19 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 	if err != nil {
 		return errors.New(err.Error())
 	}
-	defer f.Close()
+	defer func() {
+		if err = f.Close(); err != nil {
+			fmt.Println("failed to close image hash file: " + err.Error())
+		}
+		if err = os.Remove(localHashFile); err != nil {
+			fmt.Println("failed to clean up image hash: " + err.Error())
+		}
+	}()
 
 	_, err = f.WriteString(imageHash)
 	if err != nil {
 		return errors.New(err.Error())
 	}
-	f.Close()
 
 	err = shared.CopyFile(localImageFile, home+shared.ImageStore+localImageFile)
 	if err != nil {
@@ -708,16 +703,6 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 	err = shared.CopyFile(localHashFile, home+shared.ImageStore+localHashFile)
 	if err != nil {
 		return errors.New("failed to copy images hash into local storage: " + err.Error())
-	}
-
-	err = os.Remove(localImageFile)
-	if err != nil {
-		return errors.New("failed to clean up image archive: " + err.Error())
-	}
-
-	err = os.Remove(localHashFile)
-	if err != nil {
-		return errors.New("failed to clean up image hash: " + err.Error())
 	}
 
 	return nil

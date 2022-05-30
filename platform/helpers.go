@@ -331,10 +331,12 @@ func processInterruptHandler(originalHostImageList []api.Image, bravefile *share
 }
 
 func cleanupBuild(originalHostImageList []api.Image, bravefile *shared.Bravefile, bh *BraveHost) {
-	updatedHostImageList, _ := listHostImages(bh.Remote)
-	fingerprint := getImageFingerprint(originalHostImageList, updatedHostImageList)
-	DeleteImageByFingerprint(fingerprint, bh.Remote)
 	DeleteUnit(bravefile.PlatformService.Name, bh.Remote)
+	updatedHostImageList, _ := listHostImages(bh.Remote)
+	fingerprints := getImageFingerprintDiff(originalHostImageList, updatedHostImageList)
+	for _, fingerprint := range fingerprints {
+		DeleteImageByFingerprint(fingerprint, bh.Remote)
+	}
 }
 
 func bravefileCopy(copy []shared.CopyCommand, service string, remote Remote) error {
@@ -458,8 +460,18 @@ func checkUnits(unitName string, bh *BraveHost) error {
 }
 
 func getImageFingerprint(slice1 []api.Image, slice2 []api.Image) string {
-	var diff []string
 	var fingerprint string
+	diff := getImageFingerprintDiff(slice1, slice2)
+
+	if len(diff) > 0 {
+		fingerprint = diff[0]
+	}
+
+	return fingerprint
+}
+
+func getImageFingerprintDiff(slice1 []api.Image, slice2 []api.Image) []string {
+	var diff []string
 
 	// Loop two times, first to find slice1 strings not in slice2,
 	// second loop to find slice2 strings not in slice1
@@ -483,9 +495,5 @@ func getImageFingerprint(slice1 []api.Image, slice2 []api.Image) string {
 		}
 	}
 
-	if len(diff) > 0 {
-		fingerprint = diff[0]
-	}
-
-	return fingerprint
+	return diff
 }
