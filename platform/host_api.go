@@ -1,16 +1,19 @@
 package platform
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 	"os/user"
 	"path"
 	"runtime"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"io/ioutil"
@@ -548,33 +551,45 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		log.Fatal(err)
 	}
 
-	processInterruptHandler(originalHostImageList, bravefile, bh)
+	abortFlag := false
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		for range c {
+			fmt.Println("Interrupting build and cleaning artefacts")
+			abortFlag = true
+			cancel()
+		}
+	}()
 	defer cleanupBuild(originalHostImageList, bravefile, bh)
 
 	switch bravefile.Base.Location {
 	case "public":
-		_, err = importLXD(bravefile, bh.Remote)
-		if err != nil {
+		_, err = importLXD(ctx, bravefile, bh.Remote)
+		if err != nil || abortFlag {
 			return err
 		}
 
 		err = Start(bravefile.PlatformService.Name, bh.Remote)
-		if err != nil {
+		if err != nil || abortFlag {
 			return err
 		}
 	case "github":
-		_, err = importGitHub(bravefile, bh)
-		if err != nil {
+		_, err = importGitHub(ctx, bravefile, bh)
+		if err != nil || abortFlag {
 			return err
 		}
 
 		err = Start(bravefile.PlatformService.Name, bh.Remote)
-		if err != nil {
+		if err != nil || abortFlag {
 			return err
 		}
 	case "local":
-		_, err = importLocal(bravefile, bh.Remote)
-		if err != nil {
+		_, err = importLocal(ctx, bravefile, bh.Remote)
+		if err != nil || abortFlag {
 			return err
 		}
 	default:
@@ -591,7 +606,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		}
 	case "apk":
 		_, err := Exec(bravefile.PlatformService.Name, []string{"apk", "update", "--no-cache"}, bh.Remote)
-		if err != nil {
+		if err != nil || abortFlag {
 			return errors.New("failed to update repositories: " + err.Error())
 		}
 
@@ -601,7 +616,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		if len(args) > 3 {
 			status, err := Exec(bravefile.PlatformService.Name, args, bh.Remote)
 
-			if err != nil {
+			if err != nil || abortFlag {
 				return errors.New("failed to install packages: " + err.Error())
 			}
 			if status > 0 {
@@ -611,7 +626,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 
 	case "apt":
 		_, err := Exec(bravefile.PlatformService.Name, []string{"apt", "update"}, bh.Remote)
-		if err != nil {
+		if err != nil || abortFlag {
 			return errors.New("failed to update repositories: " + err.Error())
 		}
 
@@ -622,7 +637,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 			args = append(args, "--yes")
 			status, err := Exec(bravefile.PlatformService.Name, args, bh.Remote)
 
-			if err != nil {
+			if err != nil || abortFlag {
 				return errors.New("failed to install packages: " + err.Error())
 			}
 			if status > 0 {
@@ -635,13 +650,13 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 
 	// Go through "Copy" section
 	err = bravefileCopy(bravefile.Copy, bravefile.PlatformService.Name, bh.Remote)
-	if err != nil {
+	if err != nil || abortFlag {
 		return err
 	}
 
 	// Go through "Run" section
 	status, err := bravefileRun(bravefile.Run, bravefile.PlatformService.Name, bh.Remote)
-	if err != nil {
+	if err != nil || abortFlag {
 		return errors.New("failed to execute command: " + err.Error())
 	}
 	if status > 0 {
@@ -650,12 +665,12 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 
 	// Create an image based on running container and export it. Image saved as tar.gz in project local directory.
 	unitFingerprint, err := Publish(bravefile.PlatformService.Name, bravefile.PlatformService.Version, bh.Remote)
-	if err != nil {
+	if err != nil || abortFlag {
 		return errors.New("failed to publish image: " + err.Error())
 	}
 
 	err = ExportImage(unitFingerprint, bravefile.PlatformService.Name+"-"+bravefile.PlatformService.Version, bh.Remote)
-	if err != nil {
+	if err != nil || abortFlag {
 		return errors.New("failed to export image: " + err.Error())
 	}
 
@@ -670,7 +685,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 	}()
 
 	imageHash, err := shared.FileHash(localImageFile)
-	if err != nil {
+	if err != nil || abortFlag {
 		return errors.New("failed to generate image hash: " + err.Error())
 	}
 
@@ -691,17 +706,17 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 	}()
 
 	_, err = f.WriteString(imageHash)
-	if err != nil {
+	if err != nil || abortFlag {
 		return errors.New(err.Error())
 	}
 
 	err = shared.CopyFile(localImageFile, home+shared.ImageStore+localImageFile)
-	if err != nil {
+	if err != nil || abortFlag {
 		return errors.New("failed to copy image archive to local storage: " + err.Error())
 	}
 
 	err = shared.CopyFile(localHashFile, home+shared.ImageStore+localHashFile)
-	if err != nil {
+	if err != nil || abortFlag {
 		return errors.New("failed to copy images hash into local storage: " + err.Error())
 	}
 

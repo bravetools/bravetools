@@ -1,6 +1,7 @@
 package platform
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -127,8 +128,11 @@ func createSharedVolume(storagePoolName string,
 	return nil
 }
 
-func importLXD(bravefile *shared.Bravefile, remote Remote) (fingerprint string, err error) {
-	fingerprint, err = Launch(bravefile.PlatformService.Name, bravefile.Base.Image, remote)
+func importLXD(ctx context.Context, bravefile *shared.Bravefile, remote Remote) (fingerprint string, err error) {
+	if err = ctx.Err(); err != nil {
+		return "", err
+	}
+	fingerprint, err = Launch(ctx, bravefile.PlatformService.Name, bravefile.Base.Image, remote)
 	if err != nil {
 		return "", errors.New("failed to launch base unit: " + err.Error())
 	}
@@ -136,7 +140,10 @@ func importLXD(bravefile *shared.Bravefile, remote Remote) (fingerprint string, 
 	return fingerprint, nil
 }
 
-func importGitHub(bravefile *shared.Bravefile, bh *BraveHost) (fingerprint string, err error) {
+func importGitHub(ctx context.Context, bravefile *shared.Bravefile, bh *BraveHost) (fingerprint string, err error) {
+	if err = ctx.Err(); err != nil {
+		return "", err
+	}
 	home, _ := os.UserHomeDir()
 	imageLocation := filepath.Join(home, shared.ImageStore)
 
@@ -160,11 +167,14 @@ func importGitHub(bravefile *shared.Bravefile, bh *BraveHost) (fingerprint strin
 	remoteBravefile.Base.Image = remoteServiceName
 	remoteBravefile.PlatformService.Name = bravefile.PlatformService.Name
 
-	fingerprint, err = importLocal(remoteBravefile, bh.Remote)
+	fingerprint, err = importLocal(ctx, remoteBravefile, bh.Remote)
 	return fingerprint, err
 }
 
-func importLocal(bravefile *shared.Bravefile, remote Remote) (fingerprint string, err error) {
+func importLocal(ctx context.Context, bravefile *shared.Bravefile, remote Remote) (fingerprint string, err error) {
+	if err = ctx.Err(); err != nil {
+		return "", err
+	}
 	home, _ := os.UserHomeDir()
 	location := filepath.Join(home, shared.ImageStore)
 
@@ -174,10 +184,18 @@ func importLocal(bravefile *shared.Bravefile, remote Remote) (fingerprint string
 		return fingerprint, errors.New("failed to import image: " + err.Error())
 	}
 
+	if err = ctx.Err(); err != nil {
+		return "", err
+	}
+
 	err = LaunchFromImage(bravefile.Base.Image, bravefile.PlatformService.Name, remote)
 	if err != nil {
 		DeleteImageByFingerprint(fingerprint, remote)
 		return fingerprint, errors.New("failed to launch unit: " + err.Error())
+	}
+
+	if err = ctx.Err(); err != nil {
+		return "", err
 	}
 
 	err = Start(bravefile.PlatformService.Name, remote)
@@ -185,6 +203,10 @@ func importLocal(bravefile *shared.Bravefile, remote Remote) (fingerprint string
 		DeleteUnit(bravefile.PlatformService.Name, remote)
 		DeleteImageByFingerprint(fingerprint, remote)
 		return fingerprint, errors.New("failed to start a unit: " + err.Error())
+	}
+
+	if err = ctx.Err(); err != nil {
+		return "", err
 	}
 
 	return fingerprint, nil
