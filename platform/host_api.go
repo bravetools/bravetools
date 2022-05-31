@@ -807,37 +807,51 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 		return err
 	}
 
+	abortFlag := false
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		for range c {
+			fmt.Println("Interrupting build and cleaning artefacts")
+			abortFlag = true
+			cancel()
+		}
+	}()
+
 	fingerprint, err = ImportImage(image, unitParams.PlatformService.Name, bh.Remote)
-	if err != nil {
+	if err != nil || abortFlag {
 		return errors.New("failed to import image: " + err.Error())
 	}
 
 	err = LaunchFromImage(unitParams.PlatformService.Name, unitParams.PlatformService.Name, bh.Remote)
-	if err != nil {
+	if err != nil || abortFlag {
 		DeleteImageByFingerprint(fingerprint, bh.Remote)
 		return errors.New("failed to launch unit: " + err.Error())
 	}
 
 	err = AttachNetwork(unitParams.PlatformService.Name, bh.Settings.Name+"br0", "eth0", "eth0", bh.Remote)
-	if err != nil {
+	if err != nil || abortFlag {
 		DeleteImageByFingerprint(fingerprint, bh.Remote)
 		return errors.New("failed to attach network: " + err.Error())
 	}
 
 	err = ConfigDevice(unitParams.PlatformService.Name, "eth0", unitParams.PlatformService.IP, bh.Remote)
-	if err != nil {
+	if err != nil || abortFlag {
 		DeleteImageByFingerprint(fingerprint, bh.Remote)
 		return errors.New("failed to set IP: " + err.Error())
 	}
 
 	err = Stop(unitParams.PlatformService.Name, bh.Remote)
-	if err != nil {
+	if err != nil || abortFlag {
 		DeleteImageByFingerprint(fingerprint, bh.Remote)
 		return errors.New("failed to stop unit: " + err.Error())
 	}
 
 	err = Start(unitParams.PlatformService.Name, bh.Remote)
-	if err != nil {
+	if err != nil || abortFlag {
 		DeleteImageByFingerprint(fingerprint, bh.Remote)
 		return errors.New("Failed to restart unit: " + err.Error())
 	}
@@ -910,19 +924,19 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 	}
 
 	err = SetConfig(unitParams.PlatformService.Name, config, bh.Remote)
-	if err != nil {
+	if err != nil || abortFlag {
 		DeleteImageByFingerprint(fingerprint, bh.Remote)
 		return errors.New("error configuring unit: " + err.Error())
 	}
 
 	err = Stop(unitParams.PlatformService.Name, bh.Remote)
-	if err != nil {
+	if err != nil || abortFlag {
 		DeleteImageByFingerprint(fingerprint, bh.Remote)
 		return errors.New("failed to stop unit: " + err.Error())
 	}
 
 	err = Start(unitParams.PlatformService.Name, bh.Remote)
-	if err != nil {
+	if err != nil || abortFlag {
 		DeleteImageByFingerprint(fingerprint, bh.Remote)
 		return errors.New("failed to restart unit: " + err.Error())
 	}
@@ -938,7 +952,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 			}
 
 			err := addIPRules(unitParams.PlatformService.Name, ps[1], ps[0], bh)
-			if err != nil {
+			if err != nil || abortFlag {
 				DeleteImageByFingerprint(fingerprint, bh.Remote)
 				delErr := DeleteUnit(unitParams.PlatformService.Name, bh.Remote)
 				if delErr != nil {
@@ -986,7 +1000,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 	braveUnit.Data = data
 
 	_, err = db.InsertUnitDB(database, braveUnit)
-	if err != nil {
+	if err != nil || abortFlag {
 		DeleteImageByFingerprint(fingerprint, bh.Remote)
 		DeleteUnit(unitParams.PlatformService.Name, bh.Remote)
 		return errors.New("failed to insert unit to database: " + err.Error())
@@ -994,21 +1008,26 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 
 	DeleteImageByFingerprint(fingerprint, bh.Remote)
 
+	err = bh.Postdeploy(ctx, unitParams)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	return nil
 }
 
 // Postdeploy copy files and run commands on running service
-func (bh *BraveHost) Postdeploy(bravefile *shared.Bravefile) (err error) {
+func (bh *BraveHost) Postdeploy(ctx context.Context, bravefile *shared.Bravefile) (err error) {
 
 	if bravefile.PlatformService.Postdeploy.Copy != nil {
-		err = bravefileCopy(bravefile.PlatformService.Postdeploy.Copy, bravefile.PlatformService.Name, bh.Remote)
+		err = bravefileCopy(ctx, bravefile.PlatformService.Postdeploy.Copy, bravefile.PlatformService.Name, bh.Remote)
 		if err != nil {
 			return err
 		}
 	}
 
 	if bravefile.PlatformService.Postdeploy.Run != nil {
-		_, err = bravefileRun(bravefile.PlatformService.Postdeploy.Run, bravefile.PlatformService.Name, bh.Remote)
+		_, err = bravefileRun(ctx, bravefile.PlatformService.Postdeploy.Run, bravefile.PlatformService.Name, bh.Remote)
 		if err != nil {
 			return err
 		}
