@@ -605,7 +605,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 			return errors.New("package manager not specified - cannot install packages")
 		}
 	case "apk":
-		_, err := Exec(bravefile.PlatformService.Name, []string{"apk", "update", "--no-cache"}, bh.Remote)
+		_, err := Exec(ctx, bravefile.PlatformService.Name, []string{"apk", "update", "--no-cache"}, bh.Remote)
 		if err != nil || abortFlag {
 			return errors.New("failed to update repositories: " + err.Error())
 		}
@@ -614,7 +614,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		args = append(args, bravefile.SystemPackages.System...)
 
 		if len(args) > 3 {
-			status, err := Exec(bravefile.PlatformService.Name, args, bh.Remote)
+			status, err := Exec(ctx, bravefile.PlatformService.Name, args, bh.Remote)
 
 			if err != nil || abortFlag {
 				return errors.New("failed to install packages: " + err.Error())
@@ -625,7 +625,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		}
 
 	case "apt":
-		_, err := Exec(bravefile.PlatformService.Name, []string{"apt", "update"}, bh.Remote)
+		_, err := Exec(ctx, bravefile.PlatformService.Name, []string{"apt", "update"}, bh.Remote)
 		if err != nil || abortFlag {
 			return errors.New("failed to update repositories: " + err.Error())
 		}
@@ -635,7 +635,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 
 		if len(args) > 2 {
 			args = append(args, "--yes")
-			status, err := Exec(bravefile.PlatformService.Name, args, bh.Remote)
+			status, err := Exec(ctx, bravefile.PlatformService.Name, args, bh.Remote)
 
 			if err != nil || abortFlag {
 				return errors.New("failed to install packages: " + err.Error())
@@ -649,13 +649,13 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 	}
 
 	// Go through "Copy" section
-	err = bravefileCopy(bravefile.Copy, bravefile.PlatformService.Name, bh.Remote)
+	err = bravefileCopy(ctx, bravefile.Copy, bravefile.PlatformService.Name, bh.Remote)
 	if err != nil || abortFlag {
 		return err
 	}
 
 	// Go through "Run" section
-	status, err := bravefileRun(bravefile.Run, bravefile.PlatformService.Name, bh.Remote)
+	status, err := bravefileRun(ctx, bravefile.Run, bravefile.PlatformService.Name, bh.Remote)
 	if err != nil || abortFlag {
 		return errors.New("failed to execute command: " + err.Error())
 	}

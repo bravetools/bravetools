@@ -361,15 +361,19 @@ func cleanupBuild(originalHostImageList []api.Image, bravefile *shared.Bravefile
 	}
 }
 
-func bravefileCopy(copy []shared.CopyCommand, service string, remote Remote) error {
+func bravefileCopy(ctx context.Context, copy []shared.CopyCommand, service string, remote Remote) error {
 	dir, _ := os.Getwd()
 	for _, c := range copy {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
 		source := c.Source
 		source = path.Join(dir, source)
 		sourcePath := filepath.FromSlash(source)
 
 		target := c.Target
-		_, err := Exec(service, []string{"mkdir", "-p", target}, remote)
+		_, err := Exec(ctx, service, []string{"mkdir", "-p", target}, remote)
 		if err != nil {
 			return errors.New("Failed to create target directory: " + err.Error())
 		}
@@ -397,7 +401,7 @@ func bravefileCopy(copy []shared.CopyCommand, service string, remote Remote) err
 		}
 
 		if c.Action != "" {
-			_, err = Exec(service, []string{"bash", "-c", c.Action}, remote)
+			_, err = Exec(ctx, service, []string{"bash", "-c", c.Action}, remote)
 			if err != nil {
 				return errors.New("Failed to execute action: " + err.Error())
 			}
@@ -407,8 +411,12 @@ func bravefileCopy(copy []shared.CopyCommand, service string, remote Remote) err
 	return nil
 }
 
-func bravefileRun(run []shared.RunCommand, service string, remote Remote) (status int, err error) {
+func bravefileRun(ctx context.Context, run []shared.RunCommand, service string, remote Remote) (status int, err error) {
 	for _, c := range run {
+		if err = ctx.Err(); err != nil {
+			return 1, err
+		}
+
 		var command string
 		var content string
 
@@ -428,7 +436,7 @@ func bravefileRun(run []shared.RunCommand, service string, remote Remote) (statu
 			args = append(args, content)
 		}
 
-		status, err = Exec(service, args, remote)
+		status, err = Exec(ctx, service, args, remote)
 
 	}
 

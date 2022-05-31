@@ -2,6 +2,7 @@ package platform
 
 import (
 	"bytes"
+	"context"
 	"crypto/x509"
 	"errors"
 	"fmt"
@@ -513,12 +514,17 @@ func LaunchFromImage(image string, name string, remote Remote) error {
 // Launch starts a new unit based on standard image from linuxcontainers.org
 // Alias: "ubuntu/bionic/amd64"
 // Alias: "alpine/3.9/amd64"
-func Launch(name string, alias string, remote Remote) (fingerprint string, err error) {
+func Launch(ctx context.Context, name string, alias string, remote Remote) (fingerprint string, err error) {
+	if err = ctx.Err(); err != nil {
+		return fingerprint, err
+	}
+
 	operation := shared.Info("Importing " + alias)
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stdout))
 	s.Suffix = " " + operation
 
 	s.Start()
+	defer s.Stop()
 
 	hostImageList, _ := listHostImages(remote)
 	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
@@ -552,9 +558,17 @@ func Launch(name string, alias string, remote Remote) (fingerprint string, err e
 		return "", errors.New("Error waiting: " + err.Error())
 	}
 
-	time.Sleep(10 * time.Second)
+	waitInit := make(chan struct{})
+	go func() {
+		time.Sleep(10 * time.Second)
+		close(waitInit)
+	}()
 
-	s.Stop()
+	select {
+	case <-ctx.Done():
+		return fingerprint, ctx.Err()
+	case <-waitInit:
+	}
 
 	updatedHostImageList, _ := listHostImages(remote)
 
@@ -601,13 +615,19 @@ func isIPv4(ip string) bool {
 }
 
 // Exec runs command inside unit
-func Exec(name string, command []string, remote Remote) (int, error) {
+func Exec(ctx context.Context, name string, command []string, remote Remote) (returnCode int, err error) {
+	if err = ctx.Err(); err != nil {
+		return 0, err
+	}
 	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
 	if err != nil {
 		return 0, err
 	}
 
 	err = retry(5, 2*time.Second, func() (err error) {
+		if err = ctx.Err(); err != nil {
+			return err
+		}
 		c, _, err := lxdServer.GetContainerState(name)
 		ip := c.Network["eth0"].Addresses[0].Address
 		isIP := isIPv4(ip)
@@ -650,7 +670,11 @@ func Exec(name string, command []string, remote Remote) (int, error) {
 	}
 	opAPI := op.Get()
 
-	<-args.DataDone
+	select {
+	case <-ctx.Done():
+		return 1, ctx.Err()
+	case <-args.DataDone:
+	}
 	status := int(opAPI.Metadata["return"].(float64))
 
 	return status, nil
