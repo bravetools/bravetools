@@ -1007,7 +1007,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 
 	err = bh.Postdeploy(ctx, unitParams)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	return nil
