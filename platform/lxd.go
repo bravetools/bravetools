@@ -331,11 +331,11 @@ func (vm Lxd) Info() (Info, error) {
 	totalMemCmd := "cat /proc/meminfo | grep MemTotal | awk '{print $2}'"
 	availableMemCmd := "cat /proc/meminfo | grep MemAvailable | awk '{print $2}'"
 
-	totalMem, err := shared.ExecCommandWReturn("bash", "-c", totalMemCmd)
+	totalMem, err := shared.ExecCommandWReturn("sh", "-c", totalMemCmd)
 	if err != nil {
 		return backendInfo, errors.New("cannot assess total RAM count")
 	}
-	availableMem, err := shared.ExecCommandWReturn("bash", "-c", availableMemCmd)
+	availableMem, err := shared.ExecCommandWReturn("sh", "-c", availableMemCmd)
 
 	if err != nil {
 		return backendInfo, errors.New("cannot assess available RAM count")
