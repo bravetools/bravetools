@@ -358,7 +358,7 @@ func (vm Lxd) Info() (Info, error) {
 	backendInfo.Memory = []string{usedMem, totalMem}
 
 	cpuCmd := "grep -c ^processor /proc/cpuinfo"
-	cpu, err := shared.ExecCommandWReturn("bash",
+	cpu, err := shared.ExecCommandWReturn("sh",
 		"-c",
 		cpuCmd)
 	if err != nil {
