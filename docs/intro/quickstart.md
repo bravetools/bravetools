@@ -97,7 +97,7 @@ alpine-edge-python3	Running	10.0.0.156	eth0(nic):bridged
 To delete the live image, run
 
 ```bash
-$ brave delete alpine-edge-python3
+$ brave remove alpine-edge-python3
 ```
 
 That's it! You have now configured and deployed your very first Bravetools image. Check out the [docs](../../docs) to dive deeper.

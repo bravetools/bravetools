@@ -12,7 +12,7 @@ nav_order: 1
 To list available commands, either run `brave` without parameters, or execute `brave help`.
 
 ```bash
-brave - tools for working with the Brave Platform
+A complete System Container management platform
 
 Usage:
   brave [command]

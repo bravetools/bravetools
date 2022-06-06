@@ -16,7 +16,7 @@ brave configure
 
 ## Description
 
-Bravetools reads configuration specifications from ~/.bravetools/config.yaml and configures host accordingly
+Bravetools reads configuration specifications from ~/.bravetools/config.yml and configures host accordingly
 
 ## Options
 
