@@ -28,7 +28,7 @@ Our research team works extensively with Docker to build, maintain and scale a n
 
 ## Our solution
 
-We found that our issues could be largely addressed through System Containers. Our researchers could once more focus on experiments and not devops, whilst ensuring efficiency, scalability, security, and reproducibility of all pipelines. Bellow we provide an overview of our typical Bioinformatics research environment and how Bravetools can be used to build, scale, and publish all dependencies.
+We found that our issues could be largely addressed through System Containers. Our researchers could once more focus on experiments and not devops, whilst ensuring efficiency, scalability, security, and reproducibility of all pipelines. Below we provide an overview of our typical Bioinformatics research environment and how Bravetools can be used to build, scale, and publish all dependencies.
 
 > **NOTE**: System Containers are not a replacement for Docker. They are a replacement for VMs. Docker can be easily deployed inside LXD containers, a feature we take advantage of in production.
 
@@ -113,21 +113,21 @@ service:
   - 8787:8787
 ```
 
-A blank IP field will result in an ephemeral IP being generated for this unit. Since a default RStudio runs on port 8787, we will leave this unchanged.
+A blank IP field will result in an ephemeral IP being generated for this unit. Since by default RStudio runs on port 8787, we will leave this unchanged.
 
 > **NOTE** If you're using Multipass (e.g. on a Mac or Windows machine), RStudio service will be accessible from HOSTIP:8787, where HOSTIP is the IPV4 address of your Multipass host, easily obtained by running `brave info`.
 
 You can now navigate to 10.0.0.23:8787 and login using `rstudio`/`password` credentials.
 
-As a side node, installing an OpenSSH server inside this environment, will allow others to connect to it over ssh, facilitating collaborative research.
+As a side node, installing an OpenSSH server inside this environment will allow others to connect to it over ssh, facilitating collaborative research.
 
 ### Publishing the environment
 
 Now that the RStudio environment is deployed, you can work inside the unit as though you're on a remote server or inside a virtual machine. Data and packages can be added as needed.
 
-> **NOTE** If you do install additional packages, do update your Bravefile, to ensure that de novo builds are consistent with your existing environment.
+> **NOTE** If you do install additional packages, update your Bravefile to ensure that de novo builds are consistent with your existing environment.
 
-Once you're happy with your environment and are ready to migrate it to a more powerful infrastructure, share it with your team, or make it available as part of your publication, you need to simply run:
+Once you're happy with your environment and are ready to migrate it to more powerful infrastructure, share it with your team, or make it available as part of your publication, you need to simply run:
 
 ```bash
 > brave publish ubuntu-bionic-rstudio-server

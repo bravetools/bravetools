@@ -12,7 +12,7 @@ Docker is the industry-standard way for building **Application Containers**. Bra
 
 # Configuring a Bravetools Unit to run Docker
 
-A unit can be configured to run Docker containers using a [Bravefile](../bravefile). This can be achieved simply by addin `docker: "yes"` to the **service** section:
+A unit can be configured to run Docker containers using a [Bravefile](../bravefile). This can be achieved simply by adding `docker: "yes"` to the **service** section:
 
 ```yaml
 service:

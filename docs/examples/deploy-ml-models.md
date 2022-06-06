@@ -14,7 +14,7 @@ description: "Using Bravetools to create and ship machine learning models"
 ![gpt2-streamlit](../../assets/gpt2-streamlit.png){:class="img-responsive"}
 
 ## Motivation
-Sharing reproducible Machine Learning (ML) models and experiments is very important for our team. It allows us to better understand how ML models work as well as test model environment before deploying it in production. As models become more and more complex, managing shareable code dependencies, artifacts, system libraries, and drivers becomes rather daunting. Because of their simplicity, System Containers became our go-to tools in our day-to-day work, virtually eliminating the dreaded [dev/prod parity](https://12factor.net/dev-prod-parity).
+Sharing reproducible Machine Learning (ML) models and experiments is very important for our team. It allows us to better understand how ML models work as well as test model environment before deploying it in production. As models become more and more complex, managing shareable code dependencies, artifacts, system libraries, and drivers becomes rather daunting. Because of their simplicity, System Containers became our go-to tools in our day-to-day work, virtually eliminating the dreaded [dev/prod parity](https://12factor.net/dev-prod-parity) problem.
 
 In this example we'll use Bravetools to configure, build, and deploy a [GPT2 model](https://openai.com/blog/better-language-models/) using a simple [streamlit](https://www.streamlit.io/) application.
 
@@ -60,7 +60,7 @@ stdout_logfile_backups=10
 Supervisor will launch the streamlit script on port 8501 and, in case our environment goes down, it will attempt to autostart the app.
 
 ## Configuring application environment
-Now it's time to package all of these little bits into a self-contained System Container! We begin with a [Bravefile](../../docs/bravefile) that describes our system with all of its dependencies. For this application we'll use Ubuntu 18.04 image from the [LXD image server](https://us.images.linuxcontainers.org/) and bundle in python3 and [supervisor](http://supervisord.org/index.html).
+Now it's time to package all of these little bits into a self-contained System Container! We begin with a [Bravefile](../../docs/bravefile) that describes our system with all of its dependencies. For this application we'll use an Ubuntu 18.04 image from the [LXD image server](https://us.images.linuxcontainers.org/) and bundle in python3 and [supervisor](http://supervisord.org/index.html).
 
 ```yaml
 base:
@@ -177,7 +177,7 @@ Sharing this application is trivial. Simply publish it:
 brave publish
 ```
 
-This will produce a `tar.gz` file, which can be imported and dpeloyed elsewhere:
+This will produce a `tar.gz` file, which can be imported and deployed elsewhere:
 
 ```bash
 brave import gpt2-streamlit-20201201082229.tar.gz

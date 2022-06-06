@@ -22,9 +22,9 @@ brave mount [UNIT:]<source> UNIT:<target>
 brave mount $PWD/DIR UNITNAME:/PATH/TO/DIR
 ```
 
-Note that the mount requires a full path to your host directory and host directory and target directory have to have an identical name.
+Note that the mount requires a full path to your host directory. The host directory and target directory must have an identical name.
 
-Since Bravetools deploys unpriveledged containers, the fact that all uids/gids in an unprivileged container are mapped to a normally unused range on the host means that sharing of data between host and container is effectively impossible. This is circumvented internally by Bravetools by directly mapping your host uid/gid to a Bravetools Unit through `lxc config set test raw.idmap`. This enables users to read/write bound volumes inside an unpriveledged container.
+Since Bravetools deploys unprivileged containers, the fact that all uids/gids in an unprivileged container are mapped to a normally unused range on the host means that sharing of data between host and container is effectively impossible. This is circumvented internally by Bravetools by directly mapping your host uid/gid to a Bravetools Unit through `lxc config set test raw.idmap`. This enables users to read/write bound volumes inside an unprivileged container.
 
 ## Options
 

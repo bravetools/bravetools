@@ -8,7 +8,7 @@ nav_order: 3
 
 # Introduction to Bravetools
 
-Welcome to Bravetools! This introduction will show you what Bravetools is and why it exists. Checkout some of our [use cases](use_cases) to explore the benefits that Bravetools can offer. The list is not exhaustive and we're excited to see new applications in the very near future.
+Welcome to Bravetools! This introduction will show you what Bravetools is and why it exists. Check out some of our [use cases](use_cases) to explore the benefits that Bravetools can offer. The list is not exhaustive and we're excited to see new applications in the very near future.
 
 # What is Bravetools
 
