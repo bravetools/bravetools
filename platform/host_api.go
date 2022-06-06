@@ -546,10 +546,8 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		return err
 	}
 
-	originalHostImageList, err := listHostImages(bh.Remote)
-	if err != nil {
-		log.Fatal(err)
-	}
+	// Intercept SIGINT, propagate cancel and cleanup artefacts
+	var imageFingerprint string
 
 	abortFlag := false
 	ctx := context.Background()
@@ -564,11 +562,11 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 			cancel()
 		}
 	}()
-	defer cleanupBuild(originalHostImageList, bravefile, bh)
 
 	switch bravefile.Base.Location {
 	case "public":
-		_, err = importLXD(ctx, bravefile, bh.Remote)
+		imageFingerprint, err = importLXD(ctx, bravefile, bh.Remote)
+		defer cleanupBuild(imageFingerprint, bravefile, bh)
 		if err != nil || abortFlag {
 			return err
 		}
@@ -578,7 +576,8 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 			return err
 		}
 	case "github":
-		_, err = importGitHub(ctx, bravefile, bh)
+		imageFingerprint, err = importGitHub(ctx, bravefile, bh)
+		defer cleanupBuild(imageFingerprint, bravefile, bh)
 		if err != nil || abortFlag {
 			return err
 		}
@@ -588,7 +587,8 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 			return err
 		}
 	case "local":
-		_, err = importLocal(ctx, bravefile, bh.Remote)
+		imageFingerprint, err = importLocal(ctx, bravefile, bh.Remote)
+		defer cleanupBuild(imageFingerprint, bravefile, bh)
 		if err != nil || abortFlag {
 			return err
 		}
@@ -665,6 +665,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 
 	// Create an image based on running container and export it. Image saved as tar.gz in project local directory.
 	unitFingerprint, err := Publish(bravefile.PlatformService.Name, bravefile.PlatformService.Version, bh.Remote)
+	defer DeleteImageByFingerprint(unitFingerprint, bh.Remote)
 	if err != nil || abortFlag {
 		return errors.New("failed to publish image: " + err.Error())
 	}

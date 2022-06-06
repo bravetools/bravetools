@@ -5,12 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/signal"
 	"os/user"
 	"path"
 	"path/filepath"
 	"regexp"
-	"syscall"
 
 	"github.com/bravetools/bravetools/shared"
 	"github.com/lxc/lxd/shared/api"
@@ -134,7 +132,7 @@ func importLXD(ctx context.Context, bravefile *shared.Bravefile, remote Remote) 
 	}
 	fingerprint, err = Launch(ctx, bravefile.PlatformService.Name, bravefile.Base.Image, remote)
 	if err != nil {
-		return "", errors.New("failed to launch base unit: " + err.Error())
+		return fingerprint, errors.New("failed to launch base unit: " + err.Error())
 	}
 
 	return fingerprint, nil
@@ -340,25 +338,9 @@ func listHostImages(remote Remote) ([]api.Image, error) {
 // 	return ifaces, nil
 // }
 
-// ProcessInterruptHandler monitors for Ctrl+C keypress in Terminal
-func processInterruptHandler(originalHostImageList []api.Image, bravefile *shared.Bravefile, bh *BraveHost) {
-	c := make(chan os.Signal)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-c
-		fmt.Println("Interrupting build and cleaning artefacts")
-		cleanupBuild(originalHostImageList, bravefile, bh)
-		os.Exit(0)
-	}()
-}
-
-func cleanupBuild(originalHostImageList []api.Image, bravefile *shared.Bravefile, bh *BraveHost) {
+func cleanupBuild(imageFingerprint string, bravefile *shared.Bravefile, bh *BraveHost) {
 	DeleteUnit(bravefile.PlatformService.Name, bh.Remote)
-	updatedHostImageList, _ := listHostImages(bh.Remote)
-	fingerprints := getImageFingerprintDiff(originalHostImageList, updatedHostImageList)
-	for _, fingerprint := range fingerprints {
-		DeleteImageByFingerprint(fingerprint, bh.Remote)
-	}
+	DeleteImageByFingerprint(imageFingerprint, bh.Remote)
 }
 
 func bravefileCopy(ctx context.Context, copy []shared.CopyCommand, service string, remote Remote) error {
@@ -487,43 +469,4 @@ func checkUnits(unitName string, bh *BraveHost) error {
 	}
 
 	return nil
-}
-
-func getImageFingerprint(slice1 []api.Image, slice2 []api.Image) string {
-	var fingerprint string
-	diff := getImageFingerprintDiff(slice1, slice2)
-
-	if len(diff) > 0 {
-		fingerprint = diff[0]
-	}
-
-	return fingerprint
-}
-
-func getImageFingerprintDiff(slice1 []api.Image, slice2 []api.Image) []string {
-	var diff []string
-
-	// Loop two times, first to find slice1 strings not in slice2,
-	// second loop to find slice2 strings not in slice1
-	for i := 0; i < 2; i++ {
-		for _, s1 := range slice1 {
-			found := false
-			for _, s2 := range slice2 {
-				if s1.Fingerprint == s2.Fingerprint {
-					found = true
-					break
-				}
-			}
-			// String not found. We add it to return slice
-			if !found {
-				diff = append(diff, s1.Fingerprint)
-			}
-		}
-		// Swap the slices, only if it was the first loop
-		if i == 0 {
-			slice1, slice2 = slice2, slice1
-		}
-	}
-
-	return diff
 }

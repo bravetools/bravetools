@@ -526,8 +526,20 @@ func Launch(ctx context.Context, name string, alias string, remote Remote) (fing
 	s.Start()
 	defer s.Stop()
 
-	hostImageList, _ := listHostImages(remote)
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
+	// Get remote image fingerprint
+	remoteLxd, err := lxd.ConnectSimpleStreams("https://images.linuxcontainers.org/", nil)
+	if err != nil {
+		return "", err
+	}
+
+	remoteAlias, _, err := remoteLxd.GetImageAlias(alias)
+	if err != nil {
+		return "", err
+	}
+	fingerprint = remoteAlias.Target
+
+	// Create a local container based on the remote image
+	localLxd, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
 	if err != nil {
 		return "", err
 	}
@@ -535,10 +547,10 @@ func Launch(ctx context.Context, name string, alias string, remote Remote) (fing
 	req := api.ContainersPost{
 		Name: name,
 		Source: api.ContainerSource{
-			Type:     "image",
-			Protocol: "simplestreams",
-			Server:   "https://images.linuxcontainers.org/",
-			Alias:    alias,
+			Type:        "image",
+			Protocol:    "simplestreams",
+			Server:      "https://images.linuxcontainers.org/",
+			Fingerprint: fingerprint,
 		},
 	}
 
@@ -548,16 +560,17 @@ func Launch(ctx context.Context, name string, alias string, remote Remote) (fing
 	}
 	req.Profiles = []string{profileName}
 
-	op, err := lxdServer.CreateContainer(req)
+	op, err := localLxd.CreateContainer(req)
 	if err != nil {
-		return "", errors.New("Failed to create unit: " + err.Error())
+		return fingerprint, errors.New("Failed to create unit: " + err.Error())
 	}
 
 	err = op.Wait()
 	if err != nil {
-		return "", errors.New("Error waiting: " + err.Error())
+		return fingerprint, errors.New("Error waiting: " + err.Error())
 	}
 
+	// Wait for container to be properly set up while checking for interrupts
 	waitInit := make(chan struct{})
 	go func() {
 		time.Sleep(10 * time.Second)
@@ -569,10 +582,6 @@ func Launch(ctx context.Context, name string, alias string, remote Remote) (fing
 		return fingerprint, ctx.Err()
 	case <-waitInit:
 	}
-
-	updatedHostImageList, _ := listHostImages(remote)
-
-	fingerprint = getImageFingerprint(hostImageList, updatedHostImageList)
 
 	return fingerprint, nil
 }
