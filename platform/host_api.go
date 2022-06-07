@@ -644,6 +644,8 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 				return errors.New(shared.Fatal("failed to install packages"))
 			}
 		}
+	default:
+		return fmt.Errorf("package manager %q not recognized", pMan)
 	}
 
 	// Go through "Copy" section
