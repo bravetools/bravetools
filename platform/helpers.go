@@ -183,7 +183,7 @@ func importLocal(ctx context.Context, bravefile *shared.Bravefile, remote Remote
 	}
 
 	if err = ctx.Err(); err != nil {
-		return "", err
+		return fingerprint, err
 	}
 
 	err = LaunchFromImage(bravefile.Base.Image, bravefile.PlatformService.Name, remote)
@@ -193,7 +193,7 @@ func importLocal(ctx context.Context, bravefile *shared.Bravefile, remote Remote
 	}
 
 	if err = ctx.Err(); err != nil {
-		return "", err
+		return fingerprint, err
 	}
 
 	err = Start(bravefile.PlatformService.Name, remote)
@@ -204,7 +204,7 @@ func importLocal(ctx context.Context, bravefile *shared.Bravefile, remote Remote
 	}
 
 	if err = ctx.Err(); err != nil {
-		return "", err
+		return fingerprint, err
 	}
 
 	return fingerprint, nil
