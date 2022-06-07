@@ -549,7 +549,6 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 	// Intercept SIGINT, propagate cancel and cleanup artefacts
 	var imageFingerprint string
 
-	abortFlag := false
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 
@@ -558,7 +557,6 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 	go func() {
 		for range c {
 			fmt.Println("Interrupting build and cleaning artefacts")
-			abortFlag = true
 			cancel()
 		}
 	}()
@@ -567,29 +565,29 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 	case "public":
 		imageFingerprint, err = importLXD(ctx, bravefile, bh.Remote)
 		defer cleanupBuild(imageFingerprint, bravefile, bh)
-		if err != nil || abortFlag {
+		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
 
 		err = Start(bravefile.PlatformService.Name, bh.Remote)
-		if err != nil || abortFlag {
+		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
 	case "github":
 		imageFingerprint, err = importGitHub(ctx, bravefile, bh)
 		defer cleanupBuild(imageFingerprint, bravefile, bh)
-		if err != nil || abortFlag {
+		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
 
 		err = Start(bravefile.PlatformService.Name, bh.Remote)
-		if err != nil || abortFlag {
+		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
 	case "local":
 		imageFingerprint, err = importLocal(ctx, bravefile, bh.Remote)
 		defer cleanupBuild(imageFingerprint, bravefile, bh)
-		if err != nil || abortFlag {
+		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
 	default:
@@ -606,7 +604,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		}
 	case "apk":
 		_, err := Exec(ctx, bravefile.PlatformService.Name, []string{"apk", "update", "--no-cache"}, bh.Remote)
-		if err != nil || abortFlag {
+		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return errors.New("failed to update repositories: " + err.Error())
 		}
 
@@ -616,7 +614,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		if len(args) > 3 {
 			status, err := Exec(ctx, bravefile.PlatformService.Name, args, bh.Remote)
 
-			if err != nil || abortFlag {
+			if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 				return errors.New("failed to install packages: " + err.Error())
 			}
 			if status > 0 {
@@ -626,7 +624,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 
 	case "apt":
 		_, err := Exec(ctx, bravefile.PlatformService.Name, []string{"apt", "update"}, bh.Remote)
-		if err != nil || abortFlag {
+		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return errors.New("failed to update repositories: " + err.Error())
 		}
 
@@ -637,7 +635,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 			args = append(args, "--yes")
 			status, err := Exec(ctx, bravefile.PlatformService.Name, args, bh.Remote)
 
-			if err != nil || abortFlag {
+			if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 				return errors.New("failed to install packages: " + err.Error())
 			}
 			if status > 0 {
@@ -650,13 +648,13 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 
 	// Go through "Copy" section
 	err = bravefileCopy(ctx, bravefile.Copy, bravefile.PlatformService.Name, bh.Remote)
-	if err != nil || abortFlag {
+	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 		return err
 	}
 
 	// Go through "Run" section
 	status, err := bravefileRun(ctx, bravefile.Run, bravefile.PlatformService.Name, bh.Remote)
-	if err != nil || abortFlag {
+	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to execute command: " + err.Error())
 	}
 	if status > 0 {
@@ -666,12 +664,12 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 	// Create an image based on running container and export it. Image saved as tar.gz in project local directory.
 	unitFingerprint, err := Publish(bravefile.PlatformService.Name, bravefile.PlatformService.Version, bh.Remote)
 	defer DeleteImageByFingerprint(unitFingerprint, bh.Remote)
-	if err != nil || abortFlag {
+	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to publish image: " + err.Error())
 	}
 
 	err = ExportImage(unitFingerprint, bravefile.PlatformService.Name+"-"+bravefile.PlatformService.Version, bh.Remote)
-	if err != nil || abortFlag {
+	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to export image: " + err.Error())
 	}
 
@@ -686,7 +684,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 	}()
 
 	imageHash, err := shared.FileHash(localImageFile)
-	if err != nil || abortFlag {
+	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to generate image hash: " + err.Error())
 	}
 
@@ -707,17 +705,17 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 	}()
 
 	_, err = f.WriteString(imageHash)
-	if err != nil || abortFlag {
+	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New(err.Error())
 	}
 
 	err = shared.CopyFile(localImageFile, home+shared.ImageStore+localImageFile)
-	if err != nil || abortFlag {
+	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to copy image archive to local storage: " + err.Error())
 	}
 
 	err = shared.CopyFile(localHashFile, home+shared.ImageStore+localHashFile)
-	if err != nil || abortFlag {
+	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to copy images hash into local storage: " + err.Error())
 	}
 
@@ -808,7 +806,6 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 		return err
 	}
 
-	abortFlag := false
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 
@@ -817,42 +814,41 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 	go func() {
 		for range c {
 			fmt.Println("Interrupting build and cleaning artefacts")
-			abortFlag = true
 			cancel()
 		}
 	}()
 
 	fingerprint, err = ImportImage(image, unitParams.PlatformService.Name, bh.Remote)
-	if err != nil || abortFlag {
+	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to import image: " + err.Error())
 	}
 
 	err = LaunchFromImage(unitParams.PlatformService.Name, unitParams.PlatformService.Name, bh.Remote)
-	if err != nil || abortFlag {
+	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 		DeleteImageByFingerprint(fingerprint, bh.Remote)
 		return errors.New("failed to launch unit: " + err.Error())
 	}
 
 	err = AttachNetwork(unitParams.PlatformService.Name, bh.Settings.Name+"br0", "eth0", "eth0", bh.Remote)
-	if err != nil || abortFlag {
+	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 		DeleteImageByFingerprint(fingerprint, bh.Remote)
 		return errors.New("failed to attach network: " + err.Error())
 	}
 
 	err = ConfigDevice(unitParams.PlatformService.Name, "eth0", unitParams.PlatformService.IP, bh.Remote)
-	if err != nil || abortFlag {
+	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 		DeleteImageByFingerprint(fingerprint, bh.Remote)
 		return errors.New("failed to set IP: " + err.Error())
 	}
 
 	err = Stop(unitParams.PlatformService.Name, bh.Remote)
-	if err != nil || abortFlag {
+	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 		DeleteImageByFingerprint(fingerprint, bh.Remote)
 		return errors.New("failed to stop unit: " + err.Error())
 	}
 
 	err = Start(unitParams.PlatformService.Name, bh.Remote)
-	if err != nil || abortFlag {
+	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 		DeleteImageByFingerprint(fingerprint, bh.Remote)
 		return errors.New("Failed to restart unit: " + err.Error())
 	}
@@ -925,19 +921,19 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 	}
 
 	err = SetConfig(unitParams.PlatformService.Name, config, bh.Remote)
-	if err != nil || abortFlag {
+	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 		DeleteImageByFingerprint(fingerprint, bh.Remote)
 		return errors.New("error configuring unit: " + err.Error())
 	}
 
 	err = Stop(unitParams.PlatformService.Name, bh.Remote)
-	if err != nil || abortFlag {
+	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 		DeleteImageByFingerprint(fingerprint, bh.Remote)
 		return errors.New("failed to stop unit: " + err.Error())
 	}
 
 	err = Start(unitParams.PlatformService.Name, bh.Remote)
-	if err != nil || abortFlag {
+	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 		DeleteImageByFingerprint(fingerprint, bh.Remote)
 		return errors.New("failed to restart unit: " + err.Error())
 	}
@@ -953,7 +949,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 			}
 
 			err := addIPRules(unitParams.PlatformService.Name, ps[1], ps[0], bh)
-			if err != nil || abortFlag {
+			if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 				DeleteImageByFingerprint(fingerprint, bh.Remote)
 				delErr := DeleteUnit(unitParams.PlatformService.Name, bh.Remote)
 				if delErr != nil {
@@ -1001,7 +997,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 	braveUnit.Data = data
 
 	_, err = db.InsertUnitDB(database, braveUnit)
-	if err != nil || abortFlag {
+	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 		DeleteImageByFingerprint(fingerprint, bh.Remote)
 		DeleteUnit(unitParams.PlatformService.Name, bh.Remote)
 		return errors.New("failed to insert unit to database: " + err.Error())
