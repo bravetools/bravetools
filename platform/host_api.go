@@ -734,22 +734,19 @@ func (bh *BraveHost) PublishUnit(name string, backend Backend) error {
 	// Create an image based on running container and export it. Image saved as tar.gz in project local directory.
 	fmt.Println("Publishing unit ...")
 
-	var unitFingerprint string
-	unitFingerprint, err = Publish(name, timestamp.Format("20060102150405"), bh.Remote)
+	unitFingerprint, err := Publish(name, timestamp.Format("20060102150405"), bh.Remote)
+	defer DeleteImageByFingerprint(unitFingerprint, bh.Remote)
 	if err != nil {
-		DeleteImageByFingerprint(unitFingerprint, bh.Remote)
 		return errors.New("failed to publish image: " + err.Error())
 	}
 
 	fmt.Println("Exporting archive ...")
 	err = ExportImage(unitFingerprint, name+"-"+timestamp.Format("20060102150405"), bh.Remote)
 	if err != nil {
-		DeleteImageByFingerprint(unitFingerprint, bh.Remote)
 		return errors.New("failed to export unit: " + err.Error())
 	}
 
 	fmt.Println("Cleaning ...")
-	DeleteImageByFingerprint(unitFingerprint, bh.Remote)
 
 	return nil
 }
