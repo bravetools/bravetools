@@ -791,7 +791,14 @@ func (bh *BraveHost) StartUnit(name string, backend Backend) error {
 }
 
 // InitUnit starts unit from supplied image
-func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) error {
+func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) (err error) {
+
+	// Check if a unit with this name already exists - we don't want to delete it during cleanup
+	err = checkUnits(unitParams.PlatformService.Name, bh)
+	if err != nil {
+		return err
+	}
+
 	var fingerprint string
 
 	homeDir, _ := os.UserHomeDir()
@@ -801,7 +808,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 	image := homeDir + shared.ImageStore + unitParams.PlatformService.Image + ".tar.gz"
 
 	// Resource checks
-	err := CheckResources(image, backend, unitParams, bh)
+	err = CheckResources(image, backend, unitParams, bh)
 	if err != nil {
 		return err
 	}
@@ -819,33 +826,42 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 	}()
 
 	fingerprint, err = ImportImage(image, unitParams.PlatformService.Name, bh.Remote)
-	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
+	defer DeleteImageByFingerprint(fingerprint, bh.Remote)
+	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to import image: " + err.Error())
 	}
-	defer DeleteImageByFingerprint(fingerprint, bh.Remote)
 
+	// Launch image and set up cleanup code to delete it if an error encountered during deployment
 	err = LaunchFromImage(unitParams.PlatformService.Name, unitParams.PlatformService.Name, bh.Remote)
-	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
+	defer func() {
+		if err != nil {
+			delErr := DeleteUnit(unitParams.PlatformService.Name, bh.Remote)
+			if delErr != nil {
+				fmt.Println("failed to delete unit: " + delErr.Error())
+			}
+		}
+	}()
+	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to launch unit: " + err.Error())
 	}
 
 	err = AttachNetwork(unitParams.PlatformService.Name, bh.Settings.Name+"br0", "eth0", "eth0", bh.Remote)
-	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
+	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to attach network: " + err.Error())
 	}
 
 	err = ConfigDevice(unitParams.PlatformService.Name, "eth0", unitParams.PlatformService.IP, bh.Remote)
-	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
+	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to set IP: " + err.Error())
 	}
 
 	err = Stop(unitParams.PlatformService.Name, bh.Remote)
-	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
+	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to stop unit: " + err.Error())
 	}
 
 	err = Start(unitParams.PlatformService.Name, bh.Remote)
-	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
+	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("Failed to restart unit: " + err.Error())
 	}
 
@@ -913,17 +929,17 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 	}
 
 	err = SetConfig(unitParams.PlatformService.Name, config, bh.Remote)
-	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
+	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("error configuring unit: " + err.Error())
 	}
 
 	err = Stop(unitParams.PlatformService.Name, bh.Remote)
-	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
+	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to stop unit: " + err.Error())
 	}
 
 	err = Start(unitParams.PlatformService.Name, bh.Remote)
-	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
+	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to restart unit: " + err.Error())
 	}
 
@@ -932,16 +948,12 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 		for _, p := range ports {
 			ps := strings.Split(p, ":")
 			if len(ps) < 2 {
-				DeleteUnit(unitParams.PlatformService.Name, bh.Remote)
-				return errors.New("invalid port forwarding definition. Appropriate format is UNIT_PORT:HOST_PORT")
+				err = errors.New("invalid port forwarding definition. Appropriate format is UNIT_PORT:HOST_PORT")
+				return
 			}
 
-			err := addIPRules(unitParams.PlatformService.Name, ps[1], ps[0], bh)
-			if err := shared.CollectErrors(err, ctx.Err()); err != nil {
-				delErr := DeleteUnit(unitParams.PlatformService.Name, bh.Remote)
-				if delErr != nil {
-					return errors.New("failed to delete unit: " + delErr.Error())
-				}
+			err = addIPRules(unitParams.PlatformService.Name, ps[1], ps[0], bh)
+			if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 				return errors.New("unable to add Proxy Device: " + err.Error())
 			}
 		}
@@ -974,14 +986,12 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) err
 
 	data, err := json.Marshal(unitData)
 	if err != nil {
-		DeleteUnit(unitParams.PlatformService.Name, bh.Remote)
 		return errors.New("failed to serialize unit data")
 	}
 	braveUnit.Data = data
 
 	_, err = db.InsertUnitDB(database, braveUnit)
-	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
-		DeleteUnit(unitParams.PlatformService.Name, bh.Remote)
+	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to insert unit to database: " + err.Error())
 	}
 
