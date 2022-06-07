@@ -793,7 +793,7 @@ func (bh *BraveHost) StartUnit(name string, backend Backend) error {
 // InitUnit starts unit from supplied image
 func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) (err error) {
 
-	// Check if a unit with this name already exists - we don't want to delete it during cleanup
+	// Check if a unit with this name already exists - we don't want to delete it
 	err = checkUnits(unitParams.PlatformService.Name, bh)
 	if err != nil {
 		return err
@@ -813,6 +813,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) (er
 		return err
 	}
 
+	// Intercept SIGINT and cancel context, triggering cleanup of resources
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 
@@ -820,7 +821,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) (er
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		for range c {
-			fmt.Println("Interrupting build and cleaning artefacts")
+			fmt.Println("Interrupting deployment and cleaning artefacts")
 			cancel()
 		}
 	}()
@@ -831,7 +832,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) (er
 		return errors.New("failed to import image: " + err.Error())
 	}
 
-	// Launch image and set up cleanup code to delete it if an error encountered during deployment
+	// Launch unit and set up cleanup code to delete it if an error encountered during deployment
 	err = LaunchFromImage(unitParams.PlatformService.Name, unitParams.PlatformService.Name, bh.Remote)
 	defer func() {
 		if err != nil {
