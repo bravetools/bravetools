@@ -77,6 +77,9 @@ func (bravefile *Bravefile) Load(file string) error {
 		return err
 	}
 
+	bravefile.PlatformService.Resources.CPU = DefaultUnitCpuLimit
+	bravefile.PlatformService.Resources.RAM = DefaultUnitRamLimit
+
 	err = yaml.Unmarshal(buf.Bytes(), &bravefile)
 	if err != nil {
 		return err

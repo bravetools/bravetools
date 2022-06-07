@@ -66,13 +66,6 @@ func deploy(cmd *cobra.Command, args []string) {
 
 	if len(args) > 0 {
 		bravefile.PlatformService.Image = args[0]
-		if unitCPU == "" {
-			bravefile.PlatformService.Resources.CPU = "2"
-		}
-
-		if unitRAM == "" {
-			bravefile.PlatformService.Resources.RAM = "2GB"
-		}
 	}
 
 	if name != "" {
