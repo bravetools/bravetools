@@ -538,6 +538,10 @@ func Launch(ctx context.Context, name string, alias string, remote Remote) (fing
 	}
 	fingerprint = remoteAlias.Target
 
+	if err = ctx.Err(); err != nil {
+		return "", err
+	}
+
 	// Create a local container based on the remote image
 	localLxd, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
 	if err != nil {
