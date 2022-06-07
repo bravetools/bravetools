@@ -338,11 +338,6 @@ func listHostImages(remote Remote) ([]api.Image, error) {
 // 	return ifaces, nil
 // }
 
-func cleanupBuild(imageFingerprint string, bravefile *shared.Bravefile, bh *BraveHost) {
-	DeleteUnit(bravefile.PlatformService.Name, bh.Remote)
-	DeleteImageByFingerprint(imageFingerprint, bh.Remote)
-}
-
 func bravefileCopy(ctx context.Context, copy []shared.CopyCommand, service string, remote Remote) error {
 	dir, _ := os.Getwd()
 	for _, c := range copy {

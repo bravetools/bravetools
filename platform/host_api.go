@@ -561,10 +561,15 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		}
 	}()
 
+	// Setup build cleanup code
+	defer func() {
+		DeleteUnit(bravefile.PlatformService.Name, bh.Remote)
+		DeleteImageByFingerprint(imageFingerprint, bh.Remote)
+	}()
+
 	switch bravefile.Base.Location {
 	case "public":
 		imageFingerprint, err = importLXD(ctx, bravefile, bh.Remote)
-		defer cleanupBuild(imageFingerprint, bravefile, bh)
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
@@ -575,7 +580,6 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		}
 	case "github":
 		imageFingerprint, err = importGitHub(ctx, bravefile, bh)
-		defer cleanupBuild(imageFingerprint, bravefile, bh)
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
@@ -586,7 +590,6 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		}
 	case "local":
 		imageFingerprint, err = importLocal(ctx, bravefile, bh.Remote)
-		defer cleanupBuild(imageFingerprint, bravefile, bh)
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
@@ -678,7 +681,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 	localHashFile := localImageFile + ".md5"
 
 	defer func() {
-		if err = os.Remove(localImageFile); err != nil {
+		if err := os.Remove(localImageFile); err != nil {
 			fmt.Println("failed to clean up image archive: " + err.Error())
 		}
 	}()
@@ -696,10 +699,10 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		return errors.New(err.Error())
 	}
 	defer func() {
-		if err = f.Close(); err != nil {
+		if err := f.Close(); err != nil {
 			fmt.Println("failed to close image hash file: " + err.Error())
 		}
-		if err = os.Remove(localHashFile); err != nil {
+		if err := os.Remove(localHashFile); err != nil {
 			fmt.Println("failed to clean up image hash: " + err.Error())
 		}
 	}()
