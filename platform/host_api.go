@@ -960,6 +960,11 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) (er
 		}
 	}
 
+	err = bh.Postdeploy(ctx, unitParams)
+	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
+		return err
+	}
+
 	// Add unit into database
 
 	var braveUnit db.BraveUnit
@@ -992,13 +997,8 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) (er
 	braveUnit.Data = data
 
 	_, err = db.InsertUnitDB(database, braveUnit)
-	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
-		return errors.New("failed to insert unit to database: " + err.Error())
-	}
-
-	err = bh.Postdeploy(ctx, unitParams)
 	if err != nil {
-		return err
+		return errors.New("failed to insert unit to database: " + err.Error())
 	}
 
 	return nil
