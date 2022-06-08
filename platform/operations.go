@@ -677,17 +677,18 @@ func Exec(ctx context.Context, name string, command []string, remote Remote) (re
 		return 1, errors.New("Error getting current state: " + err.Error())
 	}
 
+	select {
+	case <-ctx.Done():
+		return 1, ctx.Err()
+	case <-args.DataDone:
+	}
+
 	err = op.Wait()
 	if err != nil {
 		return 1, errors.New("Error executing command: " + err.Error())
 	}
 	opAPI := op.Get()
 
-	select {
-	case <-ctx.Done():
-		return 1, ctx.Err()
-	case <-args.DataDone:
-	}
 	status := int(opAPI.Metadata["return"].(float64))
 
 	return status, nil
