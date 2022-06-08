@@ -188,7 +188,6 @@ func importLocal(ctx context.Context, bravefile *shared.Bravefile, remote Remote
 
 	err = LaunchFromImage(bravefile.Base.Image, bravefile.PlatformService.Name, remote)
 	if err != nil {
-		DeleteImageByFingerprint(fingerprint, remote)
 		return fingerprint, errors.New("failed to launch unit: " + err.Error())
 	}
 
@@ -198,8 +197,6 @@ func importLocal(ctx context.Context, bravefile *shared.Bravefile, remote Remote
 
 	err = Start(bravefile.PlatformService.Name, remote)
 	if err != nil {
-		DeleteUnit(bravefile.PlatformService.Name, remote)
-		DeleteImageByFingerprint(fingerprint, remote)
 		return fingerprint, errors.New("failed to start a unit: " + err.Error())
 	}
 
