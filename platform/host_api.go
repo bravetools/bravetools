@@ -1015,9 +1015,12 @@ func (bh *BraveHost) Postdeploy(ctx context.Context, bravefile *shared.Bravefile
 	}
 
 	if bravefile.PlatformService.Postdeploy.Run != nil {
-		_, err = bravefileRun(ctx, bravefile.PlatformService.Postdeploy.Run, bravefile.PlatformService.Name, bh.Remote)
+		status, err := bravefileRun(ctx, bravefile.PlatformService.Postdeploy.Run, bravefile.PlatformService.Name, bh.Remote)
 		if err != nil {
 			return err
+		}
+		if status > 0 {
+			return errors.New(shared.Fatal("non-zero exit code: " + strconv.Itoa(status)))
 		}
 	}
 
