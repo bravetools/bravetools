@@ -592,6 +592,8 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 	pMan := bravefile.SystemPackages.Manager
 
 	switch pMan {
+	case "":
+		fallthrough
 	case "apk":
 		_, err := Exec(bravefile.PlatformService.Name, []string{"apk", "update", "--no-cache"}, bh.Remote)
 		if err != nil {
