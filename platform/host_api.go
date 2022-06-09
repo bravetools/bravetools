@@ -1133,6 +1133,16 @@ func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (
 	for i := range composeFile.Services {
 		service := composeFile.Services[i]
 
+		// Load bravefile settings as defaults, overwrite if specified in composefile
+		if service.Bravefile != "" {
+			bravefile := shared.NewBravefile()
+			err = bravefile.Load(service.Bravefile)
+			if err != nil {
+				return fmt.Errorf("failed to load bravefile %q", service.Bravefile)
+			}
+			service.Service.Merge(&bravefile.PlatformService)
+		}
+
 		err = bh.InitUnit(backend, &service.Service)
 		if err != nil {
 			return err
