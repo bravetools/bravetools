@@ -1133,6 +1133,10 @@ func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (
 	for i := range composeFile.Services {
 		service := composeFile.Services[i]
 
+		if service.Build && service.Bravefile == "" {
+			return fmt.Errorf("cannot build image for %q without a Bravefile path", service.Name)
+		}
+
 		// Load bravefile settings as defaults, overwrite if specified in composefile
 		if service.Bravefile != "" {
 			bravefile := shared.NewBravefile()
@@ -1141,6 +1145,13 @@ func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (
 				return fmt.Errorf("failed to load bravefile %q", service.Bravefile)
 			}
 			service.Service.Merge(&bravefile.PlatformService)
+
+			if service.Build {
+				err = bh.BuildImage(bravefile)
+				if err != nil {
+					return err
+				}
+			}
 		}
 
 		err = bh.InitUnit(backend, &service.Service)
