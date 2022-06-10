@@ -1130,8 +1130,8 @@ func (bh *BraveHost) Postdeploy(ctx context.Context, unitConfig *shared.Service)
 }
 
 func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (err error) {
-	for i := range composeFile.Services {
-		service := composeFile.Services[i]
+	for serviceName := range composeFile.Services {
+		service := composeFile.Services[serviceName]
 
 		if service.Build && service.Bravefile == "" {
 			return fmt.Errorf("cannot build image for %q without a Bravefile path", service.Name)
@@ -1147,17 +1147,32 @@ func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (
 			service.Service.Merge(&bravefile.PlatformService)
 
 			if service.Build {
+				// Cleanup each image if error in compose
 				err = bh.BuildImage(bravefile)
 				if err != nil {
 					return err
 				}
+				defer func() {
+					if err != nil {
+						bh.DeleteLocalImage(service.Image)
+					}
+				}()
 			}
 		}
 
+		// Override Service.Name with the key provided in brave-compose file
+		service.Name = serviceName
+
+		// Cleanup each unit if error in compose
 		err = bh.InitUnit(backend, &service.Service)
 		if err != nil {
 			return err
 		}
+		defer func() {
+			if err != nil {
+				bh.DeleteUnit(service.Name)
+			}
+		}()
 	}
 	return nil
 }
