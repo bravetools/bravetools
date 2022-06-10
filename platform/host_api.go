@@ -593,7 +593,10 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 
 	switch pMan {
 	case "":
-		fallthrough
+		// No package manager - if packages are to be installed, raise error
+		if len(bravefile.SystemPackages.System) > 0 {
+			return errors.New("package manager not specified - cannot install packages")
+		}
 	case "apk":
 		_, err := Exec(bravefile.PlatformService.Name, []string{"apk", "update", "--no-cache"}, bh.Remote)
 		if err != nil {
