@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/user"
 	"path"
 	"strconv"
 	"time"
@@ -95,12 +94,10 @@ func SetupHostConfiguration(params map[string]string, userHome string) {
 	poolSizeInt, _ := strconv.Atoi(params["storage"])
 	poolSizeInt = poolSizeInt - 2
 
-	user, err := user.Current()
+	hostName, err := getCurrentUsername()
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
-
-	hostName := user.Username
 
 	timestamp := time.Now()
 	storagePoolName := hostName + "-" + timestamp.Format("20060102150405")

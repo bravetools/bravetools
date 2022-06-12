@@ -9,7 +9,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"os/user"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -77,12 +76,10 @@ func SetActiveStoragePool(name string, remote Remote) error {
 		return err
 	}
 
-	user, err := user.Current()
+	username, err := getCurrentUsername()
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
-
-	username := user.Username
 
 	profile, etag, err := lxdServer.GetProfile(username)
 	if err != nil {
