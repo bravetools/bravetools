@@ -8,6 +8,7 @@ import (
 	"os/user"
 	"path"
 	"path/filepath"
+	"regexp"
 	"syscall"
 
 	"github.com/bravetools/bravetools/shared"
@@ -16,13 +17,27 @@ import (
 
 // Private Helpers
 
-func getCurrentUsername() (string, error) {
+func getCurrentUsername() (username string, err error) {
+
 	user, err := user.Current()
 	if err != nil {
 		return "", err
 	}
 
-	username := user.Username
+	reg, err := regexp.Compile("[^a-zA-Z0-9]+")
+	if err != nil {
+		return "", err
+	}
+
+	username = reg.ReplaceAllString(user.Username, "")
+
+	// Truncate to max username length if necessary
+	usernameLength := 12
+	if len(username) < usernameLength {
+		usernameLength = len(username)
+	}
+	username = username[:usernameLength]
+
 	return username, nil
 }
 
