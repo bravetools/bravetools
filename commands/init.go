@@ -51,9 +51,9 @@ func serverInit(cmd *cobra.Command, args []string) {
 	default:
 		err := deleteBraveHome(userHome)
 		if err != nil {
-			log.Fatal(err.Error())
+			fmt.Println(err.Error())
 		}
-		log.Fatal("unsupported hos OS: ", hostOs)
+		log.Fatal("unsupported host OS: ", hostOs)
 	}
 
 	log.Println("Initialising a new Bravetools configuration")
