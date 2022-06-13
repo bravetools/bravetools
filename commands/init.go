@@ -79,9 +79,8 @@ func serverInit(cmd *cobra.Command, args []string) {
 		// TODO: validate configuration. Now assume that path ends with config.yml
 		err = shared.CopyFile(hostConfigPath, path.Join(userHome, ".bravetools", "config.yml"))
 		if err != nil {
-			err := deleteBraveHome(userHome)
-			if err != nil {
-				log.Fatal(err.Error())
+			if err := deleteBraveHome(userHome); err != nil {
+				fmt.Println(err.Error())
 			}
 			log.Fatal(err)
 		}
@@ -95,9 +94,8 @@ func serverInit(cmd *cobra.Command, args []string) {
 	log.Println("Initialising Bravetools backend")
 	err = backend.BraveBackendInit()
 	if err != nil {
-		err := deleteBraveHome(userHome)
-		if err != nil {
-			log.Fatal(err.Error())
+		if err := deleteBraveHome(userHome); err != nil {
+			fmt.Println(err.Error())
 		}
 
 		log.Fatal("error initializing Bravetools backend: ", err)
@@ -109,9 +107,8 @@ func serverInit(cmd *cobra.Command, args []string) {
 		info, err := backend.Info()
 
 		if err != nil {
-			err := deleteBraveHome(userHome)
-			if err != nil {
-				log.Fatal(err.Error())
+			if err := deleteBraveHome(userHome); err != nil {
+				fmt.Println(err.Error())
 			}
 			log.Fatal(err)
 		}
@@ -121,9 +118,8 @@ func serverInit(cmd *cobra.Command, args []string) {
 		err = platform.UpdateBraveSettings(settings)
 
 		if err != nil {
-			err := deleteBraveHome(userHome)
-			if err != nil {
-				log.Fatal(err.Error())
+			if err := deleteBraveHome(userHome); err != nil {
+				fmt.Println(err.Error())
 			}
 			log.Fatal(err)
 		}
@@ -134,9 +130,8 @@ func serverInit(cmd *cobra.Command, args []string) {
 	log.Println("Registering a Remote")
 	err = host.AddRemote()
 	if err != nil {
-		err := deleteBraveHome(userHome)
-		if err != nil {
-			log.Fatal(err.Error())
+		if err := deleteBraveHome(userHome); err != nil {
+			fmt.Println(err.Error())
 		}
 		log.Fatal(err)
 	}
@@ -149,9 +144,8 @@ func serverInit(cmd *cobra.Command, args []string) {
 		err = db.InitDB(dbPath)
 
 		if err != nil {
-			err := deleteBraveHome(userHome)
-			if err != nil {
-				log.Fatal(err.Error())
+			if err := deleteBraveHome(userHome); err != nil {
+				fmt.Println(err.Error())
 			}
 			log.Fatal("failed to initialize database: ", err)
 		}
