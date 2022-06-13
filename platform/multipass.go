@@ -4,10 +4,12 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -60,6 +62,15 @@ func (vm Multipass) BraveBackendInit() error {
 	_, err := checkMultipass()
 	if err != nil {
 		return err
+	}
+
+	if runtime.GOOS == "windows" {
+		err = shared.ExecCommand("multipass",
+			"set",
+			"local.privileged-mounts=Yes")
+		if err != nil {
+			log.Println("failed to set local.privileged-mounts to true, attempting to continue")
+		}
 	}
 
 	err = shared.ExecCommand("multipass",
