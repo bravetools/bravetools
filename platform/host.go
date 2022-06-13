@@ -89,10 +89,17 @@ func NewBraveHost() *BraveHost {
 	}
 }
 
+type HostConfig struct {
+	Ram     string
+	Network string
+	Storage string
+	Backend string
+}
+
 // SetupHostConfiguration creates configuration file and saves it in bravetools directory
-func SetupHostConfiguration(params map[string]string, userHome string) {
+func SetupHostConfiguration(params HostConfig, userHome string) {
 	var settings = HostSettings{}
-	poolSizeInt, _ := strconv.Atoi(params["storage"])
+	poolSizeInt, _ := strconv.Atoi(params.Storage)
 	poolSizeInt = poolSizeInt - 2
 
 	user, err := user.Current()
@@ -115,27 +122,28 @@ func SetupHostConfiguration(params map[string]string, userHome string) {
 			Size: strconv.Itoa(poolSizeInt) + "GB",
 		},
 		Network: Network{
-			Bridge: params["network"],
+			Bridge: params.Network,
 		},
 		Status: "inactive",
 	}
 
-	if params["backend"] == "multipass" {
+	if params.Backend == "multipass" {
+
 		backendSettings := BackendSettings{
 			Type: "multipass",
 			Resources: BackendResources{
 				Name: hostName,
 				OS:   "bionic",
 				CPU:  "2",
-				RAM:  params["ram"],
-				HD:   params["storage"] + "GB",
+				RAM:  params.Ram,
+				HD:   params.Storage + "GB",
 				IP:   "",
 			},
 		}
 		settings.BackendSettings = backendSettings
 	}
 
-	if params["backend"] == "lxd" {
+	if params.Backend == "lxd" {
 		backendSettings := BackendSettings{
 			Type: "lxd",
 			Resources: BackendResources{
