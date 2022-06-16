@@ -1130,7 +1130,13 @@ func (bh *BraveHost) Postdeploy(ctx context.Context, unitConfig *shared.Service)
 }
 
 func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (err error) {
-	for serviceName := range composeFile.Services {
+
+	topologicalOrdering, err := composeFile.TopologicalOrdering()
+	if err != nil {
+		return err
+	}
+
+	for _, serviceName := range topologicalOrdering {
 		service := composeFile.Services[serviceName]
 
 		if service.Build && service.Bravefile == "" {
