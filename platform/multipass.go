@@ -318,7 +318,7 @@ func (vm Multipass) Info() (Info, error) {
 	_, err := checkMultipass()
 
 	if err != nil {
-		return backendInfo, errors.New("annot find backend service")
+		return backendInfo, errors.New("cannot find backend service")
 	}
 
 	out, err := exec.Command("multipass", "info", vm.Settings.Name).Output()
