@@ -448,7 +448,9 @@ func GetUnits(remote Remote) (units []shared.BraveUnit, err error) {
 		unit.Name = n
 		unit.Status = containerState.Status
 		if strings.ToLower(containerState.Status) == "running" {
-			unit.Address = containerState.Network["eth0"].Addresses[0].Address
+			if eth, ok := containerState.Network["eth0"]; ok {
+				unit.Address = eth.Addresses[0].Address
+			}
 		}
 		unit.Disk = diskDevice
 		unit.Proxy = proxyDevice
