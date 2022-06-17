@@ -34,7 +34,6 @@ func includeInitFlags(cmd *cobra.Command) {
 }
 
 func serverInit(cmd *cobra.Command, args []string) {
-	params := make(map[string]string)
 	userHome, _ := os.UserHomeDir()
 
 	if _, err := os.Stat(path.Join(userHome, ".bravetools")); !os.IsNotExist(err) {
@@ -70,10 +69,12 @@ func serverInit(cmd *cobra.Command, args []string) {
 		log.Fatal(err.Error())
 	}
 
-	params["storage"] = storage
-	params["ram"] = ram
-	params["network"] = network
-	params["backend"] = backendType
+	params := platform.HostConfig{
+		Storage: storage,
+		Ram:     ram,
+		Network: network,
+		Backend: backendType,
+	}
 
 	if hostConfigPath != "" {
 		// TODO: validate configuration. Now assume that path ends with config.yml
