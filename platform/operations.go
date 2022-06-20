@@ -677,13 +677,18 @@ func Exec(ctx context.Context, name string, command []string, remote Remote) (re
 		return 1, errors.New("Error getting current state: " + err.Error())
 	}
 
+	opWait := make(chan struct{})
+	go func() {
+		err = op.Wait()
+		close(opWait)
+	}()
+
 	select {
 	case <-ctx.Done():
 		return 1, ctx.Err()
-	case <-args.DataDone:
+	case <-opWait:
 	}
 
-	err = op.Wait()
 	if err != nil {
 		return 1, errors.New("Error executing command: " + err.Error())
 	}
