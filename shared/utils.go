@@ -389,3 +389,13 @@ func CreateDirectory(dirPath string) error {
 	}
 	return nil
 }
+
+// CollectErrors returns the first error encountered or nil if there are none
+func CollectErrors(errs ...error) error {
+	for _, err := range errs {
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}

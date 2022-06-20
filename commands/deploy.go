@@ -99,10 +99,4 @@ func deploy(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	err = host.Postdeploy(bravefile)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 }

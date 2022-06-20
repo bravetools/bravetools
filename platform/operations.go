@@ -2,6 +2,7 @@ package platform
 
 import (
 	"bytes"
+	"context"
 	"crypto/x509"
 	"errors"
 	"fmt"
@@ -513,15 +514,36 @@ func LaunchFromImage(image string, name string, remote Remote) error {
 // Launch starts a new unit based on standard image from linuxcontainers.org
 // Alias: "ubuntu/bionic/amd64"
 // Alias: "alpine/3.9/amd64"
-func Launch(name string, alias string, remote Remote) (fingerprint string, err error) {
+func Launch(ctx context.Context, name string, alias string, remote Remote) (fingerprint string, err error) {
+	if err = ctx.Err(); err != nil {
+		return fingerprint, err
+	}
+
 	operation := shared.Info("Importing " + alias)
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stdout))
 	s.Suffix = " " + operation
 
 	s.Start()
+	defer s.Stop()
 
-	hostImageList, _ := listHostImages(remote)
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
+	// Get remote image fingerprint
+	remoteLxd, err := lxd.ConnectSimpleStreams("https://images.linuxcontainers.org/", nil)
+	if err != nil {
+		return "", err
+	}
+
+	remoteAlias, _, err := remoteLxd.GetImageAlias(alias)
+	if err != nil {
+		return "", err
+	}
+	fingerprint = remoteAlias.Target
+
+	if err = ctx.Err(); err != nil {
+		return "", err
+	}
+
+	// Create a local container based on the remote image
+	localLxd, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
 	if err != nil {
 		return "", err
 	}
@@ -529,10 +551,10 @@ func Launch(name string, alias string, remote Remote) (fingerprint string, err e
 	req := api.ContainersPost{
 		Name: name,
 		Source: api.ContainerSource{
-			Type:     "image",
-			Protocol: "simplestreams",
-			Server:   "https://images.linuxcontainers.org/",
-			Alias:    alias,
+			Type:        "image",
+			Protocol:    "simplestreams",
+			Server:      "https://images.linuxcontainers.org/",
+			Fingerprint: fingerprint,
 		},
 	}
 
@@ -542,23 +564,28 @@ func Launch(name string, alias string, remote Remote) (fingerprint string, err e
 	}
 	req.Profiles = []string{profileName}
 
-	op, err := lxdServer.CreateContainer(req)
+	op, err := localLxd.CreateContainer(req)
 	if err != nil {
-		return "", errors.New("Failed to create unit: " + err.Error())
+		return fingerprint, errors.New("Failed to create unit: " + err.Error())
 	}
 
 	err = op.Wait()
 	if err != nil {
-		return "", errors.New("Error waiting: " + err.Error())
+		return fingerprint, errors.New("Error waiting: " + err.Error())
 	}
 
-	time.Sleep(10 * time.Second)
+	// Wait for container to be properly set up while checking for interrupts
+	waitInit := make(chan struct{})
+	go func() {
+		time.Sleep(10 * time.Second)
+		close(waitInit)
+	}()
 
-	s.Stop()
-
-	updatedHostImageList, _ := listHostImages(remote)
-
-	fingerprint = getImageFingerprint(hostImageList, updatedHostImageList)
+	select {
+	case <-ctx.Done():
+		return fingerprint, ctx.Err()
+	case <-waitInit:
+	}
 
 	return fingerprint, nil
 }
@@ -601,13 +628,19 @@ func isIPv4(ip string) bool {
 }
 
 // Exec runs command inside unit
-func Exec(name string, command []string, remote Remote) (int, error) {
+func Exec(ctx context.Context, name string, command []string, remote Remote) (returnCode int, err error) {
+	if err = ctx.Err(); err != nil {
+		return 0, err
+	}
 	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
 	if err != nil {
 		return 0, err
 	}
 
 	err = retry(5, 2*time.Second, func() (err error) {
+		if err = ctx.Err(); err != nil {
+			return err
+		}
 		c, _, err := lxdServer.GetContainerState(name)
 		ip := c.Network["eth0"].Addresses[0].Address
 		isIP := isIPv4(ip)
@@ -644,13 +677,18 @@ func Exec(name string, command []string, remote Remote) (int, error) {
 		return 1, errors.New("Error getting current state: " + err.Error())
 	}
 
+	select {
+	case <-ctx.Done():
+		return 1, ctx.Err()
+	case <-args.DataDone:
+	}
+
 	err = op.Wait()
 	if err != nil {
 		return 1, errors.New("Error executing command: " + err.Error())
 	}
 	opAPI := op.Get()
 
-	<-args.DataDone
 	status := int(opAPI.Metadata["return"].(float64))
 
 	return status, nil

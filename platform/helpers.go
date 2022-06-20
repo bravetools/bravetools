@@ -1,15 +1,14 @@
 package platform
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
-	"os/signal"
 	"os/user"
 	"path"
 	"path/filepath"
 	"regexp"
-	"syscall"
 
 	"github.com/bravetools/bravetools/shared"
 	"github.com/lxc/lxd/shared/api"
@@ -127,16 +126,22 @@ func createSharedVolume(storagePoolName string,
 	return nil
 }
 
-func importLXD(bravefile *shared.Bravefile, remote Remote) (fingerprint string, err error) {
-	fingerprint, err = Launch(bravefile.PlatformService.Name, bravefile.Base.Image, remote)
+func importLXD(ctx context.Context, bravefile *shared.Bravefile, remote Remote) (fingerprint string, err error) {
+	if err = ctx.Err(); err != nil {
+		return "", err
+	}
+	fingerprint, err = Launch(ctx, bravefile.PlatformService.Name, bravefile.Base.Image, remote)
 	if err != nil {
-		return "", errors.New("failed to launch base unit: " + err.Error())
+		return fingerprint, errors.New("failed to launch base unit: " + err.Error())
 	}
 
 	return fingerprint, nil
 }
 
-func importGitHub(bravefile *shared.Bravefile, bh *BraveHost) (fingerprint string, err error) {
+func importGitHub(ctx context.Context, bravefile *shared.Bravefile, bh *BraveHost) (fingerprint string, err error) {
+	if err = ctx.Err(); err != nil {
+		return "", err
+	}
 	home, _ := os.UserHomeDir()
 	imageLocation := filepath.Join(home, shared.ImageStore)
 
@@ -160,11 +165,14 @@ func importGitHub(bravefile *shared.Bravefile, bh *BraveHost) (fingerprint strin
 	remoteBravefile.Base.Image = remoteServiceName
 	remoteBravefile.PlatformService.Name = bravefile.PlatformService.Name
 
-	fingerprint, err = importLocal(remoteBravefile, bh.Remote)
+	fingerprint, err = importLocal(ctx, remoteBravefile, bh.Remote)
 	return fingerprint, err
 }
 
-func importLocal(bravefile *shared.Bravefile, remote Remote) (fingerprint string, err error) {
+func importLocal(ctx context.Context, bravefile *shared.Bravefile, remote Remote) (fingerprint string, err error) {
+	if err = ctx.Err(); err != nil {
+		return "", err
+	}
 	home, _ := os.UserHomeDir()
 	location := filepath.Join(home, shared.ImageStore)
 
@@ -174,17 +182,26 @@ func importLocal(bravefile *shared.Bravefile, remote Remote) (fingerprint string
 		return fingerprint, errors.New("failed to import image: " + err.Error())
 	}
 
+	if err = ctx.Err(); err != nil {
+		return fingerprint, err
+	}
+
 	err = LaunchFromImage(bravefile.Base.Image, bravefile.PlatformService.Name, remote)
 	if err != nil {
-		DeleteImageByFingerprint(fingerprint, remote)
 		return fingerprint, errors.New("failed to launch unit: " + err.Error())
+	}
+
+	if err = ctx.Err(); err != nil {
+		return fingerprint, err
 	}
 
 	err = Start(bravefile.PlatformService.Name, remote)
 	if err != nil {
-		DeleteUnit(bravefile.PlatformService.Name, remote)
-		DeleteImageByFingerprint(fingerprint, remote)
 		return fingerprint, errors.New("failed to start a unit: " + err.Error())
+	}
+
+	if err = ctx.Err(); err != nil {
+		return fingerprint, err
 	}
 
 	return fingerprint, nil
@@ -318,29 +335,19 @@ func listHostImages(remote Remote) ([]api.Image, error) {
 // 	return ifaces, nil
 // }
 
-// ProcessInterruptHandler monitors for Ctrl+C keypress in Terminal
-func processInterruptHandler(fingerprint string, bravefile *shared.Bravefile, bh *BraveHost) {
-	c := make(chan os.Signal)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		<-c
-		fmt.Println("Interrupting build and cleaning artefacts")
-		DeleteImageByFingerprint(fingerprint, bh.Remote)
-		DeleteUnit(bravefile.PlatformService.Name, bh.Remote)
-
-		os.Exit(0)
-	}()
-}
-
-func bravefileCopy(copy []shared.CopyCommand, service string, remote Remote) error {
+func bravefileCopy(ctx context.Context, copy []shared.CopyCommand, service string, remote Remote) error {
 	dir, _ := os.Getwd()
 	for _, c := range copy {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
 		source := c.Source
 		source = path.Join(dir, source)
 		sourcePath := filepath.FromSlash(source)
 
 		target := c.Target
-		_, err := Exec(service, []string{"mkdir", "-p", target}, remote)
+		_, err := Exec(ctx, service, []string{"mkdir", "-p", target}, remote)
 		if err != nil {
 			return errors.New("Failed to create target directory: " + err.Error())
 		}
@@ -368,7 +375,7 @@ func bravefileCopy(copy []shared.CopyCommand, service string, remote Remote) err
 		}
 
 		if c.Action != "" {
-			_, err = Exec(service, []string{"bash", "-c", c.Action}, remote)
+			_, err = Exec(ctx, service, []string{"bash", "-c", c.Action}, remote)
 			if err != nil {
 				return errors.New("Failed to execute action: " + err.Error())
 			}
@@ -378,8 +385,12 @@ func bravefileCopy(copy []shared.CopyCommand, service string, remote Remote) err
 	return nil
 }
 
-func bravefileRun(run []shared.RunCommand, service string, remote Remote) (status int, err error) {
+func bravefileRun(ctx context.Context, run []shared.RunCommand, service string, remote Remote) (status int, err error) {
 	for _, c := range run {
+		if err = ctx.Err(); err != nil {
+			return 1, err
+		}
+
 		var command string
 		var content string
 
@@ -399,7 +410,7 @@ func bravefileRun(run []shared.RunCommand, service string, remote Remote) (statu
 			args = append(args, content)
 		}
 
-		status, err = Exec(service, args, remote)
+		status, err = Exec(ctx, service, args, remote)
 
 	}
 
@@ -450,37 +461,4 @@ func checkUnits(unitName string, bh *BraveHost) error {
 	}
 
 	return nil
-}
-
-func getImageFingerprint(slice1 []api.Image, slice2 []api.Image) string {
-	var diff []string
-	var fingerprint string
-
-	// Loop two times, first to find slice1 strings not in slice2,
-	// second loop to find slice2 strings not in slice1
-	for i := 0; i < 2; i++ {
-		for _, s1 := range slice1 {
-			found := false
-			for _, s2 := range slice2 {
-				if s1.Fingerprint == s2.Fingerprint {
-					found = true
-					break
-				}
-			}
-			// String not found. We add it to return slice
-			if !found {
-				diff = append(diff, s1.Fingerprint)
-			}
-		}
-		// Swap the slices, only if it was the first loop
-		if i == 0 {
-			slice1, slice2 = slice2, slice1
-		}
-	}
-
-	if len(diff) > 0 {
-		fingerprint = diff[0]
-	}
-
-	return fingerprint
 }
