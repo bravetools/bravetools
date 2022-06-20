@@ -1,6 +1,7 @@
 package platform
 
 import (
+	"context"
 	"testing"
 
 	"github.com/bravetools/bravetools/shared"
@@ -70,6 +71,8 @@ func Test_InitUnit(t *testing.T) {
 	host := *NewBraveHost()
 	backend := NewLxd(host.Settings)
 
+	ctx := context.Background()
+
 	bravefile := *shared.NewBravefile()
 	bravefile.Base.Image = "alpine/edge/amd64"
 	bravefile.Base.Location = "public"
@@ -107,7 +110,7 @@ func Test_InitUnit(t *testing.T) {
 		t.Error("host.InitUnit: ", err)
 	}
 
-	err = host.Postdeploy(&bravefile)
+	err = host.Postdeploy(ctx, &bravefile)
 	if err != nil {
 		t.Error("host.Postdeploy: ", err)
 	}
