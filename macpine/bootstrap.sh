@@ -17,5 +17,5 @@ export GO111MODULE=on
 
 go version
 
-cd /mnt ; make linux; cd ../
+cd /root/mnt ; make linux; cd ../
 brave init
