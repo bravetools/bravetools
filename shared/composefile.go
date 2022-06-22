@@ -12,6 +12,7 @@ type ComposeService struct {
 	Service   `yaml:",inline"`
 	Bravefile string   `yaml:"bravefile,omitempty"`
 	Build     bool     `yaml:"build,omitempty"`
+	Context   string   `yaml:"context,omitempty"`
 	Depends   []string `yaml:"depends_on,omitempty"`
 }
 

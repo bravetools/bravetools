@@ -1136,6 +1136,11 @@ func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (
 		return err
 	}
 
+	workingDir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
 	for _, serviceName := range topologicalOrdering {
 		service := composeFile.Services[serviceName]
 
@@ -1153,6 +1158,13 @@ func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (
 			service.Service.Merge(&bravefile.PlatformService)
 
 			if service.Build {
+				// Switch to build context dir
+				buildDir := service.Context
+				if buildDir == "" {
+					buildDir = filepath.Dir(service.Bravefile)
+				}
+				os.Chdir(buildDir)
+
 				// Cleanup each image if error in compose
 				err = bh.BuildImage(bravefile)
 				if err != nil {
@@ -1163,11 +1175,24 @@ func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (
 						bh.DeleteLocalImage(service.Image)
 					}
 				}()
+
+				os.Chdir(workingDir)
 			}
 		}
 
 		// Override Service.Name with the key provided in brave-compose file
 		service.Name = serviceName
+
+		// Deploy context - use Context is provided, else Bravefile if present, else current dir
+		deployDir := service.Context
+		if deployDir == "" {
+			if service.Bravefile != "" {
+				deployDir = filepath.Dir(service.Bravefile)
+			} else {
+				deployDir = "."
+			}
+		}
+		os.Chdir(deployDir)
 
 		// Cleanup each unit if error in compose
 		err = bh.InitUnit(backend, &service.Service)
@@ -1179,6 +1204,9 @@ func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (
 				bh.DeleteUnit(service.Name)
 			}
 		}()
+
+		os.Chdir(workingDir)
+
 	}
 	return nil
 }
