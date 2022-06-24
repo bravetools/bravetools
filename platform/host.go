@@ -223,8 +223,8 @@ func ConfigureHost(settings HostSettings, remote Remote) error {
 func loadRemoteSettings(userHome string, remoteIP string) (Remote, error) {
 	remote := Remote{}
 
-	keyPath := userHome + shared.BraveClientKey
-	certPath := userHome + shared.BraveClientCert
+	keyPath := path.Join(userHome, shared.BraveClientKey)
+	certPath := path.Join(userHome, shared.BraveClientCert)
 	key, _ := loadKey(keyPath)
 	cert, _ := loadCert(certPath)
 
