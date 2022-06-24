@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -152,7 +153,7 @@ func AddRemote(braveHost *BraveHost) error {
 		fmt.Printf(("Certificate fingerprint: %s")+"\n", digest)
 	}
 
-	dnam := userHome + "/.bravetools/" + "servercerts"
+	dnam := path.Join(userHome, shared.BraveServerCertStore)
 	err = os.MkdirAll(dnam, 0750)
 	if err != nil {
 		return errors.New("could not create server cert dir")
@@ -195,7 +196,7 @@ func RemoveRemote(name string) error {
 	userHome, _ := os.UserHomeDir()
 	certf := userHome + shared.BraveClientCert
 	keyf := userHome + shared.BraveClientKey
-	certs := userHome + "/.bravetools/" + "servercerts/" + name + ".crt"
+	certs := path.Join(userHome, shared.BraveServerCertStore, name+".crt")
 	err := os.Remove(certf)
 	if err != nil {
 		return err

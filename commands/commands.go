@@ -83,17 +83,17 @@ func createBraveHome(userHome string) error {
 		return err
 	}
 
-	err = shared.CreateDirectory(path.Join(userHome, ".bravetools", "certs"))
+	err = shared.CreateDirectory(path.Join(userHome, shared.BraveCertStore))
 	if err != nil {
 		return err
 	}
 
-	err = shared.CreateDirectory(path.Join(userHome, ".bravetools", "images"))
+	err = shared.CreateDirectory(path.Join(userHome, shared.ImageStore))
 	if err != nil {
 		return err
 	}
 
-	err = shared.CreateDirectory(path.Join(userHome, ".bravetools", "servercerts"))
+	err = shared.CreateDirectory(path.Join(userHome, shared.BraveServerCertStore))
 	if err != nil {
 		return err
 	}
