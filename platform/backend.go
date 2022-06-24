@@ -20,3 +20,14 @@ type Info struct {
 	Memory        []string
 	CPU           string
 }
+
+// NewHostBackend returns a new Backend from provided host Settings
+func NewHostBackend(host BraveHost) (backend Backend) {
+	switch host.Settings.BackendSettings.Type {
+	case "multipass":
+		backend = NewMultipass(host.Settings)
+	case "lxd":
+		backend = NewLxd(host.Settings)
+	}
+	return backend
+}
