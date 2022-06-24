@@ -110,8 +110,8 @@ func (vm Multipass) BraveBackendInit() error {
 
 	err = shared.ExecCommand("multipass",
 		"mount",
-		filepath.Join(usr.HomeDir, ".bravetools"),
-		vm.Settings.Name+":/home/ubuntu/.bravetools/")
+		filepath.Join(usr.HomeDir, shared.BraveHome),
+		vm.Settings.Name+":/home/ubuntu"+shared.BraveHome)
 
 	if err != nil {
 		return errors.New("Unable to mount local volumes to multipass: " + err.Error())

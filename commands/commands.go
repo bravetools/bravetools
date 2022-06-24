@@ -78,7 +78,7 @@ func setBackend(host platform.BraveHost) error {
 }
 
 func createBraveHome(userHome string) error {
-	err := shared.CreateDirectory(path.Join(userHome, ".bravetools"))
+	err := shared.CreateDirectory(path.Join(userHome, shared.BraveHome))
 	if err != nil {
 		return err
 	}

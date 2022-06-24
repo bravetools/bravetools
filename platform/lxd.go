@@ -33,7 +33,7 @@ const (
 
 func deleteBraveHome() error {
 	userHome, _ := os.UserHomeDir()
-	bravetoolsHome := path.Join(userHome, ".bravetools")
+	bravetoolsHome := path.Join(userHome, shared.BraveHome)
 	err := os.RemoveAll(bravetoolsHome)
 	return err
 }
