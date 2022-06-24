@@ -2,23 +2,27 @@ package db
 
 import (
 	"encoding/json"
+	"log"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 )
 
+const testDB = "brave_test.db"
+
 func Test_GetAllUnits(t *testing.T) {
 
-	db, err := OpenDB("brave_test.db")
+	db, err := OpenDB(testDB)
 	if err != nil {
-		t.Log("Failed to open db")
+		t.Fatal("Failed to open db: ", err)
 	}
 
 	units, err := GetAllUnitsDB(db)
 	if err != nil {
 		t.Log("Error getting all units")
-		t.Log("Error: ", err)
+		t.Error("Error: ", err)
 	} else {
 		t.Log("Units: ", units)
 	}
@@ -26,9 +30,9 @@ func Test_GetAllUnits(t *testing.T) {
 
 func Test_GetUnit(t *testing.T) {
 
-	db, err := OpenDB("brave_test.db")
+	db, err := OpenDB(testDB)
 	if err != nil {
-		t.Log("Failed to open db")
+		t.Fatal("Failed to open db: ", err)
 	}
 
 	unit, err := GetUnitDB(db, "test")
@@ -49,9 +53,9 @@ func Test_GetUnit(t *testing.T) {
 
 func Test_DeleteUnit(t *testing.T) {
 
-	db, err := OpenDB("brave_test.db")
+	db, err := OpenDB(testDB)
 	if err != nil {
-		t.Log("Failed to open db")
+		t.Fatal("Failed to open db: ", err)
 	}
 
 	err = DeleteUnitDB(db, "test")
@@ -64,8 +68,6 @@ func Test_DeleteUnit(t *testing.T) {
 }
 
 func Test_InsertUnit(t *testing.T) {
-	err := InitDB("brave_test.db")
-
 	uid, _ := uuid.NewUUID()
 
 	unitData := UnitData{
@@ -84,9 +86,9 @@ func Test_InsertUnit(t *testing.T) {
 		Data: data,
 	}
 
-	db, err := OpenDB("brave_test.db")
+	db, err := OpenDB(testDB)
 	if err != nil {
-		t.Log("Failed to open db")
+		t.Fatal("Failed to open db: ", err)
 	}
 
 	id, err := InsertUnitDB(db, unit)
@@ -96,5 +98,14 @@ func Test_InsertUnit(t *testing.T) {
 	} else {
 		t.Log("Unit inserted")
 		t.Log("Record ID: ", id)
+	}
+}
+
+func TestMain(m *testing.M) {
+	InitDB(testDB)
+	m.Run()
+	err := os.Remove(testDB)
+	if err != nil {
+		log.Println("failed to cleanup test database file :", testDB)
 	}
 }
