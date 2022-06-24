@@ -101,13 +101,13 @@ func createBraveHome(userHome string) error {
 }
 
 func deleteBraveHome(userHome string) error {
-	exists, err := shared.CheckPath(path.Join(userHome, ".bravetools"))
+	exists, err := shared.CheckPath(path.Join(userHome, shared.BraveHome))
 	if err != nil {
 		return err
 	}
 
 	if exists {
-		err = os.RemoveAll(path.Join(userHome, ".bravetools"))
+		err = os.RemoveAll(path.Join(userHome, shared.BraveHome))
 		if err != nil {
 			return err
 		}

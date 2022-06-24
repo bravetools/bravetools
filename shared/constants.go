@@ -11,6 +11,7 @@ service:
   version: 1.0
 `
 
+const BraveHome = "/.bravetools"
 // PlatformConfig ..
 const PlatformConfig = "/.bravetools/config.yml"
 
