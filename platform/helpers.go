@@ -357,7 +357,7 @@ func bravefileCopy(ctx context.Context, lxdServer lxd.InstanceServer, copy []sha
 		sourcePath := filepath.FromSlash(source)
 
 		target := c.Target
-		_, err := Exec(ctx, lxdServer, service, []string{"mkdir", "-p", target})
+		_, err := Exec(ctx, lxdServer, service, []string{"mkdir", "-p", target}, ExecArgs{})
 		if err != nil {
 			return errors.New("Failed to create target directory: " + err.Error())
 		}
@@ -385,7 +385,7 @@ func bravefileCopy(ctx context.Context, lxdServer lxd.InstanceServer, copy []sha
 		}
 
 		if c.Action != "" {
-			_, err = Exec(ctx, lxdServer, service, []string{"bash", "-c", c.Action})
+			_, err = Exec(ctx, lxdServer, service, []string{"bash", "-c", c.Action}, ExecArgs{})
 			if err != nil {
 				return errors.New("Failed to execute action: " + err.Error())
 			}
@@ -417,14 +417,13 @@ func bravefileRun(ctx context.Context, lxdServer lxd.InstanceServer, run []share
 			args = append(args, content)
 		}
 
-		status, err := Exec(ctx, lxdServer, service, args)
+		status, err := Exec(ctx, lxdServer, service, args, ExecArgs{})
 		if err != nil {
 			return err
 		}
 		if status > 0 {
 			return fmt.Errorf("non-zero exit code %d for command %q", status, strings.Join(args, " "))
 		}
-
 	}
 
 	return err
