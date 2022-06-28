@@ -589,6 +589,7 @@ func isIPv4(ip string) bool {
 }
 
 type ExecArgs struct {
+	env map[string]string
 }
 
 // Exec runs command inside unit
@@ -621,6 +622,7 @@ func Exec(ctx context.Context, lxdServer lxd.InstanceServer, name string, comman
 		WaitForWS:    true,
 		RecordOutput: true,
 		Interactive:  false,
+		Environment:  arg.env,
 	}
 
 	args := lxd.ContainerExecArgs{
