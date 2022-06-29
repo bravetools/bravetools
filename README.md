@@ -38,18 +38,14 @@ Configurable system images have many advantages, but their use has been limited.
 
 To get started using Bravetools:
 
-1. Download a platform-specific binary, rename it to `brave`, and add it to your PATH variable:
-
-| Operating System | Binary | Version |
-|------------------|--------|---------|
-| Ubuntu           | [download](https://github.com/bravetools/bravetools/releases/download/1.55/brave-release-1.55-ubuntu) | release-1.55 |
-| macOS            | [download](https://github.com/bravetools/bravetools/releases/download/1.55/brave-release-1.55-darwin) | release-1.55 |
-| Windows 8/10     | [download](https://github.com/bravetools/bravetools/releases/download/1.55/brave-release-1.55-win.exe)  | release-1.55 |
+1. [Download](https://github.com/bravetools/bravetools/releases) a platform-specific binary, rename it to `brave`, and add it to your PATH 
 
 2. Add your user to `lxd group`:
 ```bash
 sudo usermod --append --groups lxd $USER
 ```
+
+3. Run `brave init`
 
 ### Install from source
 
