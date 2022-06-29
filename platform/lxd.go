@@ -45,25 +45,36 @@ func deleteBraveHome() error {
 // 	return checkPath
 // }
 
-func lxdCheck(vm Lxd) (LxdStatus, string, error) {
-	r, err := shared.ExecCommandWReturn(
-		"which",
-		"lxc")
+func lxdCheck(vm Lxd) (status LxdStatus, lxcPath string, err error) {
+	switch vm.Settings.BackendSettings.Type {
+	case "lxd":
+		lxcPath, err = shared.ExecCommandWReturn(
+			"which",
+			"lxc")
+	case "multipass":
+		lxcPath, err = shared.ExecCommandWReturn(
+			"multipass",
+			"exec",
+			vm.Settings.Name,
+			"--",
+			"which",
+			"lxc")
+	}
 	if err != nil {
 		return -1, "", err
 	}
 
-	if r == "" {
+	if lxcPath == "" {
 		return NotInstalled, "", nil
 	}
 
-	whichLxc := strings.TrimSpace(r)
+	lxcPath = strings.TrimSpace(lxcPath)
 
-	if len(whichLxc) > 0 && vm.Settings.Status == "inactive" {
-		return NotInitialised, whichLxc, nil
+	if len(lxcPath) > 0 && vm.Settings.Status == "inactive" {
+		return NotInitialised, lxcPath, nil
 	}
 
-	return Installed, whichLxc, nil
+	return Installed, lxcPath, nil
 }
 
 // NewLxd constructor
@@ -112,7 +123,7 @@ func (vm Lxd) BraveBackendInit() error {
 
 func initiateLxd(vm Lxd, whichLxc string) error {
 
-	_, _, err := checkLXDVersion(whichLxc)
+	_, _, err := vm.checkLXDVersion(whichLxc)
 	if err != nil {
 		return err
 	}
@@ -189,10 +200,24 @@ func initiateLxd(vm Lxd, whichLxc string) error {
 	return nil
 }
 
-func checkLXDVersion(whichLxc string) (clientVersion int, serverVersion int, err error) {
-	ver, err := shared.ExecCommandWReturn(
-		whichLxc,
-		"version")
+func (vm Lxd) checkLXDVersion(whichLxc string) (clientVersion int, serverVersion int, err error) {
+	var ver string
+
+	switch vm.Settings.BackendSettings.Type {
+	case "lxd":
+		ver, err = shared.ExecCommandWReturn(
+			whichLxc,
+			"version")
+	case "multipass":
+		ver, err = shared.ExecCommandWReturn(
+			"multipass",
+			"exec",
+			vm.Settings.Name,
+			"--",
+			whichLxc,
+			"version")
+	}
+
 	if err != nil {
 		return clientVersion, serverVersion, errors.New("cannot get LXD version")
 	}

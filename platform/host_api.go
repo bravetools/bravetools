@@ -891,7 +891,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) (er
 		return err
 	}
 
-	clientVersion, _, err := checkLXDVersion(whichLxc)
+	clientVersion, _, err := vm.checkLXDVersion(whichLxc)
 	if err != nil {
 		return err
 	}
