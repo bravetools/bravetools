@@ -32,3 +32,9 @@ const SnapLXC = "/snap/bin/lxc"
 
 // BraveDB path to Bravetools database
 const BraveDB = BraveHome + "/bravetools.db"
+
+// DefaultUnitCpuLimit - used if not specified
+const DefaultUnitCpuLimit = "2"
+
+// DefaultUnitRamLimit - used if not specified
+const DefaultUnitRamLimit = "2GB"
