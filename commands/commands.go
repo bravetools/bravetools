@@ -64,19 +64,6 @@ func checkBackend() {
 	}
 }
 
-func setBackend(host platform.BraveHost) error {
-	backendType := host.Settings.BackendSettings.Type
-
-	switch backendType {
-	case "multipass":
-		backend = platform.NewMultipass(host.Settings)
-	case "lxd":
-		backend = platform.NewLxd(host.Settings)
-	}
-
-	return nil
-}
-
 func createBraveHome(userHome string) error {
 	err := shared.CreateDirectory(path.Join(userHome, shared.BraveHome))
 	if err != nil {
@@ -116,8 +103,9 @@ func deleteBraveHome(userHome string) error {
 }
 
 func loadConfig() {
+	var err error
 	host = *platform.NewBraveHost()
-	err := setBackend(host)
+	backend, err = platform.NewHostBackend(host)
 	if err != nil {
 		log.Fatal(err)
 	}

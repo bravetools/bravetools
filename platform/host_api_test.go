@@ -29,9 +29,12 @@ func Test_DeleteLocalImage(t *testing.T) {
 
 func Test_HostInfo(t *testing.T) {
 	host := *NewBraveHost()
-	backend := NewLxd(host.Settings)
+	backend, err := NewHostBackend(host)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	err := host.HostInfo(backend, false)
+	err = host.HostInfo(backend, false)
 	if err != nil {
 		t.Error("host.HostInfo: ", err)
 	}
@@ -69,7 +72,10 @@ func Test_BuildImage(t *testing.T) {
 
 func Test_InitUnit(t *testing.T) {
 	host := *NewBraveHost()
-	backend := NewLxd(host.Settings)
+	backend, err := NewHostBackend(host)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	ctx := context.Background()
 
@@ -100,7 +106,7 @@ func Test_InitUnit(t *testing.T) {
 		},
 	}
 
-	err := host.BuildImage(&bravefile)
+	err = host.BuildImage(&bravefile)
 	if err != nil {
 		t.Error("host.BuildImage: ", err)
 	}
@@ -138,9 +144,12 @@ func Test_InitUnit(t *testing.T) {
 
 func Test_ListLocalImages(t *testing.T) {
 	host := *NewBraveHost()
-	backend := NewLxd(host.Settings)
+	backend, err := NewHostBackend(host)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	err := host.HostInfo(backend, false)
+	err = host.HostInfo(backend, false)
 	if err != nil {
 		t.Error("host.HostInfo: ", err)
 	}
@@ -153,9 +162,12 @@ func Test_ListLocalImages(t *testing.T) {
 
 func Test_ListUnits(t *testing.T) {
 	host := *NewBraveHost()
-	backend := NewLxd(host.Settings)
+	backend, err := NewHostBackend(host)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	err := host.HostInfo(backend, false)
+	err = host.HostInfo(backend, false)
 	if err != nil {
 		t.Error("host.HostInfo: ", err)
 	}
