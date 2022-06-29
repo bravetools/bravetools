@@ -22,6 +22,7 @@ type RunCommand struct {
 	Content string            `yaml:"content,omitempty"`
 	Args    []string          `yaml:"args,omitempty"`
 	Env     map[string]string `yaml:"env,omitempty"`
+	Detach  bool              `yaml:"detach,omitempty"`
 }
 
 //CopyCommand defines source and target for files to be copied into container

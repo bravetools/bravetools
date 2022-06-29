@@ -589,7 +589,8 @@ func isIPv4(ip string) bool {
 }
 
 type ExecArgs struct {
-	env map[string]string
+	env    map[string]string
+	detach bool
 }
 
 // Exec runs command inside unit
@@ -633,10 +634,18 @@ func Exec(ctx context.Context, lxdServer lxd.InstanceServer, name string, comman
 		DataDone: make(chan bool),
 	}
 
+	if arg.detach {
+		req.WaitForWS = false
+	}
+
 	op, err := lxdServer.ExecContainer(name, req, &args)
 
 	if err != nil {
 		return 1, errors.New("Error getting current state: " + err.Error())
+	}
+
+	if arg.detach {
+		return returnCode, nil
 	}
 
 	opWait := make(chan struct{})
@@ -656,9 +665,9 @@ func Exec(ctx context.Context, lxdServer lxd.InstanceServer, name string, comman
 	}
 	opAPI := op.Get()
 
-	status := int(opAPI.Metadata["return"].(float64))
+	returnCode = int(opAPI.Metadata["return"].(float64))
 
-	return status, nil
+	return returnCode, nil
 }
 
 // Delete deletes a unit on a LXD remote
