@@ -6,6 +6,7 @@
 *.swp
 
 docs/_build
+bin/
 
 release/bin/brave
 release/bin/*.tar.gz
