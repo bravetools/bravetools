@@ -7,8 +7,8 @@ import (
 )
 
 var braveRemove = &cobra.Command{
-	Use:   "remove [<remote>:]<instance>",
-	Short: "Remove a Unit or an Image",
+	Use:   "remove [<remote>:]<instance> [[<remote>:]<instance>...]",
+	Short: "Remove Units or Images",
 	Long:  ``,
 	Run:   remove,
 }
@@ -29,15 +29,17 @@ func remove(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	if imageToggle {
-		err := host.DeleteLocalImage(args[0])
-		if err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		err := host.DeleteUnit(args[0])
-		if err != nil {
-			log.Fatal(err)
+	for _, arg := range args {
+		if imageToggle {
+			err := host.DeleteLocalImage(arg)
+			if err != nil {
+				log.Fatal(err)
+			}
+		} else {
+			err := host.DeleteUnit(arg)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 	}
 }

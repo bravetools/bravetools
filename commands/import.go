@@ -7,8 +7,8 @@ import (
 )
 
 var braveImportImage = &cobra.Command{
-	Use:   "import NAME",
-	Short: "Import an LXD image tarball into local Bravetools image repository",
+	Use:   "import <file> [<file>...]",
+	Short: "Import LXD image tarballs into local Bravetools image repository",
 	Long:  ``,
 	Run:   importImage,
 }
@@ -20,8 +20,10 @@ func importImage(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	err := host.ImportLocalImage(args[0])
-	if err != nil {
-		log.Fatal(err)
+	for _, arg := range args {
+		err := host.ImportLocalImage(arg)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 }

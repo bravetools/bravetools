@@ -2,14 +2,13 @@ package commands
 
 import (
 	"log"
-	"os"
 
 	"github.com/spf13/cobra"
 )
 
 var braveStart = &cobra.Command{
-	Use:   "start  [<remote>:]<instance>",
-	Short: "Start Unit <instance>",
+	Use:   "start  [<remote>:]<instance> [[<remote>:]<instance>...]",
+	Short: "Start Units",
 	Long:  ``,
 	Run:   start,
 }
@@ -20,9 +19,10 @@ func start(cmd *cobra.Command, args []string) {
 		log.Fatal("missing name - please provide unit name")
 	}
 
-	err := host.StartUnit(args[0])
-	if err != nil {
-		log.Fatal(err)
-		os.Exit(1)
+	for _, arg := range args {
+		err := host.StartUnit(arg)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 }
