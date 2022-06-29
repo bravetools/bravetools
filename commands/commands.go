@@ -78,22 +78,22 @@ func setBackend(host platform.BraveHost) error {
 }
 
 func createBraveHome(userHome string) error {
-	err := shared.CreateDirectory(path.Join(userHome, ".bravetools"))
+	err := shared.CreateDirectory(path.Join(userHome, shared.BraveHome))
 	if err != nil {
 		return err
 	}
 
-	err = shared.CreateDirectory(path.Join(userHome, ".bravetools", "certs"))
+	err = shared.CreateDirectory(path.Join(userHome, shared.BraveCertStore))
 	if err != nil {
 		return err
 	}
 
-	err = shared.CreateDirectory(path.Join(userHome, ".bravetools", "images"))
+	err = shared.CreateDirectory(path.Join(userHome, shared.ImageStore))
 	if err != nil {
 		return err
 	}
 
-	err = shared.CreateDirectory(path.Join(userHome, ".bravetools", "servercerts"))
+	err = shared.CreateDirectory(path.Join(userHome, shared.BraveServerCertStore))
 	if err != nil {
 		return err
 	}
@@ -101,13 +101,13 @@ func createBraveHome(userHome string) error {
 }
 
 func deleteBraveHome(userHome string) error {
-	exists, err := shared.CheckPath(path.Join(userHome, shared.PlatformConfig))
+	exists, err := shared.CheckPath(path.Join(userHome, shared.BraveHome))
 	if err != nil {
 		return err
 	}
 
 	if exists {
-		err = os.RemoveAll(path.Join(userHome, shared.PlatformConfig))
+		err = os.RemoveAll(path.Join(userHome, shared.BraveHome))
 		if err != nil {
 			return err
 		}

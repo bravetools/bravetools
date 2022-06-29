@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -130,8 +131,8 @@ func CreateStoragePool(name string, size string, remote Remote) error {
 func AddRemote(braveHost *BraveHost) error {
 	var err error
 	userHome, _ := os.UserHomeDir()
-	certf := userHome + shared.BraveClientCert
-	keyf := userHome + shared.BraveClientKey
+	certf := path.Join(userHome, shared.BraveClientCert)
+	keyf := path.Join(userHome, shared.BraveClientKey)
 
 	// Generate client certificates
 	err = lxdshared.FindOrGenCert(certf, keyf, true, false)
@@ -152,7 +153,7 @@ func AddRemote(braveHost *BraveHost) error {
 		fmt.Printf(("Certificate fingerprint: %s")+"\n", digest)
 	}
 
-	dnam := userHome + "/.bravetools/" + "servercerts"
+	dnam := path.Join(userHome, shared.BraveServerCertStore)
 	err = os.MkdirAll(dnam, 0750)
 	if err != nil {
 		return errors.New("could not create server cert dir")
@@ -173,8 +174,8 @@ func AddRemote(braveHost *BraveHost) error {
 	}
 	req.Type = "client"
 
-	keyPath := userHome + shared.BraveClientKey
-	certPath := userHome + shared.BraveClientCert
+	keyPath := path.Join(userHome, shared.BraveClientKey)
+	certPath := path.Join(userHome, shared.BraveClientCert)
 	key, _ := loadKey(keyPath)
 	cert, _ := loadCert(certPath)
 
@@ -193,9 +194,9 @@ func AddRemote(braveHost *BraveHost) error {
 // RemoveRemote removes remote LXC host
 func RemoveRemote(name string) error {
 	userHome, _ := os.UserHomeDir()
-	certf := userHome + shared.BraveClientCert
-	keyf := userHome + shared.BraveClientKey
-	certs := userHome + "/.bravetools/" + "servercerts/" + name + ".crt"
+	certf := path.Join(userHome, shared.BraveClientCert)
+	keyf := path.Join(userHome, shared.BraveClientKey)
+	certs := path.Join(userHome, shared.BraveServerCertStore, name+".crt")
 	err := os.Remove(certf)
 	if err != nil {
 		return err

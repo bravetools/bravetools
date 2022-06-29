@@ -86,15 +86,15 @@ func (bh *BraveHost) ImportLocalImage(sourcePath string) error {
 
 	_, imageName := filepath.Split(sourcePath)
 
-	imagePath := home + shared.ImageStore
-	hashFile := imagePath + imageName + ".md5"
+	imagePath := path.Join(home, shared.ImageStore, imageName)
+	hashFile := imagePath + ".md5"
 
-	_, err := os.Stat(home + shared.ImageStore + imageName)
+	_, err := os.Stat(imagePath)
 	if !os.IsNotExist(err) {
 		return errors.New("image " + imageName + " already exists in local image store")
 	}
 
-	err = shared.CopyFile(sourcePath, imagePath+imageName)
+	err = shared.CopyFile(sourcePath, imagePath)
 	if err != nil {
 		return errors.New("failed to copy image archive to local image store: " + err.Error())
 	}
@@ -124,10 +124,10 @@ func (bh *BraveHost) ImportLocalImage(sourcePath string) error {
 // ListLocalImages reads list of files in images folder
 func (bh *BraveHost) ListLocalImages() error {
 	home, _ := os.UserHomeDir()
-	imagePath := home + shared.ImageStore
+	imageStore := path.Join(home, shared.ImageStore)
 
 	// We're only interested in images and not MD5 checksums
-	images, err := shared.WalkMatch(imagePath, "*.tar.gz")
+	images, err := shared.WalkMatch(imageStore, "*.tar.gz")
 	if err != nil {
 		return errors.New("failed to access images folder: " + err.Error())
 	}
@@ -157,7 +157,7 @@ func (bh *BraveHost) ListLocalImages() error {
 					timeUnit = "just now"
 				}
 
-				localImageFile := home + shared.ImageStore + filepath.Base(fi.Name())
+				localImageFile := path.Join(home, shared.ImageStore, filepath.Base(fi.Name()))
 				hashFileName := localImageFile + ".md5"
 
 				hash, err := ioutil.ReadFile(hashFileName)
@@ -220,11 +220,10 @@ func (bh *BraveHost) ListLocalImages() error {
 // DeleteLocalImage deletes a local image
 func (bh *BraveHost) DeleteLocalImage(name string) error {
 	home, _ := os.UserHomeDir()
-	imagePath := home + shared.ImageStore
-	imageName := imagePath + name + ".tar.gz"
-	imageHash := imageName + ".md5"
+	imagePath := path.Join(home, shared.ImageStore, name+".tar.gz")
+	imageHash := imagePath + ".md5"
 
-	err := os.Remove(imageName)
+	err := os.Remove(imagePath)
 	if err != nil {
 		return err
 	}
@@ -712,12 +711,12 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		return errors.New(err.Error())
 	}
 
-	err = shared.CopyFile(localImageFile, home+shared.ImageStore+localImageFile)
+	err = shared.CopyFile(localImageFile, path.Join(home, shared.ImageStore, localImageFile))
 	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to copy image archive to local storage: " + err.Error())
 	}
 
-	err = shared.CopyFile(localHashFile, home+shared.ImageStore+localHashFile)
+	err = shared.CopyFile(localHashFile, path.Join(home, shared.ImageStore, localHashFile))
 	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to copy images hash into local storage: " + err.Error())
 	}
@@ -805,7 +804,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) (er
 	if unitParams.PlatformService.Image == "" {
 		return errors.New("unit image name cannot be empty")
 	}
-	image := homeDir + shared.ImageStore + unitParams.PlatformService.Image + ".tar.gz"
+	image := path.Join(homeDir, shared.ImageStore, unitParams.PlatformService.Image+".tar.gz")
 
 	// Resource checks
 	err = CheckResources(image, backend, unitParams, bh)

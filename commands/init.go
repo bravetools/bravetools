@@ -36,7 +36,7 @@ func includeInitFlags(cmd *cobra.Command) {
 func serverInit(cmd *cobra.Command, args []string) {
 	userHome, _ := os.UserHomeDir()
 
-	if _, err := os.Stat(path.Join(userHome, ".bravetools")); !os.IsNotExist(err) {
+	if _, err := os.Stat(path.Join(userHome, shared.BraveHome)); !os.IsNotExist(err) {
 		log.Fatal("$HOME/.bravetools directory exists. Run rm -r $HOME/.bravetools to create a fresh install")
 	}
 
@@ -51,9 +51,9 @@ func serverInit(cmd *cobra.Command, args []string) {
 	default:
 		err := deleteBraveHome(userHome)
 		if err != nil {
-			log.Fatal(err.Error())
+			fmt.Println(err.Error())
 		}
-		log.Fatal("unsupported hos OS: ", hostOs)
+		log.Fatal("unsupported host OS: ", hostOs)
 	}
 
 	log.Println("Initialising a new Bravetools configuration")
@@ -78,7 +78,7 @@ func serverInit(cmd *cobra.Command, args []string) {
 
 	if hostConfigPath != "" {
 		// TODO: validate configuration. Now assume that path ends with config.yml
-		err = shared.CopyFile(hostConfigPath, path.Join(userHome, ".bravetools", "config.yml"))
+		err = shared.CopyFile(hostConfigPath, path.Join(userHome, shared.PlatformConfig))
 		if err != nil {
 			if err := deleteBraveHome(userHome); err != nil {
 				fmt.Println(err.Error())
