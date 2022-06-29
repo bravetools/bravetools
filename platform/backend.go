@@ -1,5 +1,7 @@
 package platform
 
+import "fmt"
+
 // Backend ..
 type Backend interface {
 	BraveBackendInit() error
@@ -22,12 +24,16 @@ type Info struct {
 }
 
 // NewHostBackend returns a new Backend from provided host Settings
-func NewHostBackend(host BraveHost) (backend Backend) {
-	switch host.Settings.BackendSettings.Type {
+func NewHostBackend(host BraveHost) (backend Backend, err error) {
+	backendType := host.Settings.BackendSettings.Type
+
+	switch backendType {
 	case "multipass":
 		backend = NewMultipass(host.Settings)
 	case "lxd":
 		backend = NewLxd(host.Settings)
+	default:
+		err = fmt.Errorf("backend type %q not supported", backendType)
 	}
-	return backend
+	return backend, err
 }
