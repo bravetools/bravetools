@@ -256,8 +256,8 @@ func (bh *BraveHost) HostInfo(backend Backend, short bool) error {
 	table.SetHeader([]string{"Name", "State", "IPv4", "Disk", "Memory", "CPU"})
 
 	r := []string{info.Name, info.State, info.IPv4,
-		info.Disk[0] + " of " + info.Disk[1],
-		info.Memory[0] + " of " + info.Memory[1], info.CPU}
+		info.Disk.UsedStorage + " of " + info.Disk.TotalStorage,
+		info.Memory.UsedStorage + " of " + info.Memory.TotalStorage, info.CPU}
 
 	table.Append(r)
 	table.SetAutoWrapText(false)

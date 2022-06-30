@@ -23,11 +23,11 @@ func CheckResources(image string, backend Backend, unitParams *shared.Bravefile,
 		return errors.New("Failed to connect to host: " + err.Error())
 	}
 
-	usedDiskSize, err := shared.SizeCountToInt(info.Disk[0])
+	usedDiskSize, err := shared.SizeCountToInt(info.Disk.UsedStorage)
 	if err != nil {
 		return err
 	}
-	totalDiskSize, err := shared.SizeCountToInt(info.Disk[1])
+	totalDiskSize, err := shared.SizeCountToInt(info.Disk.TotalStorage)
 	if err != nil {
 		return err
 	}
@@ -36,11 +36,11 @@ func CheckResources(image string, backend Backend, unitParams *shared.Bravefile,
 		return errors.New("requested unit size exceeds available disk space on bravetools host. To increase storage pool size modify $HOME/.bravetools/config.yml and run brave configure")
 	}
 
-	usedMemorySize, err := shared.SizeCountToInt(info.Memory[0])
+	usedMemorySize, err := shared.SizeCountToInt(info.Memory.UsedStorage)
 	if err != nil {
 		return err
 	}
-	totalMemorySize, err := shared.SizeCountToInt(info.Memory[1])
+	totalMemorySize, err := shared.SizeCountToInt(info.Memory.TotalStorage)
 	if err != nil {
 		return err
 	}
