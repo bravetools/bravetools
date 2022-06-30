@@ -1,0 +1,15 @@
+services:
+  api:
+    bravefile: ./api/Bravefile
+    build: true
+    depends_on:
+      - auth
+      - log
+  auth:
+    bravefile: ./auth/Bravefile
+    build: true
+    depends_on:
+      - log
+  log:
+    bravefile: ./log/Bravefile
+    build: true

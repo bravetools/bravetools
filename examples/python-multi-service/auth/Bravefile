@@ -1,0 +1,40 @@
+base:
+  image: alpine/3.16
+  location: public
+
+packages:
+  manager: apk
+  system:
+    - python3
+    - py3-pip
+
+copy:
+  - source: app.py
+    target: /root/
+  - source: requirements.txt
+    target: /root/
+
+run:
+  - command: python3
+    args:
+      - -m
+      - pip
+      - install
+      - -r
+      - requirements.txt
+
+service:
+  postdeploy:
+    run:
+      - command: sh
+        args:
+          - -c
+          - gunicorn app:app --bind 0.0.0.0:80 --daemon
+
+  image: python-auth-1.0
+  name: python-auth
+  version: 1.0
+  ip: 10.0.0.15
+  resources:
+    ram: 500MB
+    cpu: 1
