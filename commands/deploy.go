@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/bravetools/bravetools/shared"
 	"github.com/spf13/cobra"
 )
 
@@ -60,33 +61,22 @@ func deploy(cmd *cobra.Command, args []string) {
 		}
 
 	}
-	if (len(args) == 0) && (!useBravefile) {
-		log.Fatal("missing image name")
-	}
 
+	cliArgs := &shared.Service{
+		Name:  name,
+		IP:    unitIP,
+		Ports: unitPort,
+		Resources: shared.Resources{
+			RAM: unitRAM,
+			CPU: unitCPU,
+		},
+	}
 	if len(args) > 0 {
 		bravefile.PlatformService.Image = args[0]
 	}
 
-	if name != "" {
-		bravefile.PlatformService.Name = name
-	}
-
-	if unitCPU != "" {
-		bravefile.PlatformService.Resources.CPU = unitCPU
-	}
-
-	if unitRAM != "" {
-		bravefile.PlatformService.Resources.RAM = unitRAM
-	}
-
-	if unitIP != "" {
-		bravefile.PlatformService.IP = unitIP
-	}
-
-	if len(unitPort) != 0 {
-		bravefile.PlatformService.Ports = unitPort
-	}
+	cliArgs.Merge(&bravefile.PlatformService)
+	bravefile.PlatformService = *cliArgs
 
 	err = host.InitUnit(backend, bravefile)
 	if err != nil {
