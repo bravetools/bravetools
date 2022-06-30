@@ -20,7 +20,7 @@ func CheckResources(image string, backend Backend, unitParams *shared.Bravefile,
 
 	info, err := backend.Info()
 	if err != nil {
-		return err
+		return errors.New("Failed to connect to host: " + err.Error())
 	}
 
 	usedDiskSize, err := shared.SizeCountToInt(info.Disk[0])
@@ -54,12 +54,7 @@ func CheckResources(image string, backend Backend, unitParams *shared.Bravefile,
 	}
 
 	// Networking Checks
-	hostInfo, err := backend.Info()
-	if err != nil {
-		return errors.New("Failed to connect to host: " + err.Error())
-	}
-
-	hostIP := hostInfo.IPv4
+	hostIP := info.IPv4
 	ports := unitParams.PlatformService.Ports
 	var hostPorts []string
 	if len(ports) > 0 {
