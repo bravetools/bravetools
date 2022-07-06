@@ -400,8 +400,22 @@ func GetBraveProfile(remote Remote) (braveProfile shared.BraveProfile, err error
 	return braveProfile, errors.New("profile not found")
 }
 
+func containerHasProfile(container *api.Container, profile *shared.BraveProfile) bool {
+	for _, p := range container.ContainerPut.Profiles {
+		if p == profile.Name {
+			return true
+		}
+	}
+	return false
+}
+
 // GetUnits returns all running units
 func GetUnits(remote Remote) (units []shared.BraveUnit, err error) {
+	userProfile, err := GetBraveProfile(remote)
+	if err != nil {
+		return nil, err
+	}
+
 	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
 	if err != nil {
 		return units, err
@@ -414,6 +428,11 @@ func GetUnits(remote Remote) (units []shared.BraveUnit, err error) {
 		containerState, _, _ := lxdServer.GetContainerState(n)
 		var unit shared.BraveUnit
 		container, _, _ := lxdServer.GetContainer(n)
+
+		// Check if current user profile manages this container
+		if !containerHasProfile(container, &userProfile) {
+			continue
+		}
 
 		devices := container.Devices
 		var diskDevice []shared.DiskDevice
