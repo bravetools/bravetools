@@ -60,9 +60,6 @@ func deploy(cmd *cobra.Command, args []string) {
 		}
 
 	}
-	if (len(args) == 0) && (!useBravefile) {
-		log.Fatal("missing image name")
-	}
 
 	if len(args) > 0 {
 		bravefile.PlatformService.Image = args[0]

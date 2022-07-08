@@ -802,7 +802,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) (er
 
 	homeDir, _ := os.UserHomeDir()
 	if unitParams.PlatformService.Image == "" {
-		return errors.New("unit image name cannot be empty")
+		unitParams.PlatformService.Image = unitParams.PlatformService.Name + "-" + unitParams.PlatformService.Version
 	}
 	image := path.Join(homeDir, shared.ImageStore, unitParams.PlatformService.Image+".tar.gz")
 
