@@ -24,7 +24,7 @@ brave stop go-service
 brave units
 sleep 10
 
-echo ">> Deleteing a unit ..."
+echo ">> Deleting a unit ..."
 brave remove go-service
 brave units
 brave images
