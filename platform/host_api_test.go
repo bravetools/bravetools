@@ -179,3 +179,37 @@ func Test_ListUnits(t *testing.T) {
 		t.Error("host.ListLocalImages: ", err)
 	}
 }
+
+func Test_Compose(t *testing.T) {
+	var err error
+
+	host := *NewBraveHost()
+	backend, err := NewHostBackend(host)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	composefile := shared.NewComposeFile()
+	err = composefile.Load("../test/compose/python-multi-service/brave-compose.yml")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = host.Compose(backend, composefile)
+	if err != nil {
+		t.Error("host.BuildImage: ", err)
+	}
+
+	for _, service := range composefile.Services {
+		err = host.DeleteUnit(service.Name)
+		if err != nil {
+			t.Errorf("failed to delete unit: %q", service.Name)
+			t.Log(err)
+		}
+		err = host.DeleteLocalImage(service.Image)
+		if err != nil {
+			t.Errorf("failed to delete unit: %q", service.Image)
+			t.Log(err)
+		}
+	}
+}
