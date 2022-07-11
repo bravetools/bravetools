@@ -1153,19 +1153,8 @@ func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (
 	for _, serviceName := range topologicalOrdering {
 		service := composeFile.Services[serviceName]
 
-		if service.Build && service.Bravefile == "" {
-			return fmt.Errorf("cannot build image for %q without a Bravefile path", service.Name)
-		}
-
 		// Load bravefile settings as defaults, overwrite if specified in composefile
 		if service.Bravefile != "" {
-			bravefile := shared.NewBravefile()
-			err = bravefile.Load(service.Bravefile)
-			if err != nil {
-				return fmt.Errorf("failed to load bravefile %q", service.Bravefile)
-			}
-			service.Service.Merge(&bravefile.PlatformService)
-
 			if service.Build {
 				// Switch to build context dir
 				buildDir := service.Context
@@ -1175,7 +1164,7 @@ func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (
 				os.Chdir(buildDir)
 
 				// Cleanup each image if error in compose
-				err = bh.BuildImage(bravefile)
+				err = bh.BuildImage(service.BravefileBuild)
 				if err != nil {
 					return err
 				}
@@ -1188,9 +1177,6 @@ func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (
 				os.Chdir(workingDir)
 			}
 		}
-
-		// Override Service.Name with the key provided in brave-compose file
-		service.Name = serviceName
 
 		// Deploy context - use Context is provided, else Bravefile if present, else current dir
 		deployDir := service.Context

@@ -12,7 +12,7 @@ import "testing"
 //                  └───────┘
 func TestTopologicalOrdering_first(t *testing.T) {
 	composeFile := ComposeFile{
-		Services: map[string]ComposeService{
+		Services: map[string]*ComposeService{
 			"api":  {Depends: []string{"db"}},
 			"auth": {Depends: []string{"db"}},
 			"db":   {},
@@ -42,7 +42,7 @@ func TestTopologicalOrdering_first(t *testing.T) {
 // └───────┘
 func TestTopologicalOrdering_end(t *testing.T) {
 	composeFile := ComposeFile{
-		Services: map[string]ComposeService{
+		Services: map[string]*ComposeService{
 			"api":  {Depends: []string{"db", "auth"}},
 			"auth": {},
 			"db":   {},
@@ -68,7 +68,7 @@ func TestTopologicalOrdering_end(t *testing.T) {
 // └──────┘    └───────┘    └──────┘
 func TestTopologicalOrdering_exactOrder(t *testing.T) {
 	composeFile := ComposeFile{
-		Services: map[string]ComposeService{
+		Services: map[string]*ComposeService{
 			"api":  {Depends: []string{"db"}},
 			"auth": {Depends: []string{"api"}},
 			"db":   {},
@@ -98,7 +98,7 @@ func TestTopologicalOrdering_exactOrder(t *testing.T) {
 // └──────┘    └───────┘    └──────┘
 func TestTopologicalOrdering_exactOrder2(t *testing.T) {
 	composeFile := ComposeFile{
-		Services: map[string]ComposeService{
+		Services: map[string]*ComposeService{
 			"api":  {Depends: []string{"auth"}},
 			"auth": {},
 			"db":   {Depends: []string{"api"}},
@@ -128,7 +128,7 @@ func TestTopologicalOrdering_exactOrder2(t *testing.T) {
 // └──────┘    └───────┘    └──────┘
 func TestTopologicalOrdering_exactOrder3(t *testing.T) {
 	composeFile := ComposeFile{
-		Services: map[string]ComposeService{
+		Services: map[string]*ComposeService{
 			"api":  {},
 			"auth": {Depends: []string{"api"}},
 			"db":   {Depends: []string{"auth"}},
@@ -196,7 +196,7 @@ func TestTopologicalOrdering_exactOrder4(t *testing.T) {
 // └───────┘    └──────┘
 func TestTopologicalOrdering_directCycle(t *testing.T) {
 	composeFile := ComposeFile{
-		Services: map[string]ComposeService{
+		Services: map[string]*ComposeService{
 			"api":  {Depends: []string{"auth"}},
 			"auth": {Depends: []string{"api"}},
 			"db":   {},
@@ -221,7 +221,7 @@ func TestTopologicalOrdering_directCycle(t *testing.T) {
 // └───────┘    └──────┘
 func TestTopologicalOrdering_indirectCycle(t *testing.T) {
 	composeFile := ComposeFile{
-		Services: map[string]ComposeService{
+		Services: map[string]*ComposeService{
 			"api":  {Depends: []string{"auth"}},
 			"auth": {Depends: []string{"db"}},
 			"db":   {Depends: []string{"api"}},
@@ -241,7 +241,7 @@ func TestTopologicalOrdering_indirectCycle(t *testing.T) {
 // └──────┘    └───────┘    └──────┘
 func TestTopologicalOrdering_noDeps(t *testing.T) {
 	composeFile := ComposeFile{
-		Services: map[string]ComposeService{
+		Services: map[string]*ComposeService{
 			"api":  {},
 			"auth": {},
 			"db":   {},
@@ -257,7 +257,7 @@ func TestTopologicalOrdering_noDeps(t *testing.T) {
 //
 func TestTopologicalOrdering_noServices(t *testing.T) {
 	composeFile := ComposeFile{
-		Services: map[string]ComposeService{},
+		Services: map[string]*ComposeService{},
 	}
 
 	_, err := composeFile.TopologicalOrdering()

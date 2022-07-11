@@ -3,23 +3,26 @@ package shared
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 
 	"gopkg.in/yaml.v2"
 )
 
 // ComposeService defines a service
 type ComposeService struct {
-	Service   `yaml:",inline"`
-	Bravefile string   `yaml:"bravefile,omitempty"`
-	Build     bool     `yaml:"build,omitempty"`
-	Context   string   `yaml:"context,omitempty"`
-	Depends   []string `yaml:"depends_on,omitempty"`
+	Service        `yaml:",inline"`
+	BravefileBuild *Bravefile
+	Bravefile      string   `yaml:"bravefile,omitempty"`
+	Build          bool     `yaml:"build,omitempty"`
+	Context        string   `yaml:"context,omitempty"`
+	Depends        []string `yaml:"depends_on,omitempty"`
 }
 
 // A ComposeFile maps service names to services
 type ComposeFile struct {
 	Path     string
-	Services map[string]ComposeService `yaml:"services"`
+	Services map[string]*ComposeService `yaml:"services"`
 }
 
 // NewComposeFile returns a pointer to a newly created empty ComposeFile struct
@@ -45,6 +48,40 @@ func (composeFile *ComposeFile) Load(file string) error {
 	// Check for empty compose file
 	if len(composeFile.Services) == 0 {
 		return fmt.Errorf("no services found in composefile %q", composeFile.Path)
+	}
+
+	// Move to parent directory of compose file so relative Bravefile paths work
+	workingDir, err := filepath.Abs(filepath.Dir(composeFile.Path))
+	if err != nil {
+		return err
+	}
+	startDir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	os.Chdir(workingDir)
+	defer os.Chdir(startDir)
+
+	// Upade each service with servicename and load bravefile if provided
+	for serviceName := range composeFile.Services {
+		service := composeFile.Services[serviceName]
+
+		// Override Service.Name with the key provided in brave-compose file
+		service.Name = serviceName
+
+		if service.Build && service.Bravefile == "" {
+			return fmt.Errorf("cannot build image for %q without a Bravefile path", service.Name)
+		}
+
+		// Load Bravefile is provided - merge service settings and save build settings
+		if service.Bravefile != "" {
+			service.BravefileBuild = NewBravefile()
+			err = service.BravefileBuild.Load(service.Bravefile)
+			if err != nil {
+				return fmt.Errorf("failed to load bravefile %q", service.Bravefile)
+			}
+			service.Service.Merge(&service.BravefileBuild.PlatformService)
+		}
 	}
 
 	return nil
