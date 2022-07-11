@@ -190,7 +190,7 @@ func Test_Compose(t *testing.T) {
 	}
 
 	composefile := shared.NewComposeFile()
-	err = composefile.Load("../test/compose/python-multi-service/brave-compose.yml")
+	err = composefile.Load("../test/compose/python-multi-service/brave-compose.yaml")
 	if err != nil {
 		t.Fatal(err)
 	}

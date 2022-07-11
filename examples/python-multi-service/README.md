@@ -7,7 +7,7 @@ In this example we will build and deploy a small system of three python web serv
 
 ## Compose file
 
-The minimal compose file that we will use in this example is at "brave-compose.yml" and is shown below:
+The minimal compose file that we will use in this example is at "brave-compose.yaml" and is shown below:
 
 ```yaml
 services:

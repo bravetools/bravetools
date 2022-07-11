@@ -17,7 +17,7 @@ func TestCompose(t *testing.T) {
 	}
 
 	os.Chdir("python-multi-service")
-	p := "brave-compose.yml"
+	p := "brave-compose.yaml"
 
 	composefile := shared.NewComposeFile()
 	err = composefile.Load(p)

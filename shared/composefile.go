@@ -9,6 +9,11 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+const (
+	ComposefileName  = "brave-compose.yaml"
+	ComposefileAlias = "brave-compose.yml"
+)
+
 // ComposeService defines a service
 type ComposeService struct {
 	Service        `yaml:",inline"`

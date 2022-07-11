@@ -2,8 +2,9 @@ package commands
 
 import (
 	"log"
-	"path"
+	"path/filepath"
 
+	"github.com/bravetools/bravetools/shared"
 	"github.com/spf13/cobra"
 )
 
@@ -17,10 +18,21 @@ var braveCompose = &cobra.Command{
 func compose(cmd *cobra.Command, args []string) {
 	var p string
 
-	if len(args) == 0 {
-		p = "brave-compose.yml"
+	baseDir := "."
+	if len(args) > 0 {
+		baseDir = args[0]
+	}
+
+	// Load composefile from directory. Favour ".yaml" over ".yml" but accept both.
+	if shared.FileExists(filepath.Join(baseDir, shared.ComposefileName)) {
+		p = filepath.Join(baseDir, shared.ComposefileName)
 	} else {
-		p = path.Join(args[0], "brave-compose.yml")
+		if shared.FileExists(filepath.Join(baseDir, shared.ComposefileAlias)) {
+			p = filepath.Join(baseDir, shared.ComposefileAlias)
+		}
+	}
+	if p == "" {
+		log.Fatalf("composefile %q not found at %q", shared.ComposefileName, baseDir)
 	}
 
 	err := composefile.Load(p)
