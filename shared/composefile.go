@@ -18,6 +18,7 @@ type ComposeService struct {
 
 // A ComposeFile maps service names to services
 type ComposeFile struct {
+	Path     string
 	Services map[string]ComposeService `yaml:"services"`
 }
 
@@ -36,6 +37,14 @@ func (composeFile *ComposeFile) Load(file string) error {
 	err = yaml.Unmarshal(buf.Bytes(), &composeFile)
 	if err != nil {
 		return err
+	}
+
+	// Record composefile path (later used for deploy context)
+	composeFile.Path = file
+
+	// Check for empty compose file
+	if len(composeFile.Services) == 0 {
+		return fmt.Errorf("no services found in composefile %q", composeFile.Path)
 	}
 
 	return nil

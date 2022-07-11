@@ -1131,16 +1131,25 @@ func (bh *BraveHost) Postdeploy(ctx context.Context, unitConfig *shared.Service)
 
 func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (err error) {
 
+	// Compose runs from parent directory of compose file
+	workingDir, err := filepath.Abs(filepath.Dir(composeFile.Path))
+	if err != nil {
+		return err
+	}
+	startDir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	os.Chdir(workingDir)
+	defer os.Chdir(startDir)
+
+	// Order services by deps
 	topologicalOrdering, err := composeFile.TopologicalOrdering()
 	if err != nil {
 		return err
 	}
 
-	workingDir, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
+	// (Optionally build) and deploy each service
 	for _, serviceName := range topologicalOrdering {
 		service := composeFile.Services[serviceName]
 
@@ -1161,7 +1170,7 @@ func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (
 				// Switch to build context dir
 				buildDir := service.Context
 				if buildDir == "" {
-					buildDir = filepath.Dir(service.Bravefile)
+					buildDir, err = filepath.Abs(filepath.Dir(service.Bravefile))
 				}
 				os.Chdir(buildDir)
 
@@ -1187,7 +1196,10 @@ func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (
 		deployDir := service.Context
 		if deployDir == "" {
 			if service.Bravefile != "" {
-				deployDir = filepath.Dir(service.Bravefile)
+				deployDir, err = filepath.Abs(filepath.Dir(service.Bravefile))
+				if err != nil {
+					return err
+				}
 			} else {
 				deployDir = "."
 			}
