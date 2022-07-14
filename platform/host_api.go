@@ -1128,3 +1128,15 @@ func (bh *BraveHost) Postdeploy(ctx context.Context, unitConfig *shared.Service)
 
 	return nil
 }
+
+func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (err error) {
+	for i := range composeFile.Services {
+		service := composeFile.Services[i]
+
+		err = bh.InitUnit(backend, &service.Service)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}

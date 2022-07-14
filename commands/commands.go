@@ -15,6 +15,7 @@ import (
 var host platform.BraveHost
 var backend platform.Backend
 var bravefile *shared.Bravefile
+var composefile *shared.ComposeFile
 
 var (
 	// BravetoolsCmd ..
@@ -44,6 +45,7 @@ func init() {
 	BravetoolsCmd.AddCommand(bravePublish)
 	BravetoolsCmd.AddCommand(baseBuild)
 	BravetoolsCmd.AddCommand(braveVersion)
+	BravetoolsCmd.AddCommand(braveCompose)
 
 	userHome, _ := os.UserHomeDir()
 	exists, err := shared.CheckPath(path.Join(userHome, shared.PlatformConfig))
@@ -53,6 +55,7 @@ func init() {
 
 	if exists {
 		bravefile = shared.NewBravefile()
+		composefile = shared.NewComposeFile()
 		loadConfig()
 	}
 }
