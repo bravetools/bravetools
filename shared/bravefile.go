@@ -66,7 +66,14 @@ type Bravefile struct {
 
 // NewBravefile ..
 func NewBravefile() *Bravefile {
-	return &Bravefile{}
+	return &Bravefile{
+		PlatformService: Service{
+			Resources: Resources{
+				CPU: DefaultUnitCpuLimit,
+				RAM: DefaultUnitRamLimit,
+			},
+		},
+	}
 }
 
 // Load loads Bravefile
@@ -76,9 +83,6 @@ func (bravefile *Bravefile) Load(file string) error {
 	if err != nil {
 		return err
 	}
-
-	bravefile.PlatformService.Resources.CPU = DefaultUnitCpuLimit
-	bravefile.PlatformService.Resources.RAM = DefaultUnitRamLimit
 
 	err = yaml.Unmarshal(buf.Bytes(), &bravefile)
 	if err != nil {
