@@ -29,8 +29,8 @@ func init() {
 func includeDeployFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&unitConfig, "config", "", "", "Path to Unit configuration file [OPTIONAL]")
 	cmd.Flags().StringVarP(&unitIP, "ip", "i", "", "IPv4 address (e.g., 10.0.0.20) [OPTIONAL]")
-	cmd.Flags().StringVarP(&unitCPU, "cpu", "c", "", "Number of allocated CPUs (e.g., 2) [OPTIONAL]")
-	cmd.Flags().StringVarP(&unitRAM, "ram", "r", "", "Number of allocated CPUs (e.g., 2GB) [OPTIONAL]")
+	cmd.Flags().StringVarP(&unitCPU, "cpu", "c", "2", "Number of allocated CPUs (e.g., 2) [OPTIONAL]")
+	cmd.Flags().StringVarP(&unitRAM, "ram", "r", "2GB", "Number of allocated CPUs (e.g., 2GB) [OPTIONAL]")
 	cmd.Flags().StringSliceVarP(&unitPort, "port", "p", []string{}, "Publish Unit port to host [OPTIONAL]")
 	cmd.Flags().StringVarP(&name, "name", "n", "", "Assign name to deployed Unit")
 }
@@ -70,15 +70,17 @@ func deploy(cmd *cobra.Command, args []string) {
 
 	if name != "" {
 		bravefile.PlatformService.Name = name
-	}
+	} else {
+    log.Fatal("missing unit name")
+  }
 
-	if unitCPU != "" {
-		bravefile.PlatformService.Resources.CPU = unitCPU
-	}
+	//if unitCPU != "" {
+	bravefile.PlatformService.Resources.CPU = unitCPU
+	//}
 
-	if unitRAM != "" {
-		bravefile.PlatformService.Resources.RAM = unitRAM
-	}
+	//if unitRAM != "" {
+	bravefile.PlatformService.Resources.RAM = unitRAM
+	//}
 
 	if unitIP != "" {
 		bravefile.PlatformService.IP = unitIP

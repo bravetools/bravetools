@@ -43,7 +43,8 @@ func CheckResources(image string, backend Backend, unitParams *shared.Bravefile,
 	totalMemorySize, err := shared.SizeCountToInt(info.Memory[1])
 	if err != nil {
 		return err
-	}
+	} 
+
 	requestedMemorySize, err := shared.SizeCountToInt(unitParams.PlatformService.Resources.RAM)
 	if err != nil {
 		return err
