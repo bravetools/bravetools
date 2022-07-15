@@ -146,12 +146,21 @@ func AddRemote(braveHost *BraveHost) error {
 	if err != nil {
 		return err
 	}
+	if certificate == nil {
+		return errors.New("failed to get lxd certificate - certificate is nil")
+	}
+
+	// LXD may be running in a VM and check certificate validity based on VM clock causing issues
+	// Waiting a few seconds gives a safety buffer to prevent sync issues
+	waitTime, err := time.ParseDuration("5s")
+	if err != nil {
+		return err
+	}
+	time.Sleep(waitTime)
 
 	// Handle certificate prompt
-	if certificate != nil {
-		digest := lxdshared.CertFingerprint(certificate)
-		fmt.Printf(("Certificate fingerprint: %s")+"\n", digest)
-	}
+	digest := lxdshared.CertFingerprint(certificate)
+	fmt.Printf(("Certificate fingerprint: %s")+"\n", digest)
 
 	dnam := path.Join(userHome, shared.BraveServerCertStore)
 	err = os.MkdirAll(dnam, 0750)
