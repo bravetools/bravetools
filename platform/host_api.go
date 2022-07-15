@@ -805,6 +805,9 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) (er
 		return errors.New("unit image name cannot be empty")
 	}
 	image := path.Join(homeDir, shared.ImageStore, unitParams.PlatformService.Image+".tar.gz")
+	if !shared.FileExists(image) {
+		return fmt.Errorf("image %q does not exist", unitParams.PlatformService.Image)
+	}
 
 	// Resource checks
 	err = CheckResources(image, backend, unitParams, bh)
