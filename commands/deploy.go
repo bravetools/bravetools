@@ -2,8 +2,8 @@ package commands
 
 import (
 	"log"
-	"os"
 
+	"github.com/bravetools/bravetools/shared"
 	"github.com/spf13/cobra"
 )
 
@@ -38,34 +38,29 @@ func includeDeployFlags(cmd *cobra.Command) {
 func deploy(cmd *cobra.Command, args []string) {
 	checkBackend()
 
-	var useBravefile = false
-	var bravefilePath string
+	var useBravefile = true
+	var bravefilePath = "Bravefile"
 	var err error
 
-	_, err = os.Stat("Bravefile")
-	// if Bravefile is in current directory continue with parameters set there
-	if err == nil {
-		useBravefile = true
-		bravefilePath = "Bravefile"
-	}
-	if unitConfig != "" {
-		useBravefile = true
-		bravefilePath = unitConfig
+	// If args provided, use CLI, not Bravefile
+	if len(args) > 0 {
+		useBravefile = false
+		bravefile.PlatformService.Image = args[0]
 	}
 
+	// Use Bravefile if no CLI args
 	if useBravefile {
+		if unitConfig != "" {
+			bravefilePath = unitConfig
+		}
+		if !shared.FileExists(bravefilePath) {
+			log.Fatalf("Bravefile not found at %q", bravefilePath)
+		}
+
 		err = bravefile.Load(bravefilePath)
 		if err != nil {
 			log.Fatal(err)
 		}
-
-	}
-	if (len(args) == 0) && (!useBravefile) {
-		log.Fatal("missing image name")
-	}
-
-	if len(args) > 0 {
-		bravefile.PlatformService.Image = args[0]
 	}
 
 	if name != "" {
