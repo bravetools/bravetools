@@ -19,8 +19,8 @@ Parameters specificed in the Bravefile can be overridden using command line opti
 exist in the current working directory, Bravetools expects an image name as the first agrument.`,
 	Run: deploy,
 }
-var unitConfig, unitIP, unitCPU, unitRAM, name string
-var unitPort []string
+var unitConfig string
+var deployArgs = &shared.Service{}
 
 func init() {
 	includeDeployFlags(braveDeploy)
@@ -28,11 +28,11 @@ func init() {
 
 func includeDeployFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&unitConfig, "config", "", "", "Path to Unit configuration file [OPTIONAL]")
-	cmd.Flags().StringVarP(&unitIP, "ip", "i", "", "IPv4 address (e.g., 10.0.0.20) [OPTIONAL]")
-	cmd.Flags().StringVarP(&unitCPU, "cpu", "c", "", "Number of allocated CPUs (e.g., 2) [OPTIONAL]")
-	cmd.Flags().StringVarP(&unitRAM, "ram", "r", "", "Number of allocated CPUs (e.g., 2GB) [OPTIONAL]")
-	cmd.Flags().StringSliceVarP(&unitPort, "port", "p", []string{}, "Publish Unit port to host [OPTIONAL]")
-	cmd.Flags().StringVarP(&name, "name", "n", "", "Assign name to deployed Unit")
+	cmd.Flags().StringVarP(&deployArgs.IP, "ip", "i", "", "IPv4 address (e.g., 10.0.0.20) [OPTIONAL]")
+	cmd.Flags().StringVarP(&deployArgs.Resources.CPU, "cpu", "c", "", "Number of allocated CPUs (e.g., 2) [OPTIONAL]")
+	cmd.Flags().StringVarP(&deployArgs.Resources.RAM, "ram", "r", "", "Number of allocated CPUs (e.g., 2GB) [OPTIONAL]")
+	cmd.Flags().StringSliceVarP(&deployArgs.Ports, "port", "p", []string{}, "Publish Unit port to host [OPTIONAL]")
+	cmd.Flags().StringVarP(&deployArgs.Name, "name", "n", "", "Assign name to deployed Unit")
 }
 
 func deploy(cmd *cobra.Command, args []string) {
@@ -63,25 +63,8 @@ func deploy(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	if name != "" {
-		bravefile.PlatformService.Name = name
-	}
-
-	if unitCPU != "" {
-		bravefile.PlatformService.Resources.CPU = unitCPU
-	}
-
-	if unitRAM != "" {
-		bravefile.PlatformService.Resources.RAM = unitRAM
-	}
-
-	if unitIP != "" {
-		bravefile.PlatformService.IP = unitIP
-	}
-
-	if len(unitPort) != 0 {
-		bravefile.PlatformService.Ports = unitPort
-	}
+	deployArgs.Merge(&bravefile.PlatformService)
+	bravefile.PlatformService = *deployArgs
 
 	err = host.InitUnit(backend, bravefile)
 	if err != nil {
