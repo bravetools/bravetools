@@ -444,6 +444,10 @@ func addIPRules(ct string, hostPort string, ctPort string, bh *BraveHost) error 
 }
 
 func checkUnits(unitName string, bh *BraveHost) error {
+	if unitName == "" {
+		return errors.New("unit name cannot be empty")
+	}
+
 	// Unit Checks
 	unitList, err := GetUnits(bh.Remote)
 	if err != nil {

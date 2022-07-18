@@ -46,6 +46,9 @@ func deploy(cmd *cobra.Command, args []string) {
 	if len(args) > 0 {
 		useBravefile = false
 		bravefile.PlatformService.Image = args[0]
+		if deployArgs.Name == "" {
+			log.Fatal("unit must have a name: pass one using the '--name' flag")
+		}
 	}
 
 	// Use Bravefile if no CLI args
