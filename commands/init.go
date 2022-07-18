@@ -115,7 +115,11 @@ func serverInit(cmd *cobra.Command, args []string) {
 		}
 
 		settings := host.Settings
-		settings.BackendSettings.Resources.IP = info.IPv4
+		if hostOs == "windows" {
+			settings.BackendSettings.Resources.IP = info.Name + ".mshome.net"
+		} else {
+			settings.BackendSettings.Resources.IP = info.IPv4
+		}
 		err = platform.UpdateBraveSettings(settings)
 
 		if err != nil {
