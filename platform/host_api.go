@@ -655,12 +655,9 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 	}
 
 	// Go through "Run" section
-	status, err := bravefileRun(ctx, bravefile.Run, bravefile.PlatformService.Name, bh.Remote)
+	err = bravefileRun(ctx, bravefile.Run, bravefile.PlatformService.Name, bh.Remote)
 	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
-		return errors.New("failed to execute command: " + err.Error())
-	}
-	if status > 0 {
-		return errors.New(shared.Fatal("non-zero exit code: " + strconv.Itoa(status)))
+		return errors.New(shared.Fatal("failed to execute command: " + err.Error()))
 	}
 
 	// Create an image based on running container and export it. Image saved as tar.gz in project local directory.
@@ -1014,12 +1011,9 @@ func (bh *BraveHost) Postdeploy(ctx context.Context, bravefile *shared.Bravefile
 	}
 
 	if bravefile.PlatformService.Postdeploy.Run != nil {
-		status, err := bravefileRun(ctx, bravefile.PlatformService.Postdeploy.Run, bravefile.PlatformService.Name, bh.Remote)
+		err = bravefileRun(ctx, bravefile.PlatformService.Postdeploy.Run, bravefile.PlatformService.Name, bh.Remote)
 		if err != nil {
-			return err
-		}
-		if status > 0 {
-			return errors.New(shared.Fatal("non-zero exit code: " + strconv.Itoa(status)))
+			return errors.New(shared.Fatal("failed to execute command: " + err.Error()))
 		}
 	}
 
