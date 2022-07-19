@@ -1163,16 +1163,23 @@ func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (
 				}
 				os.Chdir(buildDir)
 
-				// Cleanup each image if error in compose
 				err = bh.BuildImage(service.BravefileBuild)
-				if err != nil {
+				switch errType := err.(type) {
+				// Cleanup image later if error in compose
+				case nil:
+					defer func() {
+						if err != nil {
+							bh.DeleteLocalImage(service.Image)
+						}
+					}()
+				// If image already exists continue and ignore err
+				case *ImageExistsError:
+					err = nil
+					fmt.Printf("image %q already exists - skipping build\n", errType.Name)
+				// Stop on unknown err
+				default:
 					return err
 				}
-				defer func() {
-					if err != nil {
-						bh.DeleteLocalImage(service.Image)
-					}
-				}()
 
 				os.Chdir(workingDir)
 			}
