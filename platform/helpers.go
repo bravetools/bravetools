@@ -9,6 +9,7 @@ import (
 	"path"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/bravetools/bravetools/shared"
 	"github.com/lxc/lxd/shared/api"
@@ -385,10 +386,10 @@ func bravefileCopy(ctx context.Context, copy []shared.CopyCommand, service strin
 	return nil
 }
 
-func bravefileRun(ctx context.Context, run []shared.RunCommand, service string, remote Remote) (status int, err error) {
+func bravefileRun(ctx context.Context, run []shared.RunCommand, service string, remote Remote) (err error) {
 	for _, c := range run {
 		if err = ctx.Err(); err != nil {
-			return 1, err
+			return err
 		}
 
 		var command string
@@ -401,20 +402,23 @@ func bravefileRun(ctx context.Context, run []shared.RunCommand, service string, 
 		args := []string{command}
 		if len(c.Args) > 0 {
 			args = append(args, c.Args...)
-			// for _, a := range c.Args {
-			// 	args = append(args, a)
-			// }
 		}
 		if c.Content != "" {
 			content = c.Content
 			args = append(args, content)
 		}
 
-		status, err = Exec(ctx, service, args, remote)
+		status, err := Exec(ctx, service, args, remote)
+		if err != nil {
+			return err
+		}
+		if status > 0 {
+			return fmt.Errorf("non-zero exit code %d for command %q", status, strings.Join(args, " "))
+		}
 
 	}
 
-	return status, err
+	return err
 }
 
 func cleanUnusedStoragePool(name string, remote Remote) {
