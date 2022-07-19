@@ -530,6 +530,14 @@ func (bh *BraveHost) DeleteUnit(name string) error {
 	return nil
 }
 
+type ImageExistsError struct {
+	Name string
+}
+
+func (e *ImageExistsError) Error() string {
+	return fmt.Sprintf("image %q already exists", e.Name)
+}
+
 // BuildImage creates an image based on Bravefile
 func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 	if strings.ContainsAny(bravefile.PlatformService.Name, "/_. !@£$%^&*(){}:;`~,?") {
@@ -543,6 +551,9 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 	err := checkUnits(bravefile.PlatformService.Name, bh)
 	if err != nil {
 		return err
+	}
+	if imageExists(bravefile.PlatformService.Image) {
+		return &ImageExistsError{Name: bravefile.PlatformService.Image}
 	}
 
 	// Intercept SIGINT, propagate cancel and cleanup artefacts
@@ -796,6 +807,9 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) (er
 	err = checkUnits(unitParams.PlatformService.Name, bh)
 	if err != nil {
 		return err
+	}
+	if !imageExists(unitParams.PlatformService.Image) {
+		return fmt.Errorf("image %q does not exist", unitParams.PlatformService.Image)
 	}
 
 	var fingerprint string
