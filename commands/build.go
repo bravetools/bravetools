@@ -4,6 +4,7 @@ import (
 	"log"
 	"path"
 
+	"github.com/bravetools/bravetools/platform"
 	"github.com/spf13/cobra"
 )
 
@@ -40,7 +41,11 @@ func build(cmd *cobra.Command, args []string) {
 	}
 
 	err = host.BuildImage(bravefile)
-	if err != nil {
+	switch errType := err.(type) {
+	case nil:
+	case *platform.ImageExistsError:
+		log.Fatalf("image %q already exists - if you want to rebuild it, first delete the existing image with: `brave remove -i [IMAGE]`", errType.Name)
+	default:
 		log.Fatal(err)
 	}
 }

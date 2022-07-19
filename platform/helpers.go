@@ -462,3 +462,9 @@ func checkUnits(unitName string, bh *BraveHost) error {
 
 	return nil
 }
+
+func imageExists(imageNameAndVersion string) bool {
+	homeDir, _ := os.UserHomeDir()
+	image := path.Join(homeDir, shared.ImageStore, imageNameAndVersion+".tar.gz")
+	return shared.FileExists(image)
+}
