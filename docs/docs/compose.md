@@ -42,7 +42,7 @@ If a path to a `Bravefile` is provided for a service, the deployment configurati
 
 ### Build
 
-If a `Bravefile` path is supplied, it is also possible to use `brave compose` to build the service by setting the "build" field to "true". The image will be built according to the build instructions in the `Bravefile` before deployment. 
+If a `Bravefile` path is supplied, it is also possible to use `brave compose` to build the service by setting the "build" field to "true". The image will be built according to the build instructions in the `Bravefile` before deployment if it does not already exist. If the image already exists, that image will be reused and the build will be skipped.
 
 ```yaml
 services:
@@ -125,4 +125,41 @@ services:
       - log
   log:
     bravefile: ./log/Bravefile
+```
+
+### Reusing base images
+
+Often, images will have some overlap in their environments, sharing the same base distribution and the majority of installed packages. You can think of it as a superclass and subclasses, with specialized subclass services inheriting from the same base superclass. This scenario is perfect for incremental builds, where certain images are created and then reused and specialized by other services.
+
+The "base" field, used in tandem with the "depends_on" field, is a way to express this scenario declaratively in the compose file. Services marked as "base" are built only to be used by their dependents - they are not deployed themselves. The dependent services can then use this image as a base during build as a starting point.
+
+"base" images are by default transient - they exist only during the build to facilitate the building of other services. Therefore by default they are deleted after the end of the completion of the compose operation to avoid using disk space. In the event that you want to keep a "base" image around afterwards, you can set the "build" flag for the service to "true".
+
+In the example below, the "base" service is built first. Every other service imports it locally as their "base" image from within their Bravefile as part of the build. Finally, after the other services are deployed, the "base" image is deleted (to avoid this, uncomment the "build: true" line)
+
+```yaml
+# Build order: base -> log -> auth -> api
+services:
+  base:
+    bravefile: ./base/Bravefile
+    #build: true
+    base: true
+  api:
+    bravefile: ./api/Bravefile
+    build: true
+    depends_on:
+      - base 
+      - auth
+      - log
+  auth:
+    bravefile: ./auth/Bravefile
+    build: true
+    depends_on:
+      - base
+      - log
+  log:
+    bravefile: ./log/Bravefile
+    build: true
+    depends_on:
+      - base
 ```
