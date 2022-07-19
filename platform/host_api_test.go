@@ -2,6 +2,7 @@ package platform
 
 import (
 	"context"
+	"log"
 	"testing"
 
 	"github.com/bravetools/bravetools/shared"
@@ -183,10 +184,9 @@ func Test_ListUnits(t *testing.T) {
 func Test_Compose(t *testing.T) {
 	var err error
 
-	host := *NewBraveHost()
-	backend, err := NewHostBackend(host)
+	host, err := NewBraveHost()
 	if err != nil {
-		t.Fatal(err)
+		log.Fatal(err)
 	}
 
 	composefile := shared.NewComposeFile()
@@ -195,7 +195,7 @@ func Test_Compose(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = host.Compose(backend, composefile)
+	err = host.Compose(host.Backend, composefile)
 	if err != nil {
 		t.Error("host.BuildImage: ", err)
 	}

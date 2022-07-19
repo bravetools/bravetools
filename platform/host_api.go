@@ -565,6 +565,8 @@ func (e *ImageExistsError) Error() string {
 
 // BuildImage creates an image based on Bravefile
 func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
+	fmt.Println(shared.Info("Building Image: " + bravefile.PlatformService.Image + " Version: " + bravefile.PlatformService.Version))
+
 	if strings.ContainsAny(bravefile.PlatformService.Name, "/_. !@£$%^&*(){}:;`~,?") {
 		return errors.New("image names should not contain special characters")
 	}
@@ -892,6 +894,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 	if err != nil {
 		return err
 	}
+	fmt.Println(shared.Info("Deploying Unit " + unitParams.Name))
 
 	// Check if a unit with this name already exists - we don't want to delete it
 
@@ -1149,13 +1152,24 @@ func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (
 		return err
 	}
 
+	// Remove base-only services if all images depending on them already exist
+	for _, baseService := range getBaseOnlyServices(composeFile) {
+		if len(getBuildDependents(baseService, composeFile)) == 0 {
+			serviceIdx, err := shared.StrSliceIndexOf(topologicalOrdering, baseService)
+			if err != nil {
+				return err
+			}
+			topologicalOrdering = append(topologicalOrdering[:serviceIdx], topologicalOrdering[serviceIdx+1:]...)
+		}
+	}
+
 	// (Optionally build) and deploy each service
 	for _, serviceName := range topologicalOrdering {
 		service := composeFile.Services[serviceName]
 
 		// Load bravefile settings as defaults, overwrite if specified in composefile
 		if service.Bravefile != "" {
-			if service.Build {
+			if service.Build || service.Base {
 				// Switch to build context dir
 				buildDir := service.Context
 				if buildDir == "" {
@@ -1165,52 +1179,61 @@ func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (
 
 				err = bh.BuildImage(service.BravefileBuild)
 				switch errType := err.(type) {
-				// Cleanup image later if error in compose
 				case nil:
+					// Cleanup image later if error in compose
 					defer func() {
 						if err != nil {
 							bh.DeleteLocalImage(service.Image)
 						}
 					}()
-				// If image already exists continue and ignore err
 				case *ImageExistsError:
+					// If image already exists continue and log the skip
 					err = nil
 					fmt.Printf("image %q already exists - skipping build\n", errType.Name)
-				// Stop on unknown err
 				default:
+					// Stop on unknown err
 					return err
 				}
 
 				os.Chdir(workingDir)
-			}
-		}
 
-		// Deploy context - use Context is provided, else Bravefile if present, else current dir
-		deployDir := service.Context
-		if deployDir == "" {
-			if service.Bravefile != "" {
-				deployDir, err = filepath.Abs(filepath.Dir(service.Bravefile))
-				if err != nil {
-					return err
+				if service.Base && !service.Build {
+					defer func() {
+						bh.DeleteLocalImage(service.Image)
+					}()
 				}
-			} else {
-				deployDir = "."
 			}
 		}
-		os.Chdir(deployDir)
 
-		// Cleanup each unit if error in compose
-		err = bh.InitUnit(backend, &service.Service)
-		if err != nil {
-			return err
-		}
-		defer func() {
+		// Only deploy service if it isn't a base image used during build only
+		if !service.Base {
+			// Deploy context - use Context if provided, else Bravefile if present, else current dir
+			deployDir := service.Context
+			if deployDir == "" {
+				if service.Bravefile != "" {
+					deployDir, err = filepath.Abs(filepath.Dir(service.Bravefile))
+					if err != nil {
+						return err
+					}
+				} else {
+					deployDir = "."
+				}
+			}
+			os.Chdir(deployDir)
+
+			// Cleanup each unit if error in compose
+			err = bh.InitUnit(backend, &service.Service)
 			if err != nil {
-				bh.DeleteUnit(service.Name)
+				return err
 			}
-		}()
+			defer func() {
+				if err != nil {
+					bh.DeleteUnit(service.Name)
+				}
+			}()
 
-		os.Chdir(workingDir)
+			os.Chdir(workingDir)
+		}
 
 	}
 	return nil

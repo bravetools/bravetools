@@ -20,6 +20,7 @@ type ComposeService struct {
 	BravefileBuild *Bravefile
 	Bravefile      string   `yaml:"bravefile,omitempty"`
 	Build          bool     `yaml:"build,omitempty"`
+	Base           bool     `yaml:"base,omitempty"`
 	Context        string   `yaml:"context,omitempty"`
 	Depends        []string `yaml:"depends_on,omitempty"`
 }
@@ -74,7 +75,7 @@ func (composeFile *ComposeFile) Load(file string) error {
 		// Override Service.Name with the key provided in brave-compose file
 		service.Name = serviceName
 
-		if service.Build && service.Bravefile == "" {
+		if (service.Build || service.Base) && service.Bravefile == "" {
 			return fmt.Errorf("cannot build image for %q without a Bravefile path", service.Name)
 		}
 
