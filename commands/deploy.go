@@ -2,8 +2,8 @@ package commands
 
 import (
 	"log"
-	"os"
 
+	"github.com/bravetools/bravetools/shared"
 	"github.com/spf13/cobra"
 )
 
@@ -19,8 +19,8 @@ Parameters specificed in the Bravefile can be overridden using command line opti
 exist in the current working directory, Bravetools expects an image name as the first agrument.`,
 	Run: deploy,
 }
-var unitConfig, unitIP, unitCPU, unitRAM, name string
-var unitPort []string
+var unitConfig string
+var deployArgs = &shared.Service{}
 
 func init() {
 	includeDeployFlags(braveDeploy)
@@ -28,65 +28,46 @@ func init() {
 
 func includeDeployFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&unitConfig, "config", "", "", "Path to Unit configuration file [OPTIONAL]")
-	cmd.Flags().StringVarP(&unitIP, "ip", "i", "", "IPv4 address (e.g., 10.0.0.20) [OPTIONAL]")
-	cmd.Flags().StringVarP(&unitCPU, "cpu", "c", "", "Number of allocated CPUs (e.g., 2) [OPTIONAL]")
-	cmd.Flags().StringVarP(&unitRAM, "ram", "r", "", "Number of allocated CPUs (e.g., 2GB) [OPTIONAL]")
-	cmd.Flags().StringSliceVarP(&unitPort, "port", "p", []string{}, "Publish Unit port to host [OPTIONAL]")
-	cmd.Flags().StringVarP(&name, "name", "n", "", "Assign name to deployed Unit")
+	cmd.Flags().StringVarP(&deployArgs.IP, "ip", "i", "", "IPv4 address (e.g., 10.0.0.20) [OPTIONAL]")
+	cmd.Flags().StringVarP(&deployArgs.Resources.CPU, "cpu", "c", "", "Number of allocated CPUs (e.g., 2) [OPTIONAL]")
+	cmd.Flags().StringVarP(&deployArgs.Resources.RAM, "ram", "r", "", "Number of allocated CPUs (e.g., 2GB) [OPTIONAL]")
+	cmd.Flags().StringSliceVarP(&deployArgs.Ports, "port", "p", []string{}, "Publish Unit port to host [OPTIONAL]")
+	cmd.Flags().StringVarP(&deployArgs.Name, "name", "n", "", "Assign name to deployed Unit")
 }
 
 func deploy(cmd *cobra.Command, args []string) {
 	checkBackend()
 
-	var useBravefile = false
-	var bravefilePath string
+	var useBravefile = true
+	var bravefilePath = "Bravefile"
 	var err error
 
-	_, err = os.Stat("Bravefile")
-	// if Bravefile is in current directory continue with parameters set there
-	if err == nil {
-		useBravefile = true
-		bravefilePath = "Bravefile"
-	}
-	if unitConfig != "" {
-		useBravefile = true
-		bravefilePath = unitConfig
+	// If args provided, use CLI, not Bravefile
+	if len(args) > 0 {
+		useBravefile = false
+		bravefile.PlatformService.Image = args[0]
+		if deployArgs.Name == "" {
+			log.Fatal("unit must have a name: pass one using the '--name' flag")
+		}
 	}
 
+	// Use Bravefile if no CLI args
 	if useBravefile {
+		if unitConfig != "" {
+			bravefilePath = unitConfig
+		}
+		if !shared.FileExists(bravefilePath) {
+			log.Fatalf("Bravefile not found at %q", bravefilePath)
+		}
+
 		err = bravefile.Load(bravefilePath)
 		if err != nil {
 			log.Fatal(err)
 		}
-
-	}
-	if (len(args) == 0) && (!useBravefile) {
-		log.Fatal("missing image name")
 	}
 
-	if len(args) > 0 {
-		bravefile.PlatformService.Image = args[0]
-	}
-
-	if name != "" {
-		bravefile.PlatformService.Name = name
-	}
-
-	if unitCPU != "" {
-		bravefile.PlatformService.Resources.CPU = unitCPU
-	}
-
-	if unitRAM != "" {
-		bravefile.PlatformService.Resources.RAM = unitRAM
-	}
-
-	if unitIP != "" {
-		bravefile.PlatformService.IP = unitIP
-	}
-
-	if len(unitPort) != 0 {
-		bravefile.PlatformService.Ports = unitPort
-	}
+	deployArgs.Merge(&bravefile.PlatformService)
+	bravefile.PlatformService = *deployArgs
 
 	err = host.InitUnit(backend, bravefile)
 	if err != nil {

@@ -66,7 +66,14 @@ type Bravefile struct {
 
 // NewBravefile ..
 func NewBravefile() *Bravefile {
-	return &Bravefile{}
+	return &Bravefile{
+		PlatformService: Service{
+			Resources: Resources{
+				CPU: DefaultUnitCpuLimit,
+				RAM: DefaultUnitRamLimit,
+			},
+		},
+	}
 }
 
 // Load loads Bravefile
@@ -77,13 +84,47 @@ func (bravefile *Bravefile) Load(file string) error {
 		return err
 	}
 
-	bravefile.PlatformService.Resources.CPU = DefaultUnitCpuLimit
-	bravefile.PlatformService.Resources.RAM = DefaultUnitRamLimit
-
 	err = yaml.Unmarshal(buf.Bytes(), &bravefile)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// Merges two Service structs, prioritizing the values present in first struct
+func (s *Service) Merge(service *Service) {
+	if s.Name == "" {
+		s.Name = service.Name
+	}
+	if s.Image == "" {
+		s.Image = service.Image
+	}
+	if s.Version == "" {
+		s.Version = service.Version
+	}
+	if s.Docker == "" {
+		s.Docker = service.Docker
+	}
+	if s.IP == "" {
+		s.IP = service.IP
+	}
+	if len(s.Ports) == 0 {
+		s.Ports = append(s.Ports, service.Ports...)
+	}
+	if s.Resources.CPU == "" {
+		s.Resources.CPU = service.Resources.CPU
+	}
+	if s.Resources.GPU == "" {
+		s.Resources.GPU = service.Resources.GPU
+	}
+	if s.Resources.RAM == "" {
+		s.Resources.RAM = service.Resources.RAM
+	}
+	if len(s.Postdeploy.Copy) == 0 {
+		s.Postdeploy.Copy = append(s.Postdeploy.Copy, service.Postdeploy.Copy...)
+	}
+	if len(s.Postdeploy.Run) == 0 {
+		s.Postdeploy.Run = append(s.Postdeploy.Run, service.Postdeploy.Run...)
+	}
 }

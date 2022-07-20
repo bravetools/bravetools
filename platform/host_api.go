@@ -799,6 +799,14 @@ func (bh *BraveHost) StartUnit(name string, backend Backend) error {
 
 // InitUnit starts unit from supplied image
 func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) (err error) {
+	// Check for missing mandatory fields
+	if unitParams.PlatformService.Name == "" {
+		return errors.New("unit name cannot be empty")
+	}
+	homeDir, _ := os.UserHomeDir()
+	if unitParams.PlatformService.Image == "" {
+		return errors.New("unit image name cannot be empty")
+	}
 
 	// Check if a unit with this name already exists - we don't want to delete it
 	err = checkUnits(unitParams.PlatformService.Name, bh)
@@ -811,11 +819,10 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) (er
 
 	var fingerprint string
 
-	homeDir, _ := os.UserHomeDir()
-	if unitParams.PlatformService.Image == "" {
-		return errors.New("unit image name cannot be empty")
-	}
 	image := path.Join(homeDir, shared.ImageStore, unitParams.PlatformService.Image+".tar.gz")
+	if !shared.FileExists(image) {
+		return fmt.Errorf("image %q does not exist", unitParams.PlatformService.Image)
+	}
 
 	// Resource checks
 	err = CheckResources(image, backend, unitParams, bh)
