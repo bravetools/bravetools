@@ -338,20 +338,44 @@ func (vm Multipass) Info() (backendInfo Info, err error) {
 	}
 
 	if backendInfo.State == "Running" {
-		backendInfo.Disk, err = vm.getDiskUsage()
-		if err != nil {
-			return backendInfo, errors.New("Unable to access host disk usage: " + err.Error())
-		}
-		backendInfo.Memory, err = vm.getRamUsage()
-		if err != nil {
-			return backendInfo, errors.New("cannot assess total RAM count: " + err.Error())
-		}
-		backendInfo.CPU, err = vm.getCpuCount()
-		if err != nil {
-			return backendInfo, errors.New("cannot assess CPU count: " + err.Error())
-		}
-	}
 
+		doneChan := make(chan struct{}, 3)
+		errChan := make(chan error)
+
+		go func() {
+			backendInfo.Disk, err = vm.getDiskUsage()
+			if err != nil {
+				errChan <- errors.New("Unable to access host disk usage: " + err.Error())
+			} else {
+				doneChan <- struct{}{}
+			}
+		}()
+		go func() {
+			backendInfo.Memory, err = vm.getRamUsage()
+			if err != nil {
+				errChan <- errors.New("cannot assess total RAM count: " + err.Error())
+			} else {
+				doneChan <- struct{}{}
+			}
+		}()
+		go func() {
+			backendInfo.CPU, err = vm.getCpuCount()
+			if err != nil {
+				errChan <- errors.New("cannot assess CPU count: " + err.Error())
+			} else {
+				doneChan <- struct{}{}
+			}
+		}()
+
+		for i := 0; i < cap(doneChan); i++ {
+			select {
+			case <-errChan:
+				return backendInfo, err
+			case <-doneChan:
+			}
+		}
+
+	}
 	return backendInfo, nil
 }
 
