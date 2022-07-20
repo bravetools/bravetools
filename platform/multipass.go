@@ -349,18 +349,15 @@ func (vm Multipass) Info() (backendInfo Info, err error) {
 		if err != nil {
 			return backendInfo, errors.New("cannot assess CPU count: " + err.Error())
 		}
-	} else {
-		backendInfo.Memory = StorageUsage{"Unknown", "Unknown"}
-		backendInfo.Disk = StorageUsage{"Unknown", "Unknown"}
-		backendInfo.CPU = "Unknown"
 	}
-
 	s.Stop()
 
 	return backendInfo, nil
 }
 
-func (vm Multipass) getInfo() (backendInfo Info, err error) {
+func (vm Multipass) getInfo() (Info, error) {
+
+	backendInfo := NewInfo()
 
 	out, err := exec.Command("multipass", "info", vm.Settings.Name).Output()
 	if err != nil {

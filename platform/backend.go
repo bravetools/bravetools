@@ -23,6 +23,14 @@ type Info struct {
 	CPU           string
 }
 
+func NewInfo() Info {
+	return Info{
+		Disk:   StorageUsage{"Unknown", "Unknown"},
+		Memory: StorageUsage{"Unknown", "Unknown"},
+		CPU:    "Unknown",
+	}
+}
+
 type StorageUsage struct {
 	UsedStorage  string
 	TotalStorage string
