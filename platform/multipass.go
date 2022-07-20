@@ -319,22 +319,52 @@ func (vm Multipass) BraveHostDelete() error {
 }
 
 // Info shows all VMs and their state
-func (vm Multipass) Info() (Info, error) {
+func (vm Multipass) Info() (backendInfo Info, err error) {
 	operation := shared.Info("Gathering multipass settings")
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
 	s.Suffix = " " + operation
 	s.Start()
 
-	backendInfo := Info{}
-	_, err := checkMultipass()
+	_, err = checkMultipass()
 
 	if err != nil {
-		return backendInfo, errors.New("cannot find backend service")
+		return backendInfo, errors.New("multipass process not found: " + err.Error())
 	}
+
+	backendInfo, err = vm.getInfo()
+	if err != nil {
+		return backendInfo, errors.New("error contacting multipass vm: " + err.Error())
+	}
+
+	if backendInfo.State == "Running" {
+		backendInfo.Disk, err = vm.getDiskUsage()
+		if err != nil {
+			return backendInfo, errors.New("Unable to access host disk usage: " + err.Error())
+		}
+		backendInfo.Memory, err = vm.getRamUsage()
+		if err != nil {
+			return backendInfo, errors.New("cannot assess total RAM count: " + err.Error())
+		}
+		backendInfo.CPU, err = vm.getCpuCount()
+		if err != nil {
+			return backendInfo, errors.New("cannot assess CPU count: " + err.Error())
+		}
+	} else {
+		backendInfo.Memory = StorageUsage{"Unknown", "Unknown"}
+		backendInfo.Disk = StorageUsage{"Unknown", "Unknown"}
+		backendInfo.CPU = "Unknown"
+	}
+
+	s.Stop()
+
+	return backendInfo, nil
+}
+
+func (vm Multipass) getInfo() (backendInfo Info, err error) {
 
 	out, err := exec.Command("multipass", "info", vm.Settings.Name).Output()
 	if err != nil {
-		return backendInfo, errors.New("error starting workspace")
+		return backendInfo, err
 	}
 
 	info := strings.Split(string(out), "\n")
@@ -357,119 +387,115 @@ func (vm Multipass) Info() (Info, error) {
 		}
 	}
 
-	if backendInfo.State == "Running" {
-		cmd := shared.SnapLXC + " storage info " + vm.Settings.StoragePool.Name + " --bytes"
-		storageInfo, err := shared.ExecCommandWReturn("multipass",
-			"exec",
-			vm.Settings.Name,
-			"--",
-			"bash", "-c",
-			cmd)
+	return backendInfo, nil
+}
 
-		if err != nil {
-			return backendInfo, errors.New("Unable to access host disk usage: " + err.Error())
-		}
+func (vm Multipass) getDiskUsage() (storage StorageUsage, err error) {
+	cmd := shared.SnapLXC + " storage info " + vm.Settings.StoragePool.Name + " --bytes"
+	storageInfo, err := shared.ExecCommandWReturn("multipass",
+		"exec",
+		vm.Settings.Name,
+		"--",
+		"bash", "-c",
+		cmd)
 
-		scanner := bufio.NewScanner(strings.NewReader(storageInfo))
-		var totalDisk string
-		var usedDisk string
-
-		for scanner.Scan() {
-			line := scanner.Text()
-			parts := strings.Split(line, ": ")
-			if len(parts) > 1 {
-				switch parts[0] {
-				case "  space used":
-					usedDisk = parts[1]
-
-				case "  total space":
-					totalDisk = parts[1]
-				}
-			}
-
-		}
-
-		usedDisk = usedDisk[1 : len(usedDisk)-1]
-		totalDisk = totalDisk[1 : len(totalDisk)-1]
-		usedDiskInt, err := strconv.ParseInt(usedDisk, 0, 64)
-		if err != nil {
-			return backendInfo, err
-		}
-
-		totalDiskInt, err := strconv.ParseInt(totalDisk, 0, 64)
-		if err != nil {
-			return backendInfo, err
-		}
-
-		usedDisk = shared.FormatByteCountSI(usedDiskInt)
-		totalDisk = shared.FormatByteCountSI(totalDiskInt)
-
-		backendInfo.Disk = StorageUsage{usedDisk, totalDisk}
-
-		totalMemCmd := "cat /proc/meminfo | grep MemTotal | awk '{print $2}'"
-		availableMemCmd := "cat /proc/meminfo | grep MemAvailable | awk '{print $2}'"
-
-		totalMem, err := shared.ExecCommandWReturn("multipass",
-			"exec",
-			vm.Settings.Name,
-			"--",
-			"bash", "-c", totalMemCmd)
-		if err != nil {
-			return backendInfo, errors.New("cannot assess total RAM count")
-		}
-
-		totalMem = strings.Split(strings.TrimSpace(strings.Split(totalMem, ":")[1]), " ")[0]
-
-		availableMem, err := shared.ExecCommandWReturn("multipass",
-			"exec",
-			vm.Settings.Name,
-			"--",
-			"bash", "-c", availableMemCmd)
-
-		if err != nil {
-			return backendInfo, errors.New("cannot assess available RAM count")
-		}
-
-		availableMem = strings.Split(strings.TrimSpace(strings.Split(availableMem, ":")[1]), " ")[0]
-
-		totalMemInt, err := strconv.Atoi(totalMem)
-		if err != nil {
-			return backendInfo, err
-		}
-
-		availableMemInt, err := strconv.Atoi(availableMem)
-		if err != nil {
-			return backendInfo, err
-		}
-
-		usedMemInt := totalMemInt - availableMemInt
-
-		totalMem = shared.FormatByteCountSI(int64(totalMemInt * 1000))
-		usedMem := shared.FormatByteCountSI(int64(usedMemInt * 1000))
-
-		backendInfo.Memory = StorageUsage{usedMem, totalMem}
-
-		cpuCount := "grep -c ^processor /proc/cpuinfo"
-		cpu, err := shared.ExecCommandWReturn("multipass",
-			"exec",
-			vm.Settings.Name,
-			"--",
-			"bash",
-			"-c",
-			cpuCount)
-
-		if err != nil {
-			return backendInfo, errors.New("cannot assess CPU count")
-		}
-
-		backendInfo.CPU = cpu
-	} else {
-		backendInfo.Memory = StorageUsage{"Unknown", "Unknown"}
-		backendInfo.Disk = StorageUsage{"Unknown", "Unknown"}
-		backendInfo.CPU = "Unknown"
+	if err != nil {
+		return storage, err
 	}
 
-	s.Stop()
+	scanner := bufio.NewScanner(strings.NewReader(storageInfo))
+	var totalDisk string
+	var usedDisk string
 
-	return backendInfo, nil
+	for scanner.Scan() {
+		line := scanner.Text()
+		parts := strings.Split(line, ": ")
+		if len(parts) > 1 {
+			switch parts[0] {
+			case "  space used":
+				usedDisk = parts[1]
+
+			case "  total space":
+				totalDisk = parts[1]
+			}
+		}
+
+	}
+
+	usedDisk = usedDisk[1 : len(usedDisk)-1]
+	totalDisk = totalDisk[1 : len(totalDisk)-1]
+	usedDiskInt, err := strconv.ParseInt(usedDisk, 0, 64)
+	if err != nil {
+		return storage, err
+	}
+
+	totalDiskInt, err := strconv.ParseInt(totalDisk, 0, 64)
+	if err != nil {
+		return storage, err
+	}
+
+	usedDisk = shared.FormatByteCountSI(usedDiskInt)
+	totalDisk = shared.FormatByteCountSI(totalDiskInt)
+
+	storage = StorageUsage{usedDisk, totalDisk}
+	return storage, nil
+}
+
+func (vm Multipass) getRamUsage() (storage StorageUsage, err error) {
+	totalMemCmd := "cat /proc/meminfo | grep MemTotal | awk '{print $2}'"
+	availableMemCmd := "cat /proc/meminfo | grep MemAvailable | awk '{print $2}'"
+
+	totalMem, err := shared.ExecCommandWReturn("multipass",
+		"exec",
+		vm.Settings.Name,
+		"--",
+		"bash", "-c", totalMemCmd)
+	if err != nil {
+		return storage, err
+	}
+
+	totalMem = strings.Split(strings.TrimSpace(strings.Split(totalMem, ":")[1]), " ")[0]
+
+	availableMem, err := shared.ExecCommandWReturn("multipass",
+		"exec",
+		vm.Settings.Name,
+		"--",
+		"bash", "-c", availableMemCmd)
+
+	if err != nil {
+		return storage, err
+	}
+
+	availableMem = strings.Split(strings.TrimSpace(strings.Split(availableMem, ":")[1]), " ")[0]
+
+	totalMemInt, err := strconv.Atoi(totalMem)
+	if err != nil {
+		return storage, err
+	}
+
+	availableMemInt, err := strconv.Atoi(availableMem)
+	if err != nil {
+		return storage, err
+	}
+
+	usedMemInt := totalMemInt - availableMemInt
+
+	totalMem = shared.FormatByteCountSI(int64(totalMemInt * 1000))
+	usedMem := shared.FormatByteCountSI(int64(usedMemInt * 1000))
+
+	storage = StorageUsage{usedMem, totalMem}
+	return storage, nil
+}
+
+func (vm Multipass) getCpuCount() (cpu string, err error) {
+	cpuCount := "grep -c ^processor /proc/cpuinfo"
+	cpu, err = shared.ExecCommandWReturn("multipass",
+		"exec",
+		vm.Settings.Name,
+		"--",
+		"bash",
+		"-c",
+		cpuCount)
+
+	return cpu, err
 }
