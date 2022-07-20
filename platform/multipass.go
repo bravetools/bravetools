@@ -324,6 +324,7 @@ func (vm Multipass) Info() (backendInfo Info, err error) {
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
 	s.Suffix = " " + operation
 	s.Start()
+	defer s.Stop()
 
 	_, err = checkMultipass()
 
@@ -350,7 +351,6 @@ func (vm Multipass) Info() (backendInfo Info, err error) {
 			return backendInfo, errors.New("cannot assess CPU count: " + err.Error())
 		}
 	}
-	s.Stop()
 
 	return backendInfo, nil
 }
