@@ -148,7 +148,10 @@ func importGitHub(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *
 	home, _ := os.UserHomeDir()
 	imageLocation := filepath.Join(home, shared.ImageStore)
 
-	path := "github.com/" + bravefile.Base.Image
+	path := bravefile.Base.Image
+	if !strings.HasPrefix(path, "github.com/") {
+		path = "github.com/" + path
+	}
 	remoteBravefile, err := shared.GetBravefileFromGitHub(path)
 	if err != nil {
 		return fingerprint, err
@@ -497,4 +500,25 @@ func localImageSize(imageNameAndVersion string) (bytes int64, err error) {
 	}
 
 	return info.Size(), nil
+}
+
+func resolveBaseImageLocation(baseImageNameAndVersion string) (location string, err error) {
+
+	if strings.HasPrefix(baseImageNameAndVersion, "github.com/") {
+		return "github", nil
+	}
+	if imageExists(baseImageNameAndVersion) {
+		return "local", nil
+	}
+
+	// Query public remote for alias
+	publicLxd, err := GetSimplestreamsLXDSever("https://images.linuxcontainers.org", nil)
+	if err != nil {
+		return "", err
+	}
+	if _, err := GetFingerprintByAlias(publicLxd, baseImageNameAndVersion); err == nil {
+		return "public", nil
+	}
+
+	return "", fmt.Errorf("image %q location could not be resolved", baseImageNameAndVersion)
 }
