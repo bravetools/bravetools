@@ -89,6 +89,9 @@ func GetBravefileFromGitHub(name string) (*Bravefile, error) {
 	var baseConfig string
 
 	path := strings.SplitN(name, "/", -1)
+	if len(path) <= 3 {
+		return nil, fmt.Errorf("failed to retrieve image %q from github", name)
+	}
 	user := path[1]
 	repository := path[2]
 	project := strings.Join(path[3:], "/")
