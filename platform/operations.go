@@ -507,12 +507,7 @@ func Launch(ctx context.Context, localLxd lxd.InstanceServer, name string, alias
 	if err != nil {
 		return fingerprint, err
 	}
-	remoteImage, _, err := remoteLxd.GetImageAlias(alias)
-	if err != nil {
-		return fingerprint, err
-	}
-
-	fingerprint = remoteImage.Target
+	fingerprint, err = GetFingerprintByAlias(remoteLxd, alias)
 
 	if err = ctx.Err(); err != nil {
 		return "", err
@@ -1099,13 +1094,23 @@ func ExportImage(lxdServer lxd.ImageServer, fingerprint string, name string) err
 	return nil
 }
 
+// GetFingerprintByAlias retrieves image fingerprint corresponding to provided alias
+func GetFingerprintByAlias(lxdServer lxd.ImageServer, alias string) (fingerprint string, err error) {
+	remoteAlias, _, err := lxdServer.GetImageAlias(alias)
+	if err != nil {
+		return "", err
+	}
+	fingerprint = remoteAlias.Target
+
+	return fingerprint, nil
+}
+
 // GetImageByAlias retrieves image by name
 func GetImageByAlias(lxdImageServer lxd.ImageServer, alias string) (image *api.Image, err error) {
-	remoteAlias, _, err := lxdImageServer.GetImageAlias(alias)
+	imageFingerprint, err := GetFingerprintByAlias(lxdImageServer, alias)
 	if err != nil {
 		return nil, err
 	}
-	imageFingerprint := remoteAlias.Target
 
 	image, _, err = lxdImageServer.GetImage(imageFingerprint)
 	return image, err
