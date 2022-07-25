@@ -556,16 +556,7 @@ func Launch(ctx context.Context, name string, alias string, remote Remote) (fing
 	defer s.Stop()
 
 	// Get remote image fingerprint
-	remoteLxd, err := lxd.ConnectSimpleStreams("https://images.linuxcontainers.org/", nil)
-	if err != nil {
-		return "", err
-	}
-
-	remoteAlias, _, err := remoteLxd.GetImageAlias(alias)
-	if err != nil {
-		return "", err
-	}
-	fingerprint = remoteAlias.Target
+	fingerprint, err = PublicLXDImageFingerprintByAlias(alias)
 
 	if err = ctx.Err(); err != nil {
 		return "", err
@@ -1481,4 +1472,48 @@ func GetLXDServer(key string, cert string, url string) (lxd.InstanceServer, erro
 	}
 
 	return server, nil
+}
+
+func PublicLXDImageFingerprintByAlias(alias string) (fingerprint string, err error) {
+	remoteLxd, err := lxd.ConnectSimpleStreams("https://images.linuxcontainers.org/", nil)
+	if err != nil {
+		return "", err
+	}
+
+	remoteAlias, _, err := remoteLxd.GetImageAlias(alias)
+	if err != nil {
+		return "", err
+	}
+	fingerprint = remoteAlias.Target
+
+	return fingerprint, nil
+}
+
+func PublicLXDImageByAlias(alias string) (image *api.Image, err error) {
+	remoteLxd, err := lxd.ConnectSimpleStreams("https://images.linuxcontainers.org/", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return imageByAlias(remoteLxd, alias)
+}
+
+func GetImageByAlias(alias string, remote Remote) (image *api.Image, err error) {
+	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
+	if err != nil {
+		return nil, err
+	}
+
+	return imageByAlias(lxdServer, alias)
+}
+
+func imageByAlias(lxdImageServer lxd.ImageServer, alias string) (image *api.Image, err error) {
+	remoteAlias, _, err := lxdImageServer.GetImageAlias(alias)
+	if err != nil {
+		return nil, err
+	}
+	imageFingerprint := remoteAlias.Target
+
+	image, _, err = lxdImageServer.GetImage(imageFingerprint)
+	return image, err
 }
