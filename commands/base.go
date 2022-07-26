@@ -26,7 +26,7 @@ func buildBase(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	if strings.Contains(args[0], "github.com") {
+	if strings.HasPrefix(args[0], "github.com/") {
 		bravefile, err = shared.GetBravefileFromGitHub(args[0])
 		if err != nil {
 			log.Fatal(err)
