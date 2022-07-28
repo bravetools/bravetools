@@ -15,41 +15,31 @@ func CheckResources(image string, backend Backend, unitParams *shared.Bravefile,
 	if err != nil {
 		return err
 	}
-
-	requestedImageSize := fi.Size()
-
 	info, err := backend.Info()
 	if err != nil {
 		return errors.New("Failed to connect to host: " + err.Error())
 	}
 
-	usedDiskSize, err := shared.SizeCountToInt(info.Disk.UsedStorage)
-	if err != nil {
-		return err
-	}
-	totalDiskSize, err := shared.SizeCountToInt(info.Disk.TotalStorage)
+	requestedImageSize := fi.Size()
+	freeDiskSpace, err := getFreeSpace(info.Disk)
 	if err != nil {
 		return err
 	}
 
-	if requestedImageSize*5 > (totalDiskSize - usedDiskSize) {
+	if requestedImageSize*5 > freeDiskSpace {
 		return errors.New("requested unit size exceeds available disk space on bravetools host. To increase storage pool size modify $HOME/.bravetools/config.yml and run brave configure")
 	}
 
-	usedMemorySize, err := shared.SizeCountToInt(info.Memory.UsedStorage)
-	if err != nil {
-		return err
-	}
-	totalMemorySize, err := shared.SizeCountToInt(info.Memory.TotalStorage)
-	if err != nil {
-		return err
-	}
 	requestedMemorySize, err := shared.SizeCountToInt(unitParams.PlatformService.Resources.RAM)
 	if err != nil {
 		return err
 	}
+	freeMemorySize, err := getFreeSpace(info.Memory)
+	if err != nil {
+		return err
+	}
 
-	if requestedMemorySize > (totalMemorySize - usedMemorySize) {
+	if requestedMemorySize > freeMemorySize {
 		return errors.New("Requested unit memory (" + unitParams.PlatformService.Resources.RAM + ") exceeds available memory on bravetools host")
 	}
 
@@ -70,6 +60,38 @@ func CheckResources(image string, backend Backend, unitParams *shared.Bravefile,
 	err = shared.TCPPortStatus(hostIP, hostPorts)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func getFreeSpace(storageUsage StorageUsage) (freeSpace int64, err error) {
+	usedStorageBytes, err := shared.SizeCountToInt(storageUsage.UsedStorage)
+	if err != nil {
+		return freeSpace, errors.New("failed to retrieve backend disk usage:" + err.Error())
+	}
+	totalStorageBytes, err := shared.SizeCountToInt(storageUsage.TotalStorage)
+	if err != nil {
+		return freeSpace, errors.New("failed to retrieve backend disk space:" + err.Error())
+	}
+
+	return totalStorageBytes - usedStorageBytes, nil
+}
+
+// CheckBackendDiskSpace checks whether backend has enough disk space for requested allocation
+func CheckBackendDiskSpace(backend Backend, requestedSpace int64) (err error) {
+	info, err := backend.Info()
+	if err != nil {
+		return errors.New("Failed to connect to host: " + err.Error())
+	}
+
+	freeSpace, err := getFreeSpace(info.Disk)
+	if err != nil {
+		return err
+	}
+
+	if requestedSpace >= freeSpace {
+		return errors.New("requested unit size exceeds available disk space on bravetools host. To increase storage pool size modify $HOME/.bravetools/config.yml and run brave configure")
 	}
 
 	return nil
