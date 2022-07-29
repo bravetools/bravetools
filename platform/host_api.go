@@ -568,6 +568,16 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 
 	switch bravefile.Base.Location {
 	case "public":
+		// Check disk space
+		img, err := PublicLXDImageByAlias(bravefile.Base.Image)
+		if err != nil {
+			return err
+		}
+		err = CheckBackendDiskSpace(bh.Backend, img.Size)
+		if err != nil {
+			return err
+		}
+
 		imageFingerprint, err = importLXD(ctx, bravefile, bh.Remote)
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
