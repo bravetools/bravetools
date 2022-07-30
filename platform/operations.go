@@ -1204,13 +1204,14 @@ func DeleteImageByName(name string, remote Remote) error {
 		return err
 	}
 
-	err = lxdServer.DeleteImageAlias(name)
+	alias, _, err := lxdServer.GetImageAlias(name)
 	if err != nil {
 		return err
 	}
+	imageFingerprint := alias.Target
 
-	fmt.Println(name)
-	return nil
+	_, err = lxdServer.DeleteImage(imageFingerprint)
+	return err
 }
 
 // DeleteImageFingerprint delete unit image
