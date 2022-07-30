@@ -175,10 +175,14 @@ func importLocal(ctx context.Context, bravefile *shared.Bravefile, remote Remote
 		return "", err
 	}
 	home, _ := os.UserHomeDir()
-	location := filepath.Join(home, shared.ImageStore)
+	path := filepath.Join(home, shared.ImageStore, bravefile.Base.Image) + ".tar.gz"
 
-	fingerprint, err = ImportImage(filepath.Join(location, bravefile.Base.Image)+".tar.gz", bravefile.Base.Image, remote)
+	fingerprint, err = shared.FileSha256Hash(path)
+	if err != nil {
+		return fingerprint, err
+	}
 
+	_, err = ImportImage(path, bravefile.Base.Image, remote)
 	if err != nil {
 		return fingerprint, errors.New("failed to import image: " + err.Error())
 	}

@@ -817,12 +817,16 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) (er
 		return fmt.Errorf("image %q does not exist", unitParams.PlatformService.Image)
 	}
 
-	var fingerprint string
-
 	image := path.Join(homeDir, shared.ImageStore, unitParams.PlatformService.Image+".tar.gz")
 	if !shared.FileExists(image) {
 		return fmt.Errorf("image %q does not exist", unitParams.PlatformService.Image)
 	}
+
+	fingerprint, err := shared.FileSha256Hash(image)
+	if err != nil {
+		return fmt.Errorf("failed to obtain image hash %q", unitParams.Base.Image)
+	}
+	defer DeleteImageByFingerprint(fingerprint, bh.Remote)
 
 	// Resource checks
 	err = CheckResources(image, backend, unitParams, bh)
@@ -843,8 +847,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) (er
 		}
 	}()
 
-	fingerprint, err = ImportImage(image, unitParams.PlatformService.Name, bh.Remote)
-	defer DeleteImageByFingerprint(fingerprint, bh.Remote)
+	_, err = ImportImage(image, unitParams.PlatformService.Name, bh.Remote)
 	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to import image: " + err.Error())
 	}
