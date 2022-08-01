@@ -123,7 +123,7 @@ func (vm Lxd) BraveBackendInit() error {
 
 func initiateLxd(vm Lxd, whichLxc string) error {
 
-	_, _, err := vm.checkLXDVersion(whichLxc)
+	_, _, err := checkLXDVersion(whichLxc)
 	if err != nil {
 		return err
 	}
@@ -200,23 +200,11 @@ func initiateLxd(vm Lxd, whichLxc string) error {
 	return nil
 }
 
-func (vm Lxd) checkLXDVersion(whichLxc string) (clientVersion int, serverVersion int, err error) {
-	var ver string
+func checkLXDVersion(whichLxc string) (clientVersion int, serverVersion int, err error) {
 
-	switch vm.Settings.BackendSettings.Type {
-	case "lxd":
-		ver, err = shared.ExecCommandWReturn(
-			whichLxc,
-			"version")
-	case "multipass":
-		ver, err = shared.ExecCommandWReturn(
-			"multipass",
-			"exec",
-			vm.Settings.Name,
-			"--",
-			whichLxc,
-			"version")
-	}
+	ver, err := shared.ExecCommandWReturn(
+		whichLxc,
+		"version")
 
 	if err != nil {
 		return clientVersion, serverVersion, errors.New("cannot get LXD version")
@@ -247,7 +235,7 @@ func (vm Lxd) checkLXDVersion(whichLxc string) (clientVersion int, serverVersion
 		fmt.Println("Server version: ", serverVersion)
 		return serverVersion, serverVersion, errors.New("Bravetools supports LXD >= 3.0.3. Found " + clientVersionString)
 	}
-	return serverVersion, serverVersion, nil
+	return clientVersion, serverVersion, nil
 }
 
 func enableRemote(vm Lxd, whichLxc string) error {
