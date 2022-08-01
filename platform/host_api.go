@@ -548,7 +548,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		return errors.New("service Name is empty")
 	}
 
-	err := checkUnits(bravefile.PlatformService.Name, bh)
+	err := checkUnits(bravefile.PlatformService.Name, bh.Remote)
 	if err != nil {
 		return err
 	}
@@ -829,7 +829,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) (er
 	}
 
 	// Check if a unit with this name already exists - we don't want to delete it
-	err = checkUnits(unitParams.PlatformService.Name, bh)
+	err = checkUnits(unitParams.PlatformService.Name, bh.Remote)
 	if err != nil {
 		return err
 	}
@@ -994,7 +994,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) (er
 				return
 			}
 
-			err = addIPRules(unitParams.PlatformService.Name, ps[1], ps[0], bh)
+			err = addIPRules(unitParams.PlatformService.Name, ps[1], ps[0], bh.Remote)
 			if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 				return errors.New("unable to add Proxy Device: " + err.Error())
 			}
