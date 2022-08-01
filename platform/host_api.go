@@ -927,20 +927,14 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) (er
 		gid = user.Gid
 	}
 
-	vm := *NewLxd(bh.Settings)
-	_, whichLxc, err := lxdCheck(vm)
+	serverVersion, err := GetLXDServerVersion(bh.Remote)
 	if err != nil {
-		return err
-	}
-
-	clientVersion, _, err := vm.checkLXDVersion(whichLxc)
-	if err != nil {
-		return err
+		return errors.New("failed to get server version: " + err.Error())
 	}
 
 	// uid and gid mapping is not allowed in non-snap LXD. Shares can be created, but they are read-only in a unit.
 	var config map[string]string
-	if clientVersion <= 303 {
+	if serverVersion <= 303 {
 		config = map[string]string{
 			"limits.cpu":       unitParams.PlatformService.Resources.CPU,
 			"limits.memory":    unitParams.PlatformService.Resources.RAM,
