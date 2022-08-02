@@ -106,6 +106,7 @@ func loadConfig() {
 	var err error
 	host = *platform.NewBraveHost()
 	backend, err = platform.NewHostBackend(host)
+	host.Backend = backend
 	if err != nil {
 		log.Fatal(err)
 	}

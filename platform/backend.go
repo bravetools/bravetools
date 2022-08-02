@@ -18,9 +18,14 @@ type Info struct {
 	Release       string
 	ImageHash     string
 	Load          string
-	Disk          []string
-	Memory        []string
+	Disk          StorageUsage
+	Memory        StorageUsage
 	CPU           string
+}
+
+type StorageUsage struct {
+	UsedStorage  string
+	TotalStorage string
 }
 
 // NewHostBackend returns a new Backend from provided host Settings

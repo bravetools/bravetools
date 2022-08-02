@@ -404,7 +404,7 @@ func (vm Multipass) Info() (Info, error) {
 		usedDisk = shared.FormatByteCountSI(usedDiskInt)
 		totalDisk = shared.FormatByteCountSI(totalDiskInt)
 
-		backendInfo.Disk = []string{usedDisk, totalDisk}
+		backendInfo.Disk = StorageUsage{usedDisk, totalDisk}
 
 		totalMemCmd := "cat /proc/meminfo | grep MemTotal | awk '{print $2}'"
 		availableMemCmd := "cat /proc/meminfo | grep MemAvailable | awk '{print $2}'"
@@ -447,7 +447,7 @@ func (vm Multipass) Info() (Info, error) {
 		totalMem = shared.FormatByteCountSI(int64(totalMemInt * 1000))
 		usedMem := shared.FormatByteCountSI(int64(usedMemInt * 1000))
 
-		backendInfo.Memory = []string{usedMem, totalMem}
+		backendInfo.Memory = StorageUsage{usedMem, totalMem}
 
 		cpuCount := "grep -c ^processor /proc/cpuinfo"
 		cpu, err := shared.ExecCommandWReturn("multipass",
@@ -464,8 +464,8 @@ func (vm Multipass) Info() (Info, error) {
 
 		backendInfo.CPU = cpu
 	} else {
-		backendInfo.Memory = []string{"Unknown", "Unknown"}
-		backendInfo.Disk = []string{"Unknown", "Unknown"}
+		backendInfo.Memory = StorageUsage{"Unknown", "Unknown"}
+		backendInfo.Disk = StorageUsage{"Unknown", "Unknown"}
 		backendInfo.CPU = "Unknown"
 	}
 

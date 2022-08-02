@@ -274,7 +274,7 @@ func FormatByteCountSI(b int64) string {
 		float64(b)/float64(div), "kMGTPE"[exp])
 }
 
-// SizeCountToInt convert size strings to integers
+// SizeCountToInt convert size strings to integer bytes
 func SizeCountToInt(s string) (int64, error) {
 	unitMap := map[string]int64{
 		"B":  1,

@@ -304,8 +304,8 @@ func (vm Lxd) Info() (Info, error) {
 	backendInfo.Release = ""
 	backendInfo.ImageHash = ""
 	backendInfo.Load = ""
-	backendInfo.Disk = []string{}
-	backendInfo.Memory = []string{}
+	backendInfo.Disk = StorageUsage{}
+	backendInfo.Memory = StorageUsage{}
 
 	storageInfo, err := shared.ExecCommandWReturn(whichLxc,
 		"storage",
@@ -351,7 +351,7 @@ func (vm Lxd) Info() (Info, error) {
 	usedDisk = shared.FormatByteCountSI(usedDiskInt)
 	totalDisk = shared.FormatByteCountSI(totalDiskInt)
 
-	backendInfo.Disk = []string{usedDisk, totalDisk}
+	backendInfo.Disk = StorageUsage{usedDisk, totalDisk}
 
 	totalMemCmd := "cat /proc/meminfo | grep MemTotal | awk '{print $2}'"
 	availableMemCmd := "cat /proc/meminfo | grep MemAvailable | awk '{print $2}'"
@@ -380,7 +380,7 @@ func (vm Lxd) Info() (Info, error) {
 	totalMem = shared.FormatByteCountSI(totalMemInt * 1000)
 	usedMem := shared.FormatByteCountSI(usedMemInt * 1000)
 
-	backendInfo.Memory = []string{usedMem, totalMem}
+	backendInfo.Memory = StorageUsage{usedMem, totalMem}
 
 	cpuCmd := "grep -c ^processor /proc/cpuinfo"
 	cpu, err := shared.ExecCommandWReturn("sh",
