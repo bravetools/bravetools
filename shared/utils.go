@@ -3,6 +3,7 @@ package shared
 import (
 	"bytes"
 	"crypto/md5"
+	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -337,6 +338,23 @@ func FileHash(filePath string) (string, error) {
 	s.Stop()
 
 	return MD5String, nil
+}
+
+func FileSha256Hash(path string) (fingerprint string, err error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return fingerprint, err
+	}
+	defer f.Close()
+
+	hasher := sha256.New()
+	_, err = io.Copy(hasher, f)
+	if err != nil {
+		return fingerprint, err
+	}
+
+	fingerprint = hex.EncodeToString(hasher.Sum(nil))
+	return fingerprint, nil
 }
 
 //CheckPath checks if path exists
