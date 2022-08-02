@@ -30,12 +30,8 @@ import (
 )
 
 // DeleteNetwork ..
-func DeleteNetwork(name string, remote Remote) error {
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-	if err != nil {
-		return err
-	}
-	err = lxdServer.DeleteNetwork(name)
+func DeleteNetwork(lxdServer lxd.InstanceServer, name string) error {
+	err := lxdServer.DeleteNetwork(name)
 	if err != nil {
 		return errors.New("Failed to delete Brave profile: " + err.Error())
 	}
@@ -44,12 +40,8 @@ func DeleteNetwork(name string, remote Remote) error {
 }
 
 // DeleteProfile ..
-func DeleteProfile(name string, remote Remote) error {
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-	if err != nil {
-		return err
-	}
-	err = lxdServer.DeleteProfile(name)
+func DeleteProfile(lxdServer lxd.InstanceServer, name string) error {
+	err := lxdServer.DeleteProfile(name)
 	if err != nil {
 		return errors.New("Failed to delete Brave profile: " + err.Error())
 	}
@@ -58,12 +50,8 @@ func DeleteProfile(name string, remote Remote) error {
 }
 
 // DeleteStoragePool ..
-func DeleteStoragePool(name string, remote Remote) error {
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-	if err != nil {
-		return err
-	}
-	err = lxdServer.DeleteStoragePool(name)
+func DeleteStoragePool(lxdServer lxd.InstanceServer, name string) error {
+	err := lxdServer.DeleteStoragePool(name)
 	if err != nil {
 		return errors.New("Failed to delete Brave storage pool: " + err.Error())
 	}
@@ -72,12 +60,7 @@ func DeleteStoragePool(name string, remote Remote) error {
 }
 
 // SetActiveStoragePool pool assigns a profile with default storage
-func SetActiveStoragePool(name string, remote Remote) error {
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-	if err != nil {
-		return err
-	}
-
+func SetActiveStoragePool(lxdServer lxd.InstanceServer, name string) error {
 	username, err := getCurrentUsername()
 	if err != nil {
 		log.Fatalf(err.Error())
@@ -105,11 +88,7 @@ func SetActiveStoragePool(name string, remote Remote) error {
 }
 
 // CreateStoragePool creates a new storage pool
-func CreateStoragePool(name string, size string, remote Remote) error {
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-	if err != nil {
-		return err
-	}
+func CreateStoragePool(lxdServer lxd.InstanceServer, name string, size string) error {
 	req := api.StoragePoolsPost{
 		Name:   name,
 		Driver: "zfs",
@@ -119,7 +98,7 @@ func CreateStoragePool(name string, size string, remote Remote) error {
 		"size": size,
 	}
 
-	err = lxdServer.CreateStoragePool(req)
+	err := lxdServer.CreateStoragePool(req)
 	if err != nil {
 		return errors.New("failed to create storage pool: " + err.Error())
 	}
@@ -142,7 +121,7 @@ func AddRemote(braveHost *BraveHost) error {
 
 	// Check if the system CA worked for the TLS connection
 	var certificate *x509.Certificate
-	certificate, err = lxdshared.GetRemoteCertificate(braveHost.Remote.remoteURL, "")
+	certificate, err = lxdshared.GetRemoteCertificate(braveHost.Remote.url, "")
 	if err != nil {
 		return err
 	}
@@ -188,7 +167,13 @@ func AddRemote(braveHost *BraveHost) error {
 	key, _ := loadKey(keyPath)
 	cert, _ := loadCert(certPath)
 
-	lxdServer, err := GetLXDServer(key, cert, braveHost.Remote.remoteURL)
+	remote := Remote{
+		url:  braveHost.Remote.url,
+		key:  key,
+		cert: cert,
+	}
+
+	lxdServer, err := GetLXDServer(remote)
 	if err != nil {
 		return err
 	}
@@ -223,11 +208,7 @@ func RemoveRemote(name string) error {
 }
 
 // DeleteDevice unmounts a disk
-func DeleteDevice(name string, target string, remote Remote) (string, error) {
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-	if err != nil {
-		return "", err
-	}
+func DeleteDevice(lxdServer lxd.InstanceServer, name string, target string) (string, error) {
 
 	inst, etag, err := lxdServer.GetInstance(name)
 	if err != nil {
@@ -258,11 +239,7 @@ func DeleteDevice(name string, target string, remote Remote) (string, error) {
 }
 
 // AddDevice adds an external device to
-func AddDevice(unitName string, devname string, devSettings map[string]string, remote Remote) error {
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-	if err != nil {
-		return err
-	}
+func AddDevice(lxdServer lxd.InstanceServer, unitName string, devname string, devSettings map[string]string) error {
 	inst, etag, err := lxdServer.GetInstance(unitName)
 	if err != nil {
 		return errors.New("Error accessing unit: " + unitName)
@@ -285,11 +262,7 @@ func AddDevice(unitName string, devname string, devSettings map[string]string, r
 }
 
 // MountDirectory mounts local directory to unit
-func MountDirectory(sourcePath string, destUnit string, destPath string, remote Remote) error {
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-	if err != nil {
-		return err
-	}
+func MountDirectory(lxdServer lxd.InstanceServer, sourcePath string, destUnit string, destPath string) error {
 
 	inst, etag, err := lxdServer.GetInstance(destUnit)
 	if err != nil {
@@ -323,11 +296,7 @@ func MountDirectory(sourcePath string, destUnit string, destPath string, remote 
 }
 
 // GetImages returns all images from host
-func GetImages(remote Remote) ([]api.Image, error) {
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-	if err != nil {
-		return nil, err
-	}
+func GetImages(lxdServer lxd.ImageServer) ([]api.Image, error) {
 	images, err := lxdServer.GetImages()
 	if err != nil {
 		return nil, err
@@ -337,25 +306,17 @@ func GetImages(remote Remote) ([]api.Image, error) {
 }
 
 // DeleteVolume ..
-func DeleteVolume(pool string, volume api.StorageVolume, remote Remote) error {
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
+func DeleteVolume(lxdServer lxd.InstanceServer, pool string, volume api.StorageVolume) error {
+	err := lxdServer.DeleteStoragePoolVolume(pool, volume.Type, volume.Name)
 	if err != nil {
-		return err
-	}
-	err = lxdServer.DeleteStoragePoolVolume(pool, volume.Type, volume.Name)
-	if err != nil {
-		return err
+		return errors.New("failed to delete volume: " + err.Error())
 	}
 
 	return nil
 }
 
 // GetVolume ..
-func GetVolume(pool string, remote Remote) (volume api.StorageVolume, err error) {
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-	if err != nil {
-		return volume, err
-	}
+func GetVolume(lxdServer lxd.InstanceServer, pool string) (volume api.StorageVolume, err error) {
 	volumes, err := lxdServer.GetStoragePoolVolumes(pool)
 	if err != nil {
 		return volume, err
@@ -373,12 +334,7 @@ func GetVolume(pool string, remote Remote) (volume api.StorageVolume, err error)
 }
 
 // GetBraveProfile ..
-func GetBraveProfile(remote Remote) (braveProfile shared.BraveProfile, err error) {
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-
-	if err != nil {
-		return braveProfile, err
-	}
+func GetBraveProfile(lxdServer lxd.InstanceServer) (braveProfile shared.BraveProfile, err error) {
 	srv, _, err := lxdServer.GetServer()
 	if err != nil {
 		log.Fatal("LXD server error: " + err.Error())
@@ -419,16 +375,12 @@ func containerHasProfile(container *api.Container, profile *shared.BraveProfile)
 }
 
 // GetUnits returns all running units
-func GetUnits(remote Remote) (units []shared.BraveUnit, err error) {
-	userProfile, err := GetBraveProfile(remote)
+func GetUnits(lxdServer lxd.InstanceServer) (units []shared.BraveUnit, err error) {
+	userProfile, err := GetBraveProfile(lxdServer)
 	if err != nil {
 		return nil, err
 	}
 
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-	if err != nil {
-		return units, err
-	}
 	names, err := lxdServer.GetContainerNames()
 	if err != nil {
 		return nil, err
@@ -492,16 +444,11 @@ func GetUnits(remote Remote) (units []shared.BraveUnit, err error) {
 }
 
 // LaunchFromImage creates new unit based on image
-func LaunchFromImage(image string, name string, remote Remote) error {
+func LaunchFromImage(lxdServer lxd.InstanceServer, image string, name string) error {
 	operation := shared.Info("Launching " + name)
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
 	s.Suffix = " " + operation
 	s.Start()
-
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-	if err != nil {
-		return err
-	}
 
 	req := api.ContainersPost{
 		Name: name,
@@ -543,7 +490,7 @@ func LaunchFromImage(image string, name string, remote Remote) error {
 // Launch starts a new unit based on standard image from linuxcontainers.org
 // Alias: "ubuntu/bionic/amd64"
 // Alias: "alpine/3.9/amd64"
-func Launch(ctx context.Context, name string, alias string, remote Remote) (fingerprint string, err error) {
+func Launch(ctx context.Context, localLxd lxd.InstanceServer, name string, alias string) (fingerprint string, err error) {
 	if err = ctx.Err(); err != nil {
 		return fingerprint, err
 	}
@@ -556,18 +503,22 @@ func Launch(ctx context.Context, name string, alias string, remote Remote) (fing
 	defer s.Stop()
 
 	// Get remote image fingerprint
-	fingerprint, err = PublicLXDImageFingerprintByAlias(alias)
+	remoteLxd, err := GetSimplestreamsLXDSever("https://images.linuxcontainers.org", nil)
+	if err != nil {
+		return fingerprint, err
+	}
+	remoteImage, _, err := remoteLxd.GetImageAlias(alias)
+	if err != nil {
+		return fingerprint, err
+	}
+
+	fingerprint = remoteImage.Target
 
 	if err = ctx.Err(); err != nil {
 		return "", err
 	}
 
 	// Create a local container based on the remote image
-	localLxd, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-	if err != nil {
-		return "", err
-	}
-
 	req := api.ContainersPost{
 		Name: name,
 		Source: api.ContainerSource{
@@ -648,12 +599,8 @@ func isIPv4(ip string) bool {
 }
 
 // Exec runs command inside unit
-func Exec(ctx context.Context, name string, command []string, remote Remote) (returnCode int, err error) {
+func Exec(ctx context.Context, lxdServer lxd.InstanceServer, name string, command []string) (returnCode int, err error) {
 	if err = ctx.Err(); err != nil {
-		return 0, err
-	}
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-	if err != nil {
 		return 0, err
 	}
 
@@ -720,12 +667,7 @@ func Exec(ctx context.Context, name string, command []string, remote Remote) (re
 }
 
 // Delete deletes a unit on a LXD remote
-func DeleteUnit(name string, remote Remote) error {
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-	if err != nil {
-		return err
-	}
-
+func DeleteUnit(lxdServer lxd.InstanceServer, name string) error {
 	unit, _, err := lxdServer.GetInstance(name)
 	if err != nil {
 		return err
@@ -774,11 +716,7 @@ func DeleteUnit(name string, remote Remote) error {
 }
 
 // Start unit
-func Start(name string, remote Remote) error {
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-	if err != nil {
-		return err
-	}
+func Start(lxdServer lxd.InstanceServer, name string) error {
 
 	unit, _, err := lxdServer.GetContainer(name)
 	if err != nil {
@@ -814,12 +752,7 @@ func Start(name string, remote Remote) error {
 }
 
 // Stop unit
-func Stop(name string, remote Remote) error {
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-	if err != nil {
-		return err
-	}
-
+func Stop(lxdServer lxd.InstanceServer, name string) error {
 	unit, _, err := lxdServer.GetContainer(name)
 	if err != nil {
 		return err
@@ -848,16 +781,11 @@ func Stop(name string, remote Remote) error {
 
 // Publish unit
 // lxc publish -f [remote]:[name] [remote]: --alias [name-version]
-func Publish(name string, version string, remote Remote) (fingerprint string, err error) {
+func Publish(lxdServer lxd.InstanceServer, name string, version string) (fingerprint string, err error) {
 	operation := shared.Info("Publishing " + name)
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
 	s.Suffix = " " + operation
 	s.Start()
-
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-	if err != nil {
-		return "", err
-	}
 
 	unit, _, err := lxdServer.GetInstance(name)
 	if err != nil {
@@ -937,12 +865,8 @@ func Publish(name string, version string, remote Remote) (fingerprint string, er
 }
 
 // SymlinkPush  copies a symlink into unit
-func SymlinkPush(name string, sourceFile string, targetPath string, remote Remote) error {
+func SymlinkPush(lxdServer lxd.InstanceServer, name string, sourceFile string, targetPath string) error {
 	var readCloser io.ReadCloser
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-	if err != nil {
-		return err
-	}
 
 	fi, err := os.Lstat(sourceFile)
 	if err != nil {
@@ -994,11 +918,7 @@ func SymlinkPush(name string, sourceFile string, targetPath string, remote Remot
 }
 
 // FilePush copies local file into unit
-func FilePush(name string, sourceFile string, targetPath string, remote Remote) error {
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-	if err != nil {
-		return err
-	}
+func FilePush(lxdServer lxd.InstanceServer, name string, sourceFile string, targetPath string) error {
 	var readCloser io.ReadCloser
 	fInfo, err := os.Stat(sourceFile)
 
@@ -1060,16 +980,11 @@ func FilePush(name string, sourceFile string, targetPath string, remote Remote) 
 }
 
 // ImportImage imports image from current directory
-func ImportImage(imageTar string, nameAndVersion string, remote Remote) (fingerprint string, err error) {
+func ImportImage(lxdServer lxd.InstanceServer, imageTar string, nameAndVersion string) (fingerprint string, err error) {
 	operation := shared.Info("Importing " + filepath.Base(imageTar))
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
 	s.Suffix = " " + operation
 	s.Start()
-
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-	if err != nil {
-		return "", err
-	}
 
 	var meta io.ReadCloser
 
@@ -1112,15 +1027,11 @@ func ImportImage(imageTar string, nameAndVersion string, remote Remote) (fingerp
 }
 
 // ExportImage downloads unit image into current directory
-func ExportImage(fingerprint string, name string, remote Remote) error {
+func ExportImage(lxdServer lxd.ImageServer, fingerprint string, name string) error {
 	operation := shared.Info("Exporting " + name)
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
 	s.Suffix = " " + operation
 	s.Start()
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-	if err != nil {
-		return err
-	}
 
 	targetRootfs := name + ".root"
 	dest, err := os.Create(name)
@@ -1188,13 +1099,20 @@ func ExportImage(fingerprint string, name string, remote Remote) error {
 	return nil
 }
 
-// DeleteImageName delete unit image by name
-func DeleteImageByName(name string, remote Remote) error {
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
+// GetImageByAlias retrieves image by name
+func GetImageByAlias(lxdImageServer lxd.ImageServer, alias string) (image *api.Image, err error) {
+	remoteAlias, _, err := lxdImageServer.GetImageAlias(alias)
 	if err != nil {
-		return err
+		return nil, err
 	}
+	imageFingerprint := remoteAlias.Target
 
+	image, _, err = lxdImageServer.GetImage(imageFingerprint)
+	return image, err
+}
+
+// DeleteImageName delete unit image by name
+func DeleteImageByName(lxdServer lxd.InstanceServer, name string) error {
 	alias, _, err := lxdServer.GetImageAlias(name)
 	if err != nil {
 		return err
@@ -1207,12 +1125,7 @@ func DeleteImageByName(name string, remote Remote) error {
 
 // DeleteImageFingerprint delete unit image
 // lxc image delete [remote]:[name]
-func DeleteImageByFingerprint(fingerprint string, remote Remote) error {
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-	if err != nil {
-		return err
-	}
-
+func DeleteImageByFingerprint(lxdServer lxd.InstanceServer, fingerprint string) error {
 	op, err := lxdServer.DeleteImage(fingerprint)
 	if err != nil {
 		return err
@@ -1227,12 +1140,7 @@ func DeleteImageByFingerprint(fingerprint string, remote Remote) error {
 
 // AttachNetwork attaches unit to internal network bridge
 // lxc network attach [remote]lxdbr0 [name] eth0 eth0
-func AttachNetwork(name string, bridge string, nic1 string, nic2 string, remote Remote) error {
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-	if err != nil {
-		return err
-	}
-
+func AttachNetwork(lxdServer lxd.InstanceServer, name string, bridge string, nic1 string, nic2 string) error {
 	network, _, err := lxdServer.GetNetwork(bridge)
 
 	if err != nil {
@@ -1278,11 +1186,7 @@ func AttachNetwork(name string, bridge string, nic1 string, nic2 string, remote 
 
 // ConfigDevice sets IP address
 // lxc config device set [remote]:name eth0 ipv4.address
-func ConfigDevice(name string, nic string, ip string, remote Remote) error {
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-	if err != nil {
-		return err
-	}
+func ConfigDevice(lxdServer lxd.InstanceServer, name string, nic string, ip string) error {
 
 	inst, etag, err := lxdServer.GetInstance(name)
 	if err != nil {
@@ -1309,12 +1213,7 @@ func ConfigDevice(name string, nic string, ip string, remote Remote) error {
 }
 
 // SetConfig sets unit parameters
-func SetConfig(name string, config map[string]string, remote Remote) error {
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-	if err != nil {
-		return err
-	}
-
+func SetConfig(lxdServer lxd.InstanceServer, name string, config map[string]string) error {
 	inst, etag, err := lxdServer.GetInstance(name)
 	if err != nil {
 		return errors.New("Error connecting to unit: " + name)
@@ -1338,8 +1237,8 @@ func SetConfig(name string, config map[string]string, remote Remote) error {
 }
 
 // Push ..
-func Push(name string, sourcePath string, targetPath string, remote Remote) error {
-	err := CopyDirectory(name, sourcePath, targetPath, remote)
+func Push(lxdServer lxd.InstanceServer, name string, sourcePath string, targetPath string) error {
+	err := CopyDirectory(lxdServer, name, sourcePath, targetPath)
 	if err != nil {
 		return err
 	}
@@ -1348,7 +1247,7 @@ func Push(name string, sourcePath string, targetPath string, remote Remote) erro
 }
 
 // CopyDirectory recursively copies a src directory to a destination.
-func CopyDirectory(name string, src, dst string, remote Remote) error {
+func CopyDirectory(lxdServer lxd.InstanceServer, name string, src, dst string) error {
 	entries, err := ioutil.ReadDir(src)
 	if err != nil {
 		return errors.New("Failed to read source directory: " + src)
@@ -1366,14 +1265,14 @@ func CopyDirectory(name string, src, dst string, remote Remote) error {
 
 		switch fileInfo.Mode() & os.ModeType {
 		case os.ModeDir:
-			if err := createDir(name, destPath, 0755, remote); err != nil {
+			if err := createDir(lxdServer, name, destPath, 0755); err != nil {
 				return errors.New("Failed to create directory: " + destPath + " : " + err.Error())
 			}
-			if err := CopyDirectory(name, sourcePath, destPath, remote); err != nil {
+			if err := CopyDirectory(lxdServer, name, sourcePath, destPath); err != nil {
 				return errors.New("Failed to copy directory: " + destPath)
 			}
 		default:
-			if err := CopyFiles(name, sourcePath, destPath, remote); err != nil {
+			if err := CopyFiles(lxdServer, name, sourcePath, destPath); err != nil {
 				return errors.New("Failed to copy file: " + destPath + " : " + err.Error())
 			}
 		}
@@ -1382,12 +1281,7 @@ func CopyDirectory(name string, src, dst string, remote Remote) error {
 }
 
 // CopyFiles copies a src file to a dst file where src and dst are regular files.
-func CopyFiles(name string, src, dst string, remote Remote) error {
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-	if err != nil {
-		return err
-	}
-
+func CopyFiles(lxdServer lxd.InstanceServer, name string, src, dst string) error {
 	var readCloser io.ReadCloser
 
 	fInfo, err := os.Stat(src)
@@ -1439,11 +1333,7 @@ func CopyFiles(name string, src, dst string, remote Remote) error {
 	return nil
 }
 
-func createDir(name string, dir string, mode int, remote Remote) error {
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-	if err != nil {
-		return err
-	}
+func createDir(lxdServer lxd.InstanceServer, name string, dir string, mode int) error {
 
 	args := lxd.InstanceFileArgs{
 		UID:  -1,
@@ -1453,7 +1343,7 @@ func createDir(name string, dir string, mode int, remote Remote) error {
 	}
 
 	log.Printf(shared.Info("Creating %s (%s)"), dir, args.Type)
-	err = lxdServer.CreateInstanceFile(name, dir, args)
+	err := lxdServer.CreateInstanceFile(name, dir, args)
 	if err != nil {
 		return errors.New("Failed to create directory: " + dir)
 	}
@@ -1462,12 +1352,12 @@ func createDir(name string, dir string, mode int, remote Remote) error {
 }
 
 // GetLXDServer ..
-func GetLXDServer(key string, cert string, url string) (lxd.InstanceServer, error) {
+func GetLXDServer(remote Remote) (lxd.InstanceServer, error) {
 	args := lxd.ConnectionArgs{}
-	args.TLSClientKey = key
-	args.TLSClientCert = cert
+	args.TLSClientKey = remote.key
+	args.TLSClientCert = remote.cert
 	args.InsecureSkipVerify = true
-	server, err := lxd.ConnectLXD(url, &args)
+	server, err := lxd.ConnectLXD(remote.url, &args)
 	if err != nil {
 		return nil, errors.New("Failed connect to remote: " + err.Error())
 	}
@@ -1475,58 +1365,14 @@ func GetLXDServer(key string, cert string, url string) (lxd.InstanceServer, erro
 	return server, nil
 }
 
-func PublicLXDImageFingerprintByAlias(alias string) (fingerprint string, err error) {
-	remoteLxd, err := lxd.ConnectSimpleStreams("https://images.linuxcontainers.org/", nil)
-	if err != nil {
-		return "", err
-	}
-
-	remoteAlias, _, err := remoteLxd.GetImageAlias(alias)
-	if err != nil {
-		return "", err
-	}
-	fingerprint = remoteAlias.Target
-
-	return fingerprint, nil
-}
-
-func PublicLXDImageByAlias(alias string) (image *api.Image, err error) {
-	remoteLxd, err := lxd.ConnectSimpleStreams("https://images.linuxcontainers.org/", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return imageByAlias(remoteLxd, alias)
-}
-
-func GetImageByAlias(alias string, remote Remote) (image *api.Image, err error) {
-	lxdServer, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-	if err != nil {
-		return nil, err
-	}
-
-	return imageByAlias(lxdServer, alias)
-}
-
-func imageByAlias(lxdImageServer lxd.ImageServer, alias string) (image *api.Image, err error) {
-	remoteAlias, _, err := lxdImageServer.GetImageAlias(alias)
-	if err != nil {
-		return nil, err
-	}
-	imageFingerprint := remoteAlias.Target
-
-	image, _, err = lxdImageServer.GetImage(imageFingerprint)
-	return image, err
+func GetSimplestreamsLXDSever(url string, args *lxd.ConnectionArgs) (lxd.ImageServer, error) {
+	return lxd.ConnectSimpleStreams(url, args)
 }
 
 // GetLXDServerVersion retrieves server semantic version and converts to integer
-func GetLXDServerVersion(remote Remote) (int, error) {
-	server, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
-	if err != nil {
-		return -1, err
-	}
+func GetLXDServerVersion(lxdServer lxd.InstanceServer) (int, error) {
 
-	serverStatus, _, err := server.GetServer()
+	serverStatus, _, err := lxdServer.GetServer()
 	if err != nil {
 		return -1, err
 	}

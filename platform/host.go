@@ -17,9 +17,9 @@ import (
 
 // Remote represents a configuration of the remote
 type Remote struct {
-	remoteURL string
-	key       string
-	cert      string
+	url  string
+	key  string
+	cert string
 }
 
 // HostSettings configuration data loaded from config.yaml
@@ -189,7 +189,12 @@ func UpdateBraveSettings(settings HostSettings) error {
 // ConfigureHost configures local bravetools host and updates resources
 func ConfigureHost(settings HostSettings, remote Remote) error {
 
-	units, err := GetUnits(remote)
+	lxdServer, err := GetLXDServer(remote)
+	if err != nil {
+		return err
+	}
+
+	units, err := GetUnits(lxdServer)
 	if err != nil {
 		return errors.New("failed to list units: " + err.Error())
 	}
@@ -204,22 +209,22 @@ func ConfigureHost(settings HostSettings, remote Remote) error {
 
 	currentStoragePoolName := settings.StoragePool.Name
 
-	err = CreateStoragePool(storagePoolName, storagePoolSize, remote)
+	err = CreateStoragePool(lxdServer, storagePoolName, storagePoolSize)
 	if err != nil {
-		cleanUnusedStoragePool(storagePoolName, remote)
+		cleanUnusedStoragePool(lxdServer, storagePoolName)
 		return errors.New("failed to create new storage pool: " + err.Error())
 	}
 
-	err = SetActiveStoragePool(storagePoolName, remote)
+	err = SetActiveStoragePool(lxdServer, storagePoolName)
 	if err != nil {
-		cleanUnusedStoragePool(storagePoolName, remote)
+		cleanUnusedStoragePool(lxdServer, storagePoolName)
 		return errors.New("failed to activate storage pool: " + err.Error())
 	}
 
 	settings.StoragePool.Name = storagePoolName
 	UpdateBraveSettings(settings)
 
-	err = DeleteStoragePool(currentStoragePoolName, remote)
+	err = DeleteStoragePool(lxdServer, currentStoragePoolName)
 	if err != nil {
 		return errors.New("failed to delete storage pool: " + err.Error())
 	}
@@ -237,7 +242,7 @@ func loadRemoteSettings(userHome string, remoteIP string) (Remote, error) {
 
 	remote.key = key
 	remote.cert = cert
-	remote.remoteURL = "https://" + remoteIP + ":8443"
+	remote.url = "https://" + remoteIP + ":8443"
 
 	return remote, nil
 }
