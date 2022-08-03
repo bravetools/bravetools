@@ -2,7 +2,6 @@ package platform
 
 import (
 	"errors"
-	"os"
 	"strings"
 
 	"github.com/bravetools/bravetools/shared"
@@ -10,17 +9,15 @@ import (
 
 // CheckResources ..
 func CheckResources(image string, backend Backend, unitParams *shared.Bravefile, bh *BraveHost) error {
-
-	fi, err := os.Stat(image)
-	if err != nil {
-		return err
-	}
 	info, err := backend.Info()
 	if err != nil {
 		return errors.New("Failed to connect to host: " + err.Error())
 	}
 
-	requestedImageSize := fi.Size()
+	requestedImageSize, err := localImageSize(image)
+	if err != nil {
+		return err
+	}
 	freeDiskSpace, err := getFreeSpace(info.Disk)
 	if err != nil {
 		return err

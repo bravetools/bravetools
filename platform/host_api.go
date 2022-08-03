@@ -609,6 +609,16 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 			return err
 		}
 	case "local":
+		// Check disk space
+		imgSize, err := localImageSize(bravefile.PlatformService.Image)
+		if err != nil {
+			return err
+		}
+		err = CheckBackendDiskSpace(bh.Backend, imgSize)
+		if err != nil {
+			return err
+		}
+
 		imageFingerprint, err = importLocal(ctx, bravefile, bh.Remote)
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
