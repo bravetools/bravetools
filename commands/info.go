@@ -25,7 +25,7 @@ func includeInfoFlags(cmd *cobra.Command) {
 
 func hostInfoList(cmd *cobra.Command, args []string) {
 	checkBackend()
-	err := host.HostInfo(backend, short)
+	err := host.HostInfo(short)
 	if err != nil {
 		log.Fatal(err)
 	}

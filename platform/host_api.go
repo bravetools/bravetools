@@ -237,8 +237,8 @@ func (bh *BraveHost) DeleteLocalImage(name string) error {
 }
 
 // HostInfo returns useful information about brave host
-func (bh *BraveHost) HostInfo(backend Backend, short bool) error {
-	info, err := backend.Info()
+func (bh *BraveHost) HostInfo(short bool) error {
+	info, err := bh.Backend.Info()
 	if err != nil {
 		return errors.New("failed to connect to host: " + err.Error())
 	}

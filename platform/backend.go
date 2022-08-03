@@ -29,14 +29,14 @@ type StorageUsage struct {
 }
 
 // NewHostBackend returns a new Backend from provided host Settings
-func NewHostBackend(host BraveHost) (backend Backend, err error) {
-	backendType := host.Settings.BackendSettings.Type
+func NewHostBackend(hostSetings HostSettings) (backend Backend, err error) {
+	backendType := hostSetings.BackendSettings.Type
 
 	switch backendType {
 	case "multipass":
-		backend = NewMultipass(host.Settings)
+		backend = NewMultipass(hostSetings)
 	case "lxd":
-		backend = NewLxd(host.Settings)
+		backend = NewLxd(hostSetings)
 	default:
 		err = fmt.Errorf("backend type %q not supported", backendType)
 	}

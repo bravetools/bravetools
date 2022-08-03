@@ -8,7 +8,10 @@ import (
 )
 
 func Test_DeleteLocalImage(t *testing.T) {
-	host := *NewBraveHost()
+	host, err := NewBraveHost()
+	if err != nil {
+		t.Fatal("failed to create host: ", err.Error())
+	}
 
 	bravefile, err := shared.GetBravefileFromLXD("alpine/edge/amd64")
 	if err != nil {
@@ -28,20 +31,22 @@ func Test_DeleteLocalImage(t *testing.T) {
 }
 
 func Test_HostInfo(t *testing.T) {
-	host := *NewBraveHost()
-	backend, err := NewHostBackend(host)
+	host, err := NewBraveHost()
 	if err != nil {
-		t.Fatal(err)
+		t.Fatal("failed to create host: ", err.Error())
 	}
 
-	err = host.HostInfo(backend, false)
+	err = host.HostInfo(false)
 	if err != nil {
 		t.Error("host.HostInfo: ", err)
 	}
 }
 
 func Test_BuildImage(t *testing.T) {
-	host := *NewBraveHost()
+	host, err := NewBraveHost()
+	if err != nil {
+		t.Fatal("failed to create host: ", err.Error())
+	}
 
 	bravefile := *shared.NewBravefile()
 	bravefile.Base.Image = "alpine/edge/amd64"
@@ -59,7 +64,7 @@ func Test_BuildImage(t *testing.T) {
 	bravefile.PlatformService.Name = "alpine-test"
 	bravefile.PlatformService.Version = "1.0"
 
-	err := host.BuildImage(&bravefile)
+	err = host.BuildImage(&bravefile)
 	if err != nil {
 		t.Error("host.BuildImage: ", err)
 	}
@@ -71,10 +76,9 @@ func Test_BuildImage(t *testing.T) {
 }
 
 func Test_InitUnit(t *testing.T) {
-	host := *NewBraveHost()
-	backend, err := NewHostBackend(host)
+	host, err := NewBraveHost()
 	if err != nil {
-		t.Fatal(err)
+		t.Fatal("failed to create host: ", err.Error())
 	}
 
 	ctx := context.Background()
@@ -111,7 +115,7 @@ func Test_InitUnit(t *testing.T) {
 		t.Error("host.BuildImage: ", err)
 	}
 
-	err = host.InitUnit(backend, &bravefile)
+	err = host.InitUnit(host.Backend, &bravefile)
 	if err != nil {
 		t.Error("host.InitUnit: ", err)
 	}
@@ -126,12 +130,12 @@ func Test_InitUnit(t *testing.T) {
 		t.Error("host.DeleteImageByName: ", err)
 	}
 
-	err = host.StopUnit("alpine-test", backend)
+	err = host.StopUnit("alpine-test", host.Backend)
 	if err != nil {
 		t.Error("host.StopUnit: ", err)
 	}
 
-	err = host.StartUnit("alpine-test", backend)
+	err = host.StartUnit("alpine-test", host.Backend)
 	if err != nil {
 		t.Error("host.StartUnit: ", err)
 	}
@@ -143,13 +147,12 @@ func Test_InitUnit(t *testing.T) {
 }
 
 func Test_ListLocalImages(t *testing.T) {
-	host := *NewBraveHost()
-	backend, err := NewHostBackend(host)
+	host, err := NewBraveHost()
 	if err != nil {
-		t.Fatal(err)
+		t.Fatal("failed to create host: ", err.Error())
 	}
 
-	err = host.HostInfo(backend, false)
+	err = host.HostInfo(false)
 	if err != nil {
 		t.Error("host.HostInfo: ", err)
 	}
@@ -161,18 +164,17 @@ func Test_ListLocalImages(t *testing.T) {
 }
 
 func Test_ListUnits(t *testing.T) {
-	host := *NewBraveHost()
-	backend, err := NewHostBackend(host)
+	host, err := NewBraveHost()
 	if err != nil {
-		t.Fatal(err)
+		t.Fatal("failed to create host: ", err.Error())
 	}
 
-	err = host.HostInfo(backend, false)
+	err = host.HostInfo(false)
 	if err != nil {
 		t.Error("host.HostInfo: ", err)
 	}
 
-	err = host.ListUnits(backend)
+	err = host.ListUnits(host.Backend)
 	if err != nil {
 		t.Error("host.ListLocalImages: ", err)
 	}
