@@ -104,9 +104,12 @@ func deleteBraveHome(userHome string) error {
 
 func loadConfig() {
 	var err error
-	host = *platform.NewBraveHost()
-	backend, err = platform.NewHostBackend(host)
-	host.Backend = backend
+	h, err := platform.NewBraveHost()
+	if err != nil {
+		log.Fatal(err)
+	}
+	host = *h
+	backend = host.Backend
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -69,23 +69,30 @@ type BraveHost struct {
 }
 
 // NewBraveHost returns Brave host
-func NewBraveHost() *BraveHost {
-	userHome, _ := os.UserHomeDir()
-
-	settings, err := loadHostSettings(userHome)
+func NewBraveHost() (*BraveHost, error) {
+	userHome, err := os.UserHomeDir()
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
-	remote, err := loadRemoteSettings(userHome, settings.BackendSettings.Resources.IP)
+	host := BraveHost{}
+
+	host.Settings, err = loadHostSettings(userHome)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
-	return &BraveHost{
-		Settings: settings,
-		Remote:   remote,
+	host.Remote, err = loadRemoteSettings(userHome, host.Settings.BackendSettings.Resources.IP)
+	if err != nil {
+		return nil, err
 	}
+
+	host.Backend, err = NewHostBackend(host.Settings)
+	if err != nil {
+		return nil, err
+	}
+
+	return &host, nil
 }
 
 type HostConfig struct {
