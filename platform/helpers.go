@@ -433,7 +433,7 @@ func cleanUnusedStoragePool(name string, remote Remote) {
 }
 
 // addIPRules adds firewall rule to the host iptable
-func addIPRules(ct string, hostPort string, ctPort string, bh *BraveHost) error {
+func addIPRules(ct string, hostPort string, ctPort string, remote Remote) error {
 
 	name := ct + "-proxy-" + hostPort + "-" + ctPort
 
@@ -443,7 +443,7 @@ func addIPRules(ct string, hostPort string, ctPort string, bh *BraveHost) error 
 	config["listen"] = "tcp:0.0.0.0:" + hostPort
 	config["connect"] = "tcp:127.0.0.1:" + ctPort
 
-	err := AddDevice(ct, name, config, bh.Remote)
+	err := AddDevice(ct, name, config, remote)
 	if err != nil {
 		return errors.New("failed to add proxy settings for unit " + err.Error())
 	}
@@ -451,13 +451,13 @@ func addIPRules(ct string, hostPort string, ctPort string, bh *BraveHost) error 
 	return nil
 }
 
-func checkUnits(unitName string, bh *BraveHost) error {
+func checkUnits(unitName string, remote Remote) error {
 	if unitName == "" {
 		return errors.New("unit name cannot be empty")
 	}
 
 	// Unit Checks
-	unitList, err := GetUnits(bh.Remote)
+	unitList, err := GetUnits(remote)
 	if err != nil {
 		return err
 	}

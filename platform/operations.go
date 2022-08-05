@@ -1518,3 +1518,23 @@ func imageByAlias(lxdImageServer lxd.ImageServer, alias string) (image *api.Imag
 	image, _, err = lxdImageServer.GetImage(imageFingerprint)
 	return image, err
 }
+
+// GetLXDServerVersion retrieves server semantic version and converts to integer
+func GetLXDServerVersion(remote Remote) (int, error) {
+	server, err := GetLXDServer(remote.key, remote.cert, remote.remoteURL)
+	if err != nil {
+		return -1, err
+	}
+
+	serverStatus, _, err := server.GetServer()
+	if err != nil {
+		return -1, err
+	}
+
+	serverVersionString := strings.ReplaceAll(serverStatus.Environment.ServerVersion, ".", "")
+	if len(serverVersionString) == 2 {
+		serverVersionString = serverVersionString + "0"
+	}
+
+	return strconv.Atoi(serverVersionString)
+}
