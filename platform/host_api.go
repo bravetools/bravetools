@@ -619,6 +619,14 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		DeleteImageByFingerprint(lxdServer, imageFingerprint)
 	}()
 
+	// If base image location not provided, attempt to infer it
+	if bravefile.Base.Location == "" {
+		bravefile.Base.Location, err = resolveBaseImageLocation(bravefile.Base.Image)
+		if err != nil {
+			return fmt.Errorf("base image %q does not exist: %s", bravefile.Base.Image, err.Error())
+		}
+	}
+
 	switch bravefile.Base.Location {
 	case "public":
 		// Check disk space
@@ -657,7 +665,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		}
 	case "local":
 		// Check disk space
-		imgSize, err := localImageSize(bravefile.PlatformService.Image)
+		imgSize, err := localImageSize(bravefile.Base.Image)
 		if err != nil {
 			return err
 		}

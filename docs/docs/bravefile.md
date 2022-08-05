@@ -31,6 +31,8 @@ Three types of image locations are supported:
 
 In cases where Bravefiles are ingested from GitHub, a local copy of the resulting image will be kept. The local image copy will be re-used next time you run ``brave build``.
 
+If the location field is not present, bravetools will resolve the image location itself. Local images will be checked first, then public LXD images. Image names starting with "github.com/" will be imported from GitHub.
+
 ### system
 Describes system packages to be installed through a specified package manager. Supported package managers are ``apt`` and ``apk``.
 
