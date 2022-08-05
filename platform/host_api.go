@@ -850,7 +850,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) (er
 	defer DeleteImageByFingerprint(fingerprint, bh.Remote)
 
 	// Resource checks
-	err = CheckResources(image, backend, unitParams, bh)
+	err = CheckResources(unitParams.PlatformService.Image, backend, unitParams, bh)
 	if err != nil {
 		return err
 	}
