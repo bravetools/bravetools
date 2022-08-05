@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/bravetools/bravetools/shared"
+	lxd "github.com/lxc/lxd/client"
 	"github.com/lxc/lxd/shared/api"
 )
 
@@ -41,7 +42,8 @@ func getCurrentUsername() (username string, err error) {
 	return username, nil
 }
 
-func createSharedVolume(storagePoolName string,
+func createSharedVolume(lxdServer lxd.InstanceServer,
+	storagePoolName string,
 	sharedDirectory string,
 	sourceUnit string,
 	destUnit string,
@@ -88,7 +90,7 @@ func createSharedVolume(storagePoolName string,
 	shareSettings["type"] = "disk"
 
 	// 2. Add storage volume as a disk device to source unit
-	err := AddDevice(sourceUnit, sharedDirectory, shareSettings, bh.Remote)
+	err := AddDevice(lxdServer, sourceUnit, sharedDirectory, shareSettings)
 	if err != nil {
 		switch backend {
 		case "multipass":
@@ -118,7 +120,7 @@ func createSharedVolume(storagePoolName string,
 	}
 
 	// 3. Add storage volume as a disk device to target unit
-	err = AddDevice(destUnit, sharedDirectory, shareSettings, bh.Remote)
+	err = AddDevice(lxdServer, destUnit, sharedDirectory, shareSettings)
 	if err != nil {
 		bh.UmountShare(sourceUnit, sharedDirectory)
 		return errors.New("failed to mount to destination: " + err.Error())
@@ -127,11 +129,11 @@ func createSharedVolume(storagePoolName string,
 	return nil
 }
 
-func importLXD(ctx context.Context, bravefile *shared.Bravefile, remote Remote) (fingerprint string, err error) {
+func importLXD(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *shared.Bravefile) (fingerprint string, err error) {
 	if err = ctx.Err(); err != nil {
 		return "", err
 	}
-	fingerprint, err = Launch(ctx, bravefile.PlatformService.Name, bravefile.Base.Image, remote)
+	fingerprint, err = Launch(ctx, lxdServer, bravefile.PlatformService.Name, bravefile.Base.Image)
 	if err != nil {
 		return fingerprint, errors.New("failed to launch base unit: " + err.Error())
 	}
@@ -139,7 +141,7 @@ func importLXD(ctx context.Context, bravefile *shared.Bravefile, remote Remote) 
 	return fingerprint, nil
 }
 
-func importGitHub(ctx context.Context, bravefile *shared.Bravefile, bh *BraveHost) (fingerprint string, err error) {
+func importGitHub(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *shared.Bravefile, bh *BraveHost) (fingerprint string, err error) {
 	if err = ctx.Err(); err != nil {
 		return "", err
 	}
@@ -166,11 +168,11 @@ func importGitHub(ctx context.Context, bravefile *shared.Bravefile, bh *BraveHos
 	remoteBravefile.Base.Image = remoteServiceName
 	remoteBravefile.PlatformService.Name = bravefile.PlatformService.Name
 
-	fingerprint, err = importLocal(ctx, remoteBravefile, bh.Remote)
+	fingerprint, err = importLocal(ctx, lxdServer, remoteBravefile)
 	return fingerprint, err
 }
 
-func importLocal(ctx context.Context, bravefile *shared.Bravefile, remote Remote) (fingerprint string, err error) {
+func importLocal(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *shared.Bravefile) (fingerprint string, err error) {
 	if err = ctx.Err(); err != nil {
 		return "", err
 	}
@@ -182,7 +184,7 @@ func importLocal(ctx context.Context, bravefile *shared.Bravefile, remote Remote
 		return fingerprint, err
 	}
 
-	_, err = ImportImage(path, bravefile.Base.Image, remote)
+	_, err = ImportImage(lxdServer, path, bravefile.Base.Image)
 	if err != nil {
 		return fingerprint, errors.New("failed to import image: " + err.Error())
 	}
@@ -191,7 +193,7 @@ func importLocal(ctx context.Context, bravefile *shared.Bravefile, remote Remote
 		return fingerprint, err
 	}
 
-	err = LaunchFromImage(bravefile.Base.Image, bravefile.PlatformService.Name, remote)
+	err = LaunchFromImage(lxdServer, bravefile.Base.Image, bravefile.PlatformService.Name)
 	if err != nil {
 		return fingerprint, errors.New("failed to launch unit: " + err.Error())
 	}
@@ -200,7 +202,7 @@ func importLocal(ctx context.Context, bravefile *shared.Bravefile, remote Remote
 		return fingerprint, err
 	}
 
-	err = Start(bravefile.PlatformService.Name, remote)
+	err = Start(lxdServer, bravefile.PlatformService.Name)
 	if err != nil {
 		return fingerprint, errors.New("failed to start a unit: " + err.Error())
 	}
@@ -263,14 +265,14 @@ func importLocal(ctx context.Context, bravefile *shared.Bravefile, remote Remote
 // 	return nil
 // }
 
-func deleteHostImages(remote Remote) error {
-	images, err := GetImages(remote)
+func deleteHostImages(lxdServer lxd.InstanceServer) error {
+	images, err := GetImages(lxdServer)
 	if err != nil {
 		return errors.New("Failed to access host images: " + err.Error())
 	}
 
 	for _, i := range images {
-		err := DeleteImageByFingerprint(i.Fingerprint, remote)
+		err := DeleteImageByFingerprint(lxdServer, i.Fingerprint)
 		if err != nil {
 			return errors.New("Failed to delete image: " + i.Fingerprint)
 		}
@@ -279,8 +281,8 @@ func deleteHostImages(remote Remote) error {
 	return nil
 }
 
-func listHostImages(remote Remote) ([]api.Image, error) {
-	images, err := GetImages(remote)
+func listHostImages(lxdServer lxd.ImageServer) ([]api.Image, error) {
+	images, err := GetImages(lxdServer)
 	if err != nil {
 		return nil, errors.New("Failed to access host images: " + err.Error())
 	}
@@ -340,7 +342,7 @@ func listHostImages(remote Remote) ([]api.Image, error) {
 // 	return ifaces, nil
 // }
 
-func bravefileCopy(ctx context.Context, copy []shared.CopyCommand, service string, remote Remote) error {
+func bravefileCopy(ctx context.Context, lxdServer lxd.InstanceServer, copy []shared.CopyCommand, service string) error {
 	dir, _ := os.Getwd()
 	for _, c := range copy {
 		if err := ctx.Err(); err != nil {
@@ -352,7 +354,7 @@ func bravefileCopy(ctx context.Context, copy []shared.CopyCommand, service strin
 		sourcePath := filepath.FromSlash(source)
 
 		target := c.Target
-		_, err := Exec(ctx, service, []string{"mkdir", "-p", target}, remote)
+		_, err := Exec(ctx, lxdServer, service, []string{"mkdir", "-p", target})
 		if err != nil {
 			return errors.New("Failed to create target directory: " + err.Error())
 		}
@@ -363,24 +365,24 @@ func bravefileCopy(ctx context.Context, copy []shared.CopyCommand, service strin
 		}
 
 		if fi.IsDir() {
-			err = Push(service, sourcePath, target, remote)
+			err = Push(lxdServer, service, sourcePath, target)
 			if err != nil {
 				return errors.New("Failed to push symlink: " + err.Error())
 			}
 		} else if fi.Mode()&os.ModeSymlink == os.ModeSymlink {
-			err = SymlinkPush(service, sourcePath, target, remote)
+			err = SymlinkPush(lxdServer, service, sourcePath, target)
 			if err != nil {
 				return errors.New("Failed to push directory: " + err.Error())
 			}
 		} else {
-			err = FilePush(service, sourcePath, target, remote)
+			err = FilePush(lxdServer, service, sourcePath, target)
 			if err != nil {
 				return errors.New("Failed to push file: " + err.Error())
 			}
 		}
 
 		if c.Action != "" {
-			_, err = Exec(ctx, service, []string{"bash", "-c", c.Action}, remote)
+			_, err = Exec(ctx, lxdServer, service, []string{"bash", "-c", c.Action})
 			if err != nil {
 				return errors.New("Failed to execute action: " + err.Error())
 			}
@@ -390,7 +392,7 @@ func bravefileCopy(ctx context.Context, copy []shared.CopyCommand, service strin
 	return nil
 }
 
-func bravefileRun(ctx context.Context, run []shared.RunCommand, service string, remote Remote) (err error) {
+func bravefileRun(ctx context.Context, lxdServer lxd.InstanceServer, run []shared.RunCommand, service string) (err error) {
 	for _, c := range run {
 		if err = ctx.Err(); err != nil {
 			return err
@@ -412,7 +414,7 @@ func bravefileRun(ctx context.Context, run []shared.RunCommand, service string, 
 			args = append(args, content)
 		}
 
-		status, err := Exec(ctx, service, args, remote)
+		status, err := Exec(ctx, lxdServer, service, args)
 		if err != nil {
 			return err
 		}
@@ -425,15 +427,16 @@ func bravefileRun(ctx context.Context, run []shared.RunCommand, service string, 
 	return err
 }
 
-func cleanUnusedStoragePool(name string, remote Remote) {
-	err := DeleteStoragePool(name, remote)
+func cleanUnusedStoragePool(lxdServer lxd.InstanceServer, name string) {
+	err := DeleteStoragePool(lxdServer, name)
 	if err != nil {
 		fmt.Println("Nothing to clean")
 	}
 }
 
 // addIPRules adds firewall rule to the host iptable
-func addIPRules(ct string, hostPort string, ctPort string, remote Remote) error {
+
+func addIPRules(lxdServer lxd.InstanceServer, ct string, hostPort string, ctPort string) error {
 
 	name := ct + "-proxy-" + hostPort + "-" + ctPort
 
@@ -443,7 +446,7 @@ func addIPRules(ct string, hostPort string, ctPort string, remote Remote) error 
 	config["listen"] = "tcp:0.0.0.0:" + hostPort
 	config["connect"] = "tcp:127.0.0.1:" + ctPort
 
-	err := AddDevice(ct, name, config, remote)
+	err := AddDevice(lxdServer, ct, name, config)
 	if err != nil {
 		return errors.New("failed to add proxy settings for unit " + err.Error())
 	}
@@ -451,13 +454,13 @@ func addIPRules(ct string, hostPort string, ctPort string, remote Remote) error 
 	return nil
 }
 
-func checkUnits(unitName string, remote Remote) error {
+func checkUnits(lxdServer lxd.InstanceServer, unitName string) error {
 	if unitName == "" {
 		return errors.New("unit name cannot be empty")
 	}
 
 	// Unit Checks
-	unitList, err := GetUnits(remote)
+	unitList, err := GetUnits(lxdServer)
 	if err != nil {
 		return err
 	}
