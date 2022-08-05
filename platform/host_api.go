@@ -665,7 +665,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		}
 	case "local":
 		// Check disk space
-		imgSize, err := localImageSize(bravefile.PlatformService.Image)
+		imgSize, err := localImageSize(bravefile.Base.Image)
 		if err != nil {
 			return err
 		}
