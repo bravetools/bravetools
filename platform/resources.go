@@ -11,7 +11,7 @@ import (
 func CheckResources(image string, backend Backend, unitParams *shared.Bravefile, bh *BraveHost) error {
 	info, err := backend.Info()
 	if err != nil {
-		return errors.New("Failed to connect to host: " + err.Error())
+		return errors.New("failed to connect to host: " + err.Error())
 	}
 
 	requestedImageSize, err := localImageSize(image)

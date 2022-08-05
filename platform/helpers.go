@@ -482,15 +482,13 @@ func imageExists(imageNameAndVersion string) bool {
 }
 
 func localImageSize(imageNameAndVersion string) (bytes int64, err error) {
-	homeDir, _ := os.UserHomeDir()
-	image := path.Join(homeDir, shared.ImageStore, imageNameAndVersion+".tar.gz")
 
-	info, err := os.Stat(image)
+	info, err := os.Stat(imageNameAndVersion)
 	if err != nil {
 		return -1, err
 	}
 	if info.IsDir() {
-		return -1, fmt.Errorf("expected image path %q to be a file, found dir", image)
+		return -1, fmt.Errorf("expected image path %q to be a file, found dir", imageNameAndVersion)
 	}
 
 	return info.Size(), nil
