@@ -107,7 +107,7 @@ func CreateStoragePool(lxdServer lxd.InstanceServer, name string, size string) e
 }
 
 // AddRemote adds remote LXC host
-func AddRemote(braveHost *BraveHost) error {
+func AddRemote(remote Remote, password string) error {
 	var err error
 	userHome, _ := os.UserHomeDir()
 	certf := path.Join(userHome, shared.BraveClientCert)
@@ -119,9 +119,13 @@ func AddRemote(braveHost *BraveHost) error {
 		return err
 	}
 
+	if remote.Protocol == "unix" {
+		return nil
+	}
+
 	// Check if the system CA worked for the TLS connection
 	var certificate *x509.Certificate
-	certificate, err = lxdshared.GetRemoteCertificate(braveHost.Remote.url, "")
+	certificate, err = lxdshared.GetRemoteCertificate(remote.URL, "")
 	if err != nil {
 		return err
 	}
@@ -147,7 +151,7 @@ func AddRemote(braveHost *BraveHost) error {
 		return errors.New("could not create server cert dir")
 	}
 
-	certf = fmt.Sprintf("%s/%s.crt", dnam, braveHost.Settings.Name)
+	certf = path.Join(dnam, remote.Name+".crt")
 	certOut, err := os.Create(certf)
 	if err != nil {
 		return err
@@ -157,23 +161,18 @@ func AddRemote(braveHost *BraveHost) error {
 	pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: certificate.Raw})
 	certOut.Close()
 
+	// Load newly generated certs from disk into Remote struct
+	remote, err = LoadRemoteSettings(remote.Name)
+	if err != nil {
+		return fmt.Errorf("failed to load remote %q from disk: %s", remote.Name, err)
+	}
+
 	req := api.CertificatesPost{
-		Password: braveHost.Settings.Trust,
+		Password: password,
 	}
 	req.Type = "client"
 
-	keyPath := path.Join(userHome, shared.BraveClientKey)
-	certPath := path.Join(userHome, shared.BraveClientCert)
-	key, _ := loadKey(keyPath)
-	cert, _ := loadCert(certPath)
-
-	remote := Remote{
-		url:  braveHost.Remote.url,
-		key:  key,
-		cert: cert,
-	}
-
-	lxdServer, err := GetLXDServer(remote)
+	lxdServer, err := GetLXDInstanceServer(remote)
 	if err != nil {
 		return err
 	}
@@ -188,14 +187,10 @@ func AddRemote(braveHost *BraveHost) error {
 // RemoveRemote removes remote LXC host
 func RemoveRemote(name string) error {
 	userHome, _ := os.UserHomeDir()
-	certf := path.Join(userHome, shared.BraveClientCert)
-	keyf := path.Join(userHome, shared.BraveClientKey)
+	remotef := path.Join(userHome, shared.BraveRemoteStore, name+".json")
 	certs := path.Join(userHome, shared.BraveServerCertStore, name+".crt")
-	err := os.Remove(certf)
-	if err != nil {
-		return err
-	}
-	err = os.Remove(keyf)
+
+	err := os.Remove(remotef)
 	if err != nil {
 		return err
 	}
@@ -1356,18 +1351,34 @@ func createDir(lxdServer lxd.InstanceServer, name string, dir string, mode int) 
 	return nil
 }
 
-// GetLXDServer ..
-func GetLXDServer(remote Remote) (lxd.InstanceServer, error) {
-	args := lxd.ConnectionArgs{}
-	args.TLSClientKey = remote.key
-	args.TLSClientCert = remote.cert
-	args.InsecureSkipVerify = true
-	server, err := lxd.ConnectLXD(remote.url, &args)
-	if err != nil {
-		return nil, errors.New("Failed connect to remote: " + err.Error())
+// GetLXDInstanceServer ..
+func GetLXDInstanceServer(remote Remote) (lxd.InstanceServer, error) {
+
+	args := &lxd.ConnectionArgs{
+		TLSClientKey:  remote.key,
+		TLSClientCert: remote.cert,
+		TLSServerCert: remote.servercert,
 	}
 
-	return server, nil
+	switch remote.Protocol {
+	case "unix":
+		return lxd.ConnectLXDUnix(remote.URL, args)
+	case "lxd":
+		return lxd.ConnectLXD(remote.URL, args)
+	default:
+		return nil, fmt.Errorf("unsupported protocol %q for instance server remote %q", remote.Protocol, remote.Name)
+	}
+}
+
+func GetLXDImageSever(remote Remote) (lxd.ImageServer, error) {
+	switch remote.Protocol {
+	case "simplestreams":
+		return lxd.ConnectSimpleStreams(remote.URL, nil)
+	case "lxd":
+		return lxd.ConnectPublicLXD(remote.URL, nil)
+	default:
+		return nil, fmt.Errorf("unsupported protocol %q for image sever remote %q", remote.Protocol, remote.Name)
+	}
 }
 
 func GetSimplestreamsLXDSever(url string, args *lxd.ConnectionArgs) (lxd.ImageServer, error) {

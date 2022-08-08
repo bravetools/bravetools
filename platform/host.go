@@ -15,13 +15,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// Remote represents a configuration of the remote
-type Remote struct {
-	url  string
-	key  string
-	cert string
-}
-
 // HostSettings configuration data loaded from config.yaml
 type HostSettings struct {
 	Name            string          `yaml:"name"`
@@ -82,10 +75,8 @@ func NewBraveHost() (*BraveHost, error) {
 		return nil, err
 	}
 
-	host.Remote, err = loadRemoteSettings(userHome, host.Settings.BackendSettings.Resources.IP)
-	if err != nil {
-		return nil, err
-	}
+	// Load host remote if initialized
+	host.Remote, _ = LoadRemoteSettings(shared.BravetoolsRemote)
 
 	host.Backend, err = NewHostBackend(host.Settings)
 	if err != nil {
@@ -103,8 +94,7 @@ type HostConfig struct {
 }
 
 // SetupHostConfiguration creates configuration file and saves it in bravetools directory
-func SetupHostConfiguration(params HostConfig, userHome string) {
-	var settings = HostSettings{}
+func SetupHostConfiguration(params HostConfig, userHome string) (settings HostSettings) {
 	poolSizeInt, _ := strconv.Atoi(params.Storage)
 	poolSizeInt = poolSizeInt - 2
 
@@ -153,7 +143,7 @@ func SetupHostConfiguration(params HostConfig, userHome string) {
 			Resources: BackendResources{
 				RAM: "",
 				HD:  "",
-				IP:  "0.0.0.0",
+				IP:  "127.0.0.1",
 			},
 		}
 		settings.BackendSettings = backendSettings
@@ -168,6 +158,8 @@ func SetupHostConfiguration(params HostConfig, userHome string) {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+
+	return settings
 }
 
 // UpdateBraveSettings configuration in place and write to config.yaml
@@ -189,7 +181,7 @@ func UpdateBraveSettings(settings HostSettings) error {
 // ConfigureHost configures local bravetools host and updates resources
 func ConfigureHost(settings HostSettings, remote Remote) error {
 
-	lxdServer, err := GetLXDServer(remote)
+	lxdServer, err := GetLXDInstanceServer(remote)
 	if err != nil {
 		return err
 	}
@@ -232,21 +224,6 @@ func ConfigureHost(settings HostSettings, remote Remote) error {
 	return nil
 }
 
-func loadRemoteSettings(userHome string, remoteIP string) (Remote, error) {
-	remote := Remote{}
-
-	keyPath := path.Join(userHome, shared.BraveClientKey)
-	certPath := path.Join(userHome, shared.BraveClientCert)
-	key, _ := loadKey(keyPath)
-	cert, _ := loadCert(certPath)
-
-	remote.key = key
-	remote.cert = cert
-	remote.url = "https://" + remoteIP + ":8443"
-
-	return remote, nil
-}
-
 // loadHostSettings reads config.yaml in /.bravetools directory
 func loadHostSettings(userHome string) (HostSettings, error) {
 	settings := HostSettings{}
@@ -268,22 +245,4 @@ func loadHostSettings(userHome string) (HostSettings, error) {
 	}
 
 	return settings, nil
-}
-
-func loadKey(path string) (string, error) {
-	buf, err := shared.ReadFile(path)
-	if err != nil {
-		return "", errors.New("cannot load client key")
-	}
-	key := buf.String()
-	return key, nil
-}
-
-func loadCert(path string) (string, error) {
-	buf, err := shared.ReadFile(path)
-	if err != nil {
-		return "", errors.New("cannot load client certificate")
-	}
-	cert := buf.String()
-	return cert, nil
 }
