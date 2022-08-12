@@ -84,6 +84,11 @@ func createBraveHome(userHome string) error {
 	if err != nil {
 		return err
 	}
+
+	err = shared.CreateDirectory(path.Join(userHome, shared.BraveRemoteStore))
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"os/user"
@@ -29,7 +28,7 @@ import (
 
 // DeleteImageName deletes image by name
 func (bh *BraveHost) DeleteImageByName(name string) error {
-	lxdServer, err := GetLXDServer(bh.Remote)
+	lxdServer, err := GetLXDInstanceServer(bh.Remote)
 	if err != nil {
 		return err
 	}
@@ -47,7 +46,7 @@ func (bh *BraveHost) DeleteImageByName(name string) error {
 
 // DeleteImage delete image by fingerprint
 func (bh *BraveHost) DeleteImageByFingerprint(fingerprint string) error {
-	lxdServer, err := GetLXDServer(bh.Remote)
+	lxdServer, err := GetLXDInstanceServer(bh.Remote)
 	if err != nil {
 		return err
 	}
@@ -62,7 +61,7 @@ func (bh *BraveHost) DeleteImageByFingerprint(fingerprint string) error {
 
 // DeleteHostImages removes all LXC images from host
 func (bh *BraveHost) DeleteHostImages() error {
-	lxdServer, err := GetLXDServer(bh.Remote)
+	lxdServer, err := GetLXDInstanceServer(bh.Remote)
 	if err != nil {
 		return err
 	}
@@ -76,20 +75,9 @@ func (bh *BraveHost) DeleteHostImages() error {
 
 // AddRemote sets connection to Brave platform
 func (bh *BraveHost) AddRemote() error {
-	url := "https://" + bh.Settings.BackendSettings.Resources.IP + ":8443"
-	bh.Remote.url = url
-
-	err := RemoveRemote(bh.Settings.Name)
-	if err != nil {
-		fmt.Println("no Brave host. Continue adding a new host ..")
-	}
-	err = AddRemote(bh)
+	err := AddRemote(bh.Remote, bh.Settings.Trust)
 	if err != nil {
 		return errors.New("failed to add remote host: " + err.Error())
-	}
-
-	if err != nil {
-		log.Fatal("failed to access user home directory: ", err.Error())
 	}
 
 	return nil
@@ -302,7 +290,7 @@ func (bh *BraveHost) ListUnits(backend Backend) error {
 		return errors.New("cannot connect to Bravetools remote, ensure it is up and running")
 	}
 
-	lxdServer, err := GetLXDServer(bh.Remote)
+	lxdServer, err := GetLXDInstanceServer(bh.Remote)
 	if err != nil {
 		return err
 	}
@@ -359,7 +347,7 @@ func (bh *BraveHost) ListUnits(backend Backend) error {
 func (bh *BraveHost) UmountShare(unit string, target string) error {
 	backend := bh.Settings.BackendSettings.Type
 
-	lxdServer, err := GetLXDServer(bh.Remote)
+	lxdServer, err := GetLXDInstanceServer(bh.Remote)
 	if err != nil {
 		return err
 	}
@@ -416,7 +404,7 @@ func (bh *BraveHost) UmountShare(unit string, target string) error {
 // MountShare ..
 func (bh *BraveHost) MountShare(source string, destUnit string, destPath string) error {
 
-	lxdServer, err := GetLXDServer(bh.Remote)
+	lxdServer, err := GetLXDInstanceServer(bh.Remote)
 	if err != nil {
 		return err
 	}
@@ -523,7 +511,7 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 func (bh *BraveHost) DeleteUnit(name string) error {
 	var unitNames []string
 
-	lxdServer, err := GetLXDServer(bh.Remote)
+	lxdServer, err := GetLXDInstanceServer(bh.Remote)
 	if err != nil {
 		return err
 	}
@@ -585,7 +573,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		return errors.New("service Name is empty")
 	}
 
-	lxdServer, err := GetLXDServer(bh.Remote)
+	lxdServer, err := GetLXDInstanceServer(bh.Remote)
 	if err != nil {
 		return err
 	}
@@ -814,7 +802,7 @@ func (bh *BraveHost) PublishUnit(name string, backend Backend) error {
 		return errors.New("failed to get host info: " + err.Error())
 	}
 
-	lxdServer, err := GetLXDServer(bh.Remote)
+	lxdServer, err := GetLXDInstanceServer(bh.Remote)
 	if err != nil {
 		return err
 	}
@@ -851,7 +839,7 @@ func (bh *BraveHost) StopUnit(name string, backend Backend) error {
 		return errors.New("Backend is stopped")
 	}
 
-	lxdServer, err := GetLXDServer(bh.Remote)
+	lxdServer, err := GetLXDInstanceServer(bh.Remote)
 	if err != nil {
 		return err
 	}
@@ -875,7 +863,7 @@ func (bh *BraveHost) StartUnit(name string, backend Backend) error {
 		return errors.New("Backend is stopped")
 	}
 
-	lxdServer, err := GetLXDServer(bh.Remote)
+	lxdServer, err := GetLXDInstanceServer(bh.Remote)
 	if err != nil {
 		return err
 	}
@@ -900,7 +888,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) (er
 		return errors.New("unit image name cannot be empty")
 	}
 
-	lxdServer, err := GetLXDServer(bh.Remote)
+	lxdServer, err := GetLXDInstanceServer(bh.Remote)
 	if err != nil {
 		return err
 	}
@@ -1119,7 +1107,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) (er
 
 // Postdeploy copy files and run commands on running service
 func (bh *BraveHost) Postdeploy(ctx context.Context, bravefile *shared.Bravefile) (err error) {
-	lxdServer, err := GetLXDServer(bh.Remote)
+	lxdServer, err := GetLXDInstanceServer(bh.Remote)
 	if err != nil {
 		return err
 	}

@@ -133,6 +133,14 @@ func serverInit(cmd *cobra.Command, args []string) {
 	}
 
 	log.Println("Registering a Remote")
+	host.Remote = platform.NewBravehostRemote(host.Settings.BackendSettings)
+	err = platform.SaveRemote(host.Remote)
+	if err != nil {
+		if err := deleteBraveHome(userHome); err != nil {
+			fmt.Println(err.Error())
+		}
+		log.Fatal("failed to save default bravetools remote: ", err)
+	}
 	err = host.AddRemote()
 	if err != nil {
 		if err := deleteBraveHome(userHome); err != nil {
