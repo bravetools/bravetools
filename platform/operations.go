@@ -1254,7 +1254,7 @@ func CopyDirectory(lxdServer lxd.InstanceServer, name string, src, dst string) e
 	}
 	for _, entry := range entries {
 		source := filepath.Join(src, entry.Name())
-		destPath := filepath.Join(dst, entry.Name())
+		destPath := filepath.ToSlash(filepath.Join(dst, entry.Name()))
 
 		sourcePath := filepath.FromSlash(source)
 
