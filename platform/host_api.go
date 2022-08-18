@@ -679,7 +679,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 			return errors.New("package manager not specified - cannot install packages")
 		}
 	case "apk":
-		_, err := Exec(ctx, lxdServer, bravefile.PlatformService.Name, []string{"apk", "update", "--no-cache"})
+		_, err := Exec(ctx, lxdServer, bravefile.PlatformService.Name, []string{"apk", "update", "--no-cache"}, ExecArgs{})
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return errors.New("failed to update repositories: " + err.Error())
 		}
@@ -688,7 +688,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		args = append(args, bravefile.SystemPackages.System...)
 
 		if len(args) > 3 {
-			status, err := Exec(ctx, lxdServer, bravefile.PlatformService.Name, args)
+			status, err := Exec(ctx, lxdServer, bravefile.PlatformService.Name, args, ExecArgs{})
 
 			if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 				return errors.New("failed to install packages: " + err.Error())
@@ -699,7 +699,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		}
 
 	case "apt":
-		_, err := Exec(ctx, lxdServer, bravefile.PlatformService.Name, []string{"apt", "update"})
+		_, err := Exec(ctx, lxdServer, bravefile.PlatformService.Name, []string{"apt", "update"}, ExecArgs{})
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return errors.New("failed to update repositories: " + err.Error())
 		}
@@ -709,7 +709,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 
 		if len(args) > 2 {
 			args = append(args, "--yes")
-			status, err := Exec(ctx, lxdServer, bravefile.PlatformService.Name, args)
+			status, err := Exec(ctx, lxdServer, bravefile.PlatformService.Name, args, ExecArgs{})
 
 			if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 				return errors.New("failed to install packages: " + err.Error())

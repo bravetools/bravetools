@@ -588,8 +588,12 @@ func isIPv4(ip string) bool {
 	return true
 }
 
+type ExecArgs struct {
+	env map[string]string
+}
+
 // Exec runs command inside unit
-func Exec(ctx context.Context, lxdServer lxd.InstanceServer, name string, command []string) (returnCode int, err error) {
+func Exec(ctx context.Context, lxdServer lxd.InstanceServer, name string, command []string, arg ExecArgs) (returnCode int, err error) {
 	if err = ctx.Err(); err != nil {
 		return 0, err
 	}
@@ -618,6 +622,7 @@ func Exec(ctx context.Context, lxdServer lxd.InstanceServer, name string, comman
 		WaitForWS:    true,
 		RecordOutput: true,
 		Interactive:  false,
+		Environment:  arg.env,
 	}
 
 	args := lxd.ContainerExecArgs{
@@ -1119,8 +1124,16 @@ func DeleteImageByName(lxdServer lxd.InstanceServer, name string) error {
 	}
 	imageFingerprint := alias.Target
 
-	_, err = lxdServer.DeleteImage(imageFingerprint)
-	return err
+	op, err := lxdServer.DeleteImage(imageFingerprint)
+	if err != nil {
+		return err
+	}
+
+	err = op.Wait()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // DeleteImageFingerprint delete unit image

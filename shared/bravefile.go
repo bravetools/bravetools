@@ -18,9 +18,10 @@ type Packages struct {
 
 // RunCommand defines custom commands to run inside continer
 type RunCommand struct {
-	Command string   `yaml:"command,omitempty"`
-	Content string   `yaml:"content,omitempty"`
-	Args    []string `yaml:"args,omitempty"`
+	Command string            `yaml:"command,omitempty"`
+	Content string            `yaml:"content,omitempty"`
+	Args    []string          `yaml:"args,omitempty"`
+	Env     map[string]string `yaml:"env,omitempty"`
 }
 
 //CopyCommand defines source and target for files to be copied into container
