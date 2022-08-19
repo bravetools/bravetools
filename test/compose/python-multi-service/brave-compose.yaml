@@ -1,0 +1,14 @@
+services:
+  brave-test-api:
+    bravefile: ./api/Bravefile
+    ip: 10.0.0.50
+    build: true
+    depends_on:
+      - brave-test-auth
+      - brave-test-log
+  brave-test-auth:
+    bravefile: ./auth/Bravefile
+    build: true
+  brave-test-log:
+    bravefile: ./log/Bravefile
+    build: true

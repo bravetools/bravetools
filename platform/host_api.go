@@ -565,6 +565,8 @@ func (e *ImageExistsError) Error() string {
 
 // BuildImage creates an image based on Bravefile
 func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
+	fmt.Println(shared.Info("Building Image: " + bravefile.PlatformService.Image + " Version: " + bravefile.PlatformService.Version))
+
 	if strings.ContainsAny(bravefile.PlatformService.Name, "/_. !@£$%^&*(){}:;`~,?") {
 		return errors.New("image names should not contain special characters")
 	}
@@ -878,13 +880,13 @@ func (bh *BraveHost) StartUnit(name string, backend Backend) error {
 }
 
 // InitUnit starts unit from supplied image
-func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) (err error) {
+func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err error) {
 	// Check for missing mandatory fields
-	if unitParams.PlatformService.Name == "" {
+	if unitParams.Name == "" {
 		return errors.New("unit name cannot be empty")
 	}
 	homeDir, _ := os.UserHomeDir()
-	if unitParams.PlatformService.Image == "" {
+	if unitParams.Image == "" {
 		return errors.New("unit image name cannot be empty")
 	}
 
@@ -892,31 +894,32 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) (er
 	if err != nil {
 		return err
 	}
+	fmt.Println(shared.Info("Deploying Unit " + unitParams.Name))
 
 	// Check if a unit with this name already exists - we don't want to delete it
 
-	err = checkUnits(lxdServer, unitParams.PlatformService.Name)
+	err = checkUnits(lxdServer, unitParams.Name)
 	if err != nil {
 		return err
 	}
-	if !imageExists(unitParams.PlatformService.Image) {
-		return fmt.Errorf("image %q does not exist", unitParams.PlatformService.Image)
+	if !imageExists(unitParams.Image) {
+		return fmt.Errorf("image %q does not exist", unitParams.Image)
 	}
 
-	image := path.Join(homeDir, shared.ImageStore, unitParams.PlatformService.Image+".tar.gz")
+	image := path.Join(homeDir, shared.ImageStore, unitParams.Image+".tar.gz")
 
 	if !shared.FileExists(image) {
-		return fmt.Errorf("image %q does not exist", unitParams.PlatformService.Image)
+		return fmt.Errorf("image %q does not exist", unitParams.Image)
 	}
 
 	fingerprint, err := shared.FileSha256Hash(image)
 	if err != nil {
-		return fmt.Errorf("failed to obtain image hash %q", unitParams.Base.Image)
+		return fmt.Errorf("failed to obtain image hash %q", unitParams.Image)
 	}
 	defer DeleteImageByFingerprint(lxdServer, fingerprint)
 
 	// Resource checks
-	err = CheckResources(unitParams.PlatformService.Image, backend, unitParams, bh)
+	err = CheckResources(unitParams.Image, backend, unitParams, bh)
 	if err != nil {
 		return err
 	}
@@ -934,16 +937,16 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) (er
 		}
 	}()
 
-	_, err = ImportImage(lxdServer, image, unitParams.PlatformService.Name)
+	_, err = ImportImage(lxdServer, image, unitParams.Name)
 	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to import image: " + err.Error())
 	}
 
 	// Launch unit and set up cleanup code to delete it if an error encountered during deployment
-	err = LaunchFromImage(lxdServer, unitParams.PlatformService.Name, unitParams.PlatformService.Name)
+	err = LaunchFromImage(lxdServer, unitParams.Name, unitParams.Name)
 	defer func() {
 		if err != nil {
-			delErr := DeleteUnit(lxdServer, unitParams.PlatformService.Name)
+			delErr := DeleteUnit(lxdServer, unitParams.Name)
 			if delErr != nil {
 				fmt.Println("failed to delete unit: " + delErr.Error())
 			}
@@ -953,22 +956,22 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) (er
 		return errors.New("failed to launch unit: " + err.Error())
 	}
 
-	err = AttachNetwork(lxdServer, unitParams.PlatformService.Name, bh.Settings.Name+"br0", "eth0", "eth0")
+	err = AttachNetwork(lxdServer, unitParams.Name, bh.Settings.Name+"br0", "eth0", "eth0")
 	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to attach network: " + err.Error())
 	}
 
-	err = ConfigDevice(lxdServer, unitParams.PlatformService.Name, "eth0", unitParams.PlatformService.IP)
+	err = ConfigDevice(lxdServer, unitParams.Name, "eth0", unitParams.IP)
 	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to set IP: " + err.Error())
 	}
 
-	err = Stop(lxdServer, unitParams.PlatformService.Name)
+	err = Stop(lxdServer, unitParams.Name)
 	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to stop unit: " + err.Error())
 	}
 
-	err = Start(lxdServer, unitParams.PlatformService.Name)
+	err = Start(lxdServer, unitParams.Name)
 	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("Failed to restart unit: " + err.Error())
 	}
@@ -1002,50 +1005,50 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) (er
 	var config map[string]string
 	if serverVersion <= 303 {
 		config = map[string]string{
-			"limits.cpu":       unitParams.PlatformService.Resources.CPU,
-			"limits.memory":    unitParams.PlatformService.Resources.RAM,
+			"limits.cpu":       unitParams.Resources.CPU,
+			"limits.memory":    unitParams.Resources.RAM,
 			"security.nesting": "false",
 			"nvidia.runtime":   "false",
 		}
 	} else {
 		config = map[string]string{
-			"limits.cpu":       unitParams.PlatformService.Resources.CPU,
-			"limits.memory":    unitParams.PlatformService.Resources.RAM,
+			"limits.cpu":       unitParams.Resources.CPU,
+			"limits.memory":    unitParams.Resources.RAM,
 			"raw.idmap":        "both " + uid + " " + gid,
 			"security.nesting": "false",
 			"nvidia.runtime":   "false",
 		}
 	}
 
-	if unitParams.PlatformService.Docker == "yes" {
+	if unitParams.Docker == "yes" {
 		config["security.nesting"] = "true"
 	}
 
-	if unitParams.PlatformService.Resources.GPU == "yes" {
+	if unitParams.Resources.GPU == "yes" {
 		config["nvidia.runtime"] = "true"
 		device := map[string]string{"type": "gpu"}
-		err = AddDevice(lxdServer, unitParams.PlatformService.Name, "gpu", device)
+		err = AddDevice(lxdServer, unitParams.Name, "gpu", device)
 		if err != nil {
 			return errors.New("failed to add GPU device: " + err.Error())
 		}
 	}
 
-	err = SetConfig(lxdServer, unitParams.PlatformService.Name, config)
+	err = SetConfig(lxdServer, unitParams.Name, config)
 	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("error configuring unit: " + err.Error())
 	}
 
-	err = Stop(lxdServer, unitParams.PlatformService.Name)
+	err = Stop(lxdServer, unitParams.Name)
 	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to stop unit: " + err.Error())
 	}
 
-	err = Start(lxdServer, unitParams.PlatformService.Name)
+	err = Start(lxdServer, unitParams.Name)
 	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to restart unit: " + err.Error())
 	}
 
-	ports := unitParams.PlatformService.Ports
+	ports := unitParams.Ports
 	if len(ports) > 0 {
 		for _, p := range ports {
 			ps := strings.Split(p, ":")
@@ -1054,7 +1057,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) (er
 				return
 			}
 
-			err = addIPRules(lxdServer, unitParams.PlatformService.Name, ps[1], ps[0])
+			err = addIPRules(lxdServer, unitParams.Name, ps[1], ps[0])
 			if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 				return errors.New("unable to add Proxy Device: " + err.Error())
 			}
@@ -1082,14 +1085,14 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) (er
 
 	uuid, _ := uuid.NewUUID()
 	braveUnit.UID = uuid.String()
-	braveUnit.Name = unitParams.PlatformService.Name
+	braveUnit.Name = unitParams.Name
 	braveUnit.Date = time.Now().String()
 
 	var unitData db.UnitData
-	unitData.CPU, _ = strconv.Atoi(unitParams.PlatformService.Resources.CPU)
-	unitData.RAM = unitParams.PlatformService.Resources.RAM
-	unitData.IP = unitParams.PlatformService.IP
-	unitData.Image = unitParams.Base.Image
+	unitData.CPU, _ = strconv.Atoi(unitParams.Resources.CPU)
+	unitData.RAM = unitParams.Resources.RAM
+	unitData.IP = unitParams.IP
+	unitData.Image = unitParams.Image
 
 	data, err := json.Marshal(unitData)
 	if err != nil {
@@ -1106,25 +1109,132 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Bravefile) (er
 }
 
 // Postdeploy copy files and run commands on running service
-func (bh *BraveHost) Postdeploy(ctx context.Context, bravefile *shared.Bravefile) (err error) {
+func (bh *BraveHost) Postdeploy(ctx context.Context, unitConfig *shared.Service) (err error) {
 	lxdServer, err := GetLXDInstanceServer(bh.Remote)
 	if err != nil {
 		return err
 	}
 
-	if bravefile.PlatformService.Postdeploy.Copy != nil {
-		err = bravefileCopy(ctx, lxdServer, bravefile.PlatformService.Postdeploy.Copy, bravefile.PlatformService.Name)
+	if unitConfig.Postdeploy.Copy != nil {
+		err = bravefileCopy(ctx, lxdServer, unitConfig.Postdeploy.Copy, unitConfig.Name)
 		if err != nil {
 			return err
 		}
 	}
 
-	if bravefile.PlatformService.Postdeploy.Run != nil {
-		err = bravefileRun(ctx, lxdServer, bravefile.PlatformService.Postdeploy.Run, bravefile.PlatformService.Name)
+	if unitConfig.Postdeploy.Run != nil {
+		err = bravefileRun(ctx, lxdServer, unitConfig.Postdeploy.Run, unitConfig.Name)
 		if err != nil {
 			return errors.New(shared.Fatal("failed to execute command: " + err.Error()))
 		}
 	}
 
+	return nil
+}
+
+func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (err error) {
+
+	// Compose runs from parent directory of compose file
+	workingDir, err := filepath.Abs(filepath.Dir(composeFile.Path))
+	if err != nil {
+		return err
+	}
+	startDir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	os.Chdir(workingDir)
+	defer os.Chdir(startDir)
+
+	// Order services by deps
+	topologicalOrdering, err := composeFile.TopologicalOrdering()
+	if err != nil {
+		return err
+	}
+
+	// Remove base-only services if all images depending on them already exist
+	for _, baseService := range getBaseOnlyServices(composeFile) {
+		if len(getBuildDependents(baseService, composeFile)) == 0 {
+			serviceIdx, err := shared.StrSliceIndexOf(topologicalOrdering, baseService)
+			if err != nil {
+				return err
+			}
+			topologicalOrdering = append(topologicalOrdering[:serviceIdx], topologicalOrdering[serviceIdx+1:]...)
+		}
+	}
+
+	// (Optionally build) and deploy each service
+	for _, serviceName := range topologicalOrdering {
+		service := composeFile.Services[serviceName]
+
+		// Load bravefile settings as defaults, overwrite if specified in composefile
+		if service.Bravefile != "" {
+			if service.Build || service.Base {
+				// Switch to build context dir
+				buildDir := service.Context
+				if buildDir == "" {
+					buildDir, err = filepath.Abs(filepath.Dir(service.Bravefile))
+				}
+				os.Chdir(buildDir)
+
+				err = bh.BuildImage(service.BravefileBuild)
+				switch errType := err.(type) {
+				case nil:
+					// Cleanup image later if error in compose
+					defer func() {
+						if err != nil {
+							bh.DeleteLocalImage(service.Image)
+						}
+					}()
+				case *ImageExistsError:
+					// If image already exists continue and log the skip
+					err = nil
+					fmt.Printf("image %q already exists - skipping build\n", errType.Name)
+				default:
+					// Stop on unknown err
+					return err
+				}
+
+				os.Chdir(workingDir)
+
+				if service.Base && !service.Build {
+					defer func() {
+						bh.DeleteLocalImage(service.Image)
+					}()
+				}
+			}
+		}
+
+		// Only deploy service if it isn't a base image used during build only
+		if !service.Base {
+			// Deploy context - use Context if provided, else Bravefile if present, else current dir
+			deployDir := service.Context
+			if deployDir == "" {
+				if service.Bravefile != "" {
+					deployDir, err = filepath.Abs(filepath.Dir(service.Bravefile))
+					if err != nil {
+						return err
+					}
+				} else {
+					deployDir = "."
+				}
+			}
+			os.Chdir(deployDir)
+
+			// Cleanup each unit if error in compose
+			err = bh.InitUnit(backend, &service.Service)
+			if err != nil {
+				return err
+			}
+			defer func() {
+				if err != nil {
+					bh.DeleteUnit(service.Name)
+				}
+			}()
+
+			os.Chdir(workingDir)
+		}
+
+	}
 	return nil
 }

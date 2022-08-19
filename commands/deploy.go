@@ -69,7 +69,7 @@ func deploy(cmd *cobra.Command, args []string) {
 	deployArgs.Merge(&bravefile.PlatformService)
 	bravefile.PlatformService = *deployArgs
 
-	err = host.InitUnit(backend, bravefile)
+	err = host.InitUnit(backend, &bravefile.PlatformService)
 	if err != nil {
 		log.Fatal(err)
 	}

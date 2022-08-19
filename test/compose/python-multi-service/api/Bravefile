@@ -1,0 +1,42 @@
+base:
+  image: alpine/3.16
+  location: public
+
+packages:
+  manager: apk
+  system:
+    - python3
+    - py3-pip
+
+copy:
+  - source: app.py
+    target: /root/
+  - source: requirements.txt
+    target: /root/
+
+run:
+  - command: python3
+    args:
+      - -m
+      - pip
+      - install
+      - -r
+      - requirements.txt
+
+service:
+  postdeploy:
+    run:
+      - command: sh
+        args:
+          - -c
+          - 'AUTH_ADDR=10.0.0.15:80 LOG_ADDR=10.0.0.25:8000 gunicorn app:app --bind 0.0.0.0:5000 --daemon'
+
+  image: brave-test-api-1.0
+  name: brave-test-api
+  version: 1.0
+  ip: 10.0.0.5
+  ports:
+    - 5000:5000
+  resources:
+    ram: 500MB
+    cpu: 1

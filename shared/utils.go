@@ -201,6 +201,16 @@ func WalkMatch(root, pattern string) ([]string, error) {
 	return matches, nil
 }
 
+// StrSliceIndexOf returns index of first occurence of element in a str slice or err if not found
+func StrSliceIndexOf(slice []string, element string) (index int, err error) {
+	for i := range slice {
+		if slice[i] == element {
+			return i, nil
+		}
+	}
+	return index, fmt.Errorf("element %q not found in slice %q", element, slice)
+}
+
 // StringSliceSearch searches a string slice for an expression and returns its indeces
 func StringSliceSearch(array []string, expression string) ([]int, error) {
 	pattern := regexp.MustCompile(expression)

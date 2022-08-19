@@ -2,6 +2,7 @@ package platform
 
 import (
 	"context"
+	"log"
 	"testing"
 
 	"github.com/bravetools/bravetools/shared"
@@ -115,12 +116,12 @@ func Test_InitUnit(t *testing.T) {
 		t.Error("host.BuildImage: ", err)
 	}
 
-	err = host.InitUnit(host.Backend, &bravefile)
+	err = host.InitUnit(host.Backend, &bravefile.PlatformService)
 	if err != nil {
 		t.Error("host.InitUnit: ", err)
 	}
 
-	err = host.Postdeploy(ctx, &bravefile)
+	err = host.Postdeploy(ctx, &bravefile.PlatformService)
 	if err != nil {
 		t.Error("host.Postdeploy: ", err)
 	}
@@ -177,5 +178,38 @@ func Test_ListUnits(t *testing.T) {
 	err = host.ListUnits(host.Backend)
 	if err != nil {
 		t.Error("host.ListLocalImages: ", err)
+	}
+}
+
+func Test_Compose(t *testing.T) {
+	var err error
+
+	host, err := NewBraveHost()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	composefile := shared.NewComposeFile()
+	err = composefile.Load("../test/compose/python-multi-service/brave-compose.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = host.Compose(host.Backend, composefile)
+	if err != nil {
+		t.Error("host.BuildImage: ", err)
+	}
+
+	for _, service := range composefile.Services {
+		err = host.DeleteUnit(service.Name)
+		if err != nil {
+			t.Errorf("failed to delete unit: %q", service.Name)
+			t.Log(err)
+		}
+		err = host.DeleteLocalImage(service.Image)
+		if err != nil {
+			t.Errorf("failed to delete unit: %q", service.Image)
+			t.Log(err)
+		}
 	}
 }

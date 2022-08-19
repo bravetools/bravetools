@@ -8,7 +8,7 @@ import (
 )
 
 // CheckResources ..
-func CheckResources(image string, backend Backend, unitParams *shared.Bravefile, bh *BraveHost) error {
+func CheckResources(image string, backend Backend, unitParams *shared.Service, bh *BraveHost) error {
 	info, err := backend.Info()
 	if err != nil {
 		return errors.New("failed to connect to host: " + err.Error())
@@ -27,7 +27,7 @@ func CheckResources(image string, backend Backend, unitParams *shared.Bravefile,
 		return errors.New("requested unit size exceeds available disk space on bravetools host. To increase storage pool size modify $HOME/.bravetools/config.yml and run brave configure")
 	}
 
-	requestedMemorySize, err := shared.SizeCountToInt(unitParams.PlatformService.Resources.RAM)
+	requestedMemorySize, err := shared.SizeCountToInt(unitParams.Resources.RAM)
 	if err != nil {
 		return err
 	}
@@ -37,12 +37,12 @@ func CheckResources(image string, backend Backend, unitParams *shared.Bravefile,
 	}
 
 	if requestedMemorySize > freeMemorySize {
-		return errors.New("Requested unit memory (" + unitParams.PlatformService.Resources.RAM + ") exceeds available memory on bravetools host")
+		return errors.New("Requested unit memory (" + unitParams.Resources.RAM + ") exceeds available memory on bravetools host")
 	}
 
 	// Networking Checks
 	hostIP := info.IPv4
-	ports := unitParams.PlatformService.Ports
+	ports := unitParams.Ports
 	var hostPorts []string
 	if len(ports) > 0 {
 		for _, p := range ports {

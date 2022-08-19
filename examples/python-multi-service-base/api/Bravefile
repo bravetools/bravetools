@@ -1,0 +1,25 @@
+base:
+  image: python-base-1.0
+  location: local
+
+copy:
+  - source: app.py
+    target: /root/
+
+service:
+  postdeploy:
+    run:
+      - command: sh
+        args:
+          - -c
+          - 'AUTH_ADDR=10.0.0.15:80 LOG_ADDR=10.0.0.25:8000 gunicorn app:app --bind 0.0.0.0:5000 --daemon'
+
+  image: python-api-1.0
+  name: python-api
+  version: 1.0
+  ip: 10.0.0.5
+  ports:
+    - 5000:5000
+  resources:
+    ram: 500MB
+    cpu: 1

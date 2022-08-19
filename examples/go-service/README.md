@@ -1,4 +1,4 @@
-## How ro run a go-service example
+## How to run a go-service example
 
 1. Install Bravetools and verify it is up and running:
 
@@ -6,7 +6,7 @@
 brave info
 ```
 
-2. Build base unit based on Ubuntu Buonic:
+2. Build base unit based on Ubuntu Bionic:
 
 ```bash
 $ brave base ubuntu/bionic

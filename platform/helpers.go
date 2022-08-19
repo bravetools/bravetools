@@ -521,3 +521,26 @@ func resolveBaseImageLocation(baseImageNameAndVersion string) (location string, 
 
 	return "", fmt.Errorf("image %q location could not be resolved", baseImageNameAndVersion)
 }
+
+func getBaseOnlyServices(composeFile *shared.ComposeFile) (serviceNames []string) {
+	for serviceName := range composeFile.Services {
+		if composeFile.Services[serviceName].Base && !composeFile.Services[serviceName].Build {
+			serviceNames = append(serviceNames, serviceName)
+		}
+	}
+	return serviceNames
+}
+
+func getBuildDependents(dependency string, composeFile *shared.ComposeFile) (serviceNames []string) {
+	for service := range composeFile.Services {
+		if imageExists(composeFile.Services[service].Image) {
+			continue
+		}
+		for _, dependsOn := range composeFile.Services[service].Depends {
+			if dependsOn == dependency {
+				serviceNames = append(serviceNames, service)
+			}
+		}
+	}
+	return serviceNames
+}
