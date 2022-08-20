@@ -203,16 +203,18 @@ Usage:
   brave [command]
 
 Available Commands:
-  base        Build a base unit
+  base        Pull a base image from LXD Image Server or public Github Bravefile
   build       Build an image from a Bravefile
-  configure   Configure local host parameters such as storage
+  compose     Compose a system from a set of images
+  configure   Configure local host parameters
   deploy      Deploy Unit from image
   help        Help about any command
   images      List images
-  import      Import a tarball into local Bravetools image repository
+  import      Import an LXD image tarball into local Bravetools image repository
   info        Display workspace information
   init        Create a new Bravetools host
   mount       Mount a directory to a Unit
+  publish     Publish deployed Unit as image
   remove      Remove a Unit or an Image
   start       Start Unit
   stop        Stop Unit
