@@ -2,6 +2,7 @@ package commands
 
 import (
 	"log"
+	"os"
 	"path/filepath"
 
 	"github.com/bravetools/bravetools/shared"
@@ -21,6 +22,10 @@ func compose(cmd *cobra.Command, args []string) {
 	baseDir := "."
 	if len(args) > 0 {
 		baseDir = args[0]
+		_, err := os.Stat(baseDir)
+		if err != nil {
+			log.Fatal("unable to read brave-compose.yaml: ", err)
+		}
 	}
 
 	// Load composefile from directory. Favour ".yaml" over ".yml" but accept both.
@@ -38,7 +43,7 @@ func compose(cmd *cobra.Command, args []string) {
 	err := composefile.Load(p)
 
 	if err != nil {
-		log.Fatal("Failed to load compose file: ", err)
+		log.Fatal("failed to load compose file: ", err)
 	}
 
 	err = host.Compose(backend, composefile)

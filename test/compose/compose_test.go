@@ -10,7 +10,7 @@ import (
 )
 
 func TestCompose(t *testing.T) {
-	host := *platform.NewBraveHost()
+	host, err := *platform.NewBraveHost()
 	backend, err := platform.NewHostBackend(host)
 	if err != nil {
 		log.Fatal(err)
