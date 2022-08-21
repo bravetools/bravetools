@@ -1,5 +1,5 @@
 base:
-  image: alpine/edge/arm64
+  image: alpine/edge
   location: public
 
 packages:

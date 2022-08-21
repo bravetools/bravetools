@@ -1,6 +1,8 @@
 package shared
 
 import (
+	"errors"
+
 	"gopkg.in/yaml.v2"
 )
 
@@ -88,6 +90,23 @@ func (bravefile *Bravefile) Load(file string) error {
 	err = yaml.Unmarshal(buf.Bytes(), &bravefile)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// Validate validates Bravefile
+func (bravefile *Bravefile) Validate() error {
+	if bravefile.Base.Image == "" {
+		return errors.New("invalid Bravefile: empty Base Image")
+	}
+
+	if bravefile.PlatformService.Name == "" {
+		return errors.New("invalid Bravefile: empty Platform Service Name")
+	}
+
+	if bravefile.PlatformService.Image == "" {
+		return errors.New("invalid Bravefile: empty Platform Service Image Name")
 	}
 
 	return nil
