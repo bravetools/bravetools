@@ -490,6 +490,11 @@ func Launch(ctx context.Context, localLxd lxd.InstanceServer, name string, alias
 		return fingerprint, err
 	}
 
+	a := strings.Split(alias, "/")
+	if len(a) < 3 {
+		alias = alias + "/" + runtime.GOARCH
+	}
+
 	operation := shared.Info("Importing " + alias)
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stdout))
 	s.Suffix = " " + operation
@@ -1107,6 +1112,12 @@ func GetFingerprintByAlias(lxdServer lxd.ImageServer, alias string) (fingerprint
 
 // GetImageByAlias retrieves image by name
 func GetImageByAlias(lxdImageServer lxd.ImageServer, alias string) (image *api.Image, err error) {
+
+	a := strings.Split(alias, "/")
+	if len(a) < 3 {
+		alias = alias + "/" + runtime.GOARCH
+	}
+
 	imageFingerprint, err := GetFingerprintByAlias(lxdImageServer, alias)
 	if err != nil {
 		return nil, err
