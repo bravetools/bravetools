@@ -98,15 +98,15 @@ func (bravefile *Bravefile) Load(file string) error {
 // Validate validates Bravefile
 func (bravefile *Bravefile) Validate() error {
 	if bravefile.Base.Image == "" {
-		return errors.New("invalid Bravefile: empty Base Image")
+		return errors.New("invalid Bravefile: empty Base Image name")
 	}
 
 	if bravefile.PlatformService.Name == "" {
-		return errors.New("invalid Bravefile: empty Platform Service Name")
+		return errors.New("invalid Bravefile: empty Service Name")
 	}
 
 	if bravefile.PlatformService.Image == "" {
-		return errors.New("invalid Bravefile: empty Platform Service Image Name")
+		return errors.New("invalid Bravefile: empty Service Image name")
 	}
 
 	return nil
