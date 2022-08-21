@@ -1163,6 +1163,15 @@ func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (
 		}
 	}
 
+	// Validate Bravefiles
+	for _, serviceName := range topologicalOrdering {
+		service := composeFile.Services[serviceName]
+		err := service.BravefileBuild.Validate()
+		if err != nil {
+			return err
+		}
+	}
+
 	// (Optionally build) and deploy each service
 	for _, serviceName := range topologicalOrdering {
 		service := composeFile.Services[serviceName]
