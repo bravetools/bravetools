@@ -337,10 +337,17 @@ func GetBraveProfile(lxdServer lxd.InstanceServer) (braveProfile shared.BravePro
 	braveProfile.LxdVersion = srv.Environment.ServerVersion
 	pNames, _ := lxdServer.GetProfileNames()
 
-	profileName, err := getCurrentUsername()
+	host, err := NewBraveHost()
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+
+	profileName := host.Settings.Profile
+
+	//profileName, err := getCurrentUsername()
+	//if err != nil {
+	//	log.Fatal(err.Error())
+	//}
 
 	for _, pName := range pNames {
 		if pName == profileName {
@@ -455,10 +462,17 @@ func LaunchFromImage(lxdServer lxd.InstanceServer, image string, name string) er
 	}
 	req.Source.Alias = name
 
-	profileName, err := getCurrentUsername()
+	host, err := NewBraveHost()
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+
+	profileName := host.Settings.Profile
+
+	//profileName, err := getCurrentUsername()
+	//if err != nil {
+	//	log.Fatal(err.Error())
+	//}
 	req.Profiles = []string{profileName}
 
 	image = alias.Target
@@ -524,10 +538,16 @@ func Launch(ctx context.Context, localLxd lxd.InstanceServer, name string, alias
 		},
 	}
 
-	profileName, err := getCurrentUsername()
+	host, err := NewBraveHost()
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+	profileName := host.Settings.Profile
+	//profileName, err := getCurrentUsername()
+	//if err != nil {
+	//	log.Fatal(err.Error())
+	//}
+
 	req.Profiles = []string{profileName}
 
 	op, err := localLxd.CreateContainer(req)
