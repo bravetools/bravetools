@@ -7,6 +7,7 @@ base:
   location: public
 
 service:
+  image: <service>
   name: <service>
   version: 1.0
 `
