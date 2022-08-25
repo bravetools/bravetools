@@ -105,7 +105,7 @@ func (vm Multipass) BraveBackendInit() error {
 		"multipass-sshfs")
 
 	if err != nil {
-		return errors.New("Failed to update workspace: " + err.Error())
+		return errors.New("failed to update workspace: " + err.Error())
 	}
 
 	err = shared.ExecCommand("multipass",
@@ -114,7 +114,7 @@ func (vm Multipass) BraveBackendInit() error {
 		vm.Settings.Name+":/home/ubuntu"+shared.BraveHome)
 
 	if err != nil {
-		return errors.New("Unable to mount local volumes to multipass: " + err.Error())
+		return errors.New("unable to mount local volumes to multipass: " + err.Error())
 	}
 
 	err = shared.ExecCommand("multipass",
@@ -126,7 +126,7 @@ func (vm Multipass) BraveBackendInit() error {
 		"update")
 
 	if err != nil {
-		return errors.New("Failed to update workspace: " + err.Error())
+		return errors.New("failed to update workspace: " + err.Error())
 	}
 
 	shared.ExecCommand("multipass",
@@ -178,19 +178,19 @@ func (vm Multipass) BraveBackendInit() error {
 		"ubuntu")
 
 	if err != nil {
-		return errors.New("Failed to install packages in workspace: " + err.Error())
+		return errors.New("failed to install packages in workspace: " + err.Error())
 	}
 
 	fmt.Println("Installing required software ...")
 	time.Sleep(10 * time.Second)
 
 	timestamp := time.Now()
-	storagePoolName := vm.Settings.StoragePool.Name + "-" + timestamp.Format("20060102150405")
+	storagePoolName := vm.Settings.Profile + "-" + timestamp.Format("20060102150405")
 	vm.Settings.StoragePool.Name = storagePoolName
 
 	err = UpdateBraveSettings(vm.Settings)
 	if err != nil {
-		return errors.New("Failed update settings" + err.Error())
+		return errors.New("failed update settings" + err.Error())
 	}
 
 	var lxdInit = `cat <<EOF | sudo lxd init --preseed
@@ -226,7 +226,7 @@ EOF`
 		"create",
 		vm.Settings.Profile)
 	if err != nil {
-		return errors.New("Failed to create LXD profile: " + err.Error())
+		return errors.New("failed to create LXD profile: " + err.Error())
 	}
 
 	err = shared.ExecCommand("multipass",
@@ -240,7 +240,7 @@ EOF`
 		vm.Settings.StoragePool.Type,
 		"size="+vm.Settings.StoragePool.Size)
 	if err != nil {
-		return errors.New("Failed to create storage pool: " + err.Error())
+		return errors.New("failed to create storage pool: " + err.Error())
 	}
 
 	shared.ExecCommand("multipass",
@@ -265,7 +265,7 @@ EOF`
 		"-c",
 		lxdInit)
 	if err != nil {
-		return errors.New("Failed to initiate workspace: " + err.Error())
+		return errors.New("failed to initiate workspace: " + err.Error())
 	}
 
 	err = shared.ExecCommand("multipass",
@@ -278,7 +278,7 @@ EOF`
 		"core.https_address",
 		"[::]:8443")
 	if err != nil {
-		return errors.New("Error connecting to workspace: " + err.Error())
+		return errors.New("error connecting to workspace: " + err.Error())
 	}
 
 	err = shared.ExecCommand("multipass",
@@ -291,7 +291,7 @@ EOF`
 		"core.trust_password",
 		vm.Settings.Trust)
 	if err != nil {
-		return errors.New("Error setting workspace security: " + err.Error())
+		return errors.New("error setting workspace security: " + err.Error())
 	}
 
 	vm.Settings.Status = "active"
@@ -345,7 +345,7 @@ func (vm Multipass) Info() (backendInfo Info, err error) {
 		go func() {
 			backendInfo.Disk, err = vm.getDiskUsage()
 			if err != nil {
-				errChan <- errors.New("Unable to access host disk usage: " + err.Error())
+				errChan <- errors.New("unable to access host disk usage: " + err.Error())
 			} else {
 				doneChan <- struct{}{}
 			}

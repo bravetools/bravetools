@@ -1,7 +1,12 @@
 package shared
 
 import (
+	"bytes"
 	"errors"
+	"fmt"
+	"net/http"
+	"regexp"
+	"strings"
 
 	"gopkg.in/yaml.v2"
 )
@@ -147,4 +152,78 @@ func (s *Service) Merge(service *Service) {
 	if len(s.Postdeploy.Run) == 0 {
 		s.Postdeploy.Run = append(s.Postdeploy.Run, service.Postdeploy.Run...)
 	}
+}
+
+// GetBravefileFromGitHub reads bravefile from a github URL
+func GetBravefileFromGitHub(name string) (*Bravefile, error) {
+	var bravefile Bravefile
+	var baseConfig string
+
+	path := strings.SplitN(name, "/", -1)
+	if len(path) <= 3 {
+		return nil, fmt.Errorf("failed to retrieve image %q from github", name)
+	}
+	user := path[1]
+	repository := path[2]
+	project := strings.Join(path[3:], "/")
+
+	url := "https://raw.githubusercontent.com/" + user + "/" + repository + "/master/" + project + "/Bravefile"
+
+	response, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+
+	if response.StatusCode == http.StatusOK {
+		buf := new(bytes.Buffer)
+		buf.ReadFrom(response.Body)
+		baseConfig = buf.String()
+	}
+
+	if len(baseConfig) == 0 {
+		return nil, errors.New("unable to download valid Bravefile. Check your URL")
+	}
+
+	err = yaml.Unmarshal([]byte(baseConfig), &bravefile)
+	if err != nil {
+		return nil, err
+	}
+
+	return &bravefile, nil
+}
+
+// GetBravefileFromLXD generates a Bravefile for import of images from LXD repository
+func GetBravefileFromLXD(name string) (*Bravefile, error) {
+	var bravefile Bravefile
+	var baseConfig string
+
+	dist := strings.SplitN(name, "/", -1)
+
+	if len(dist) == 1 {
+		return nil, errors.New("brave base accepts image names in the format NAME/VERSION/ARCH. See https://images.linuxcontainers.org for a list of supported images")
+	}
+
+	version := strings.SplitN(dist[1], ".", 2)
+	distroVersion := version[0]
+
+	if len(version) > 1 {
+		distroVersion = strings.Join(version[:], "")
+	}
+
+	service := "brave-base-" + dist[0] + "-" + distroVersion
+
+	baseConfig = BRAVEFILE
+
+	nameRegexp, _ := regexp.Compile("<name>")
+	serviceRegexp, _ := regexp.Compile("<service>")
+
+	baseConfig = nameRegexp.ReplaceAllString(baseConfig, name)
+	baseConfig = serviceRegexp.ReplaceAllString(baseConfig, service)
+
+	err := yaml.Unmarshal([]byte(baseConfig), &bravefile)
+	if err != nil {
+		return nil, err
+	}
+
+	return &bravefile, nil
 }
