@@ -198,7 +198,7 @@ pools:
 - name: ` + vm.Settings.StoragePool.Name + "\n" +
 		`  driver: zfs
 networks:
-- name: ` + "bravebr0\n" +
+- name: ` + vm.Settings.Profile + "br0\n" +
 		`  type: bridge
   config:` + "\n" +
 		"    ipv4.address: " + vm.Settings.Network.Bridge + "/24 \n" +
@@ -213,7 +213,7 @@ profiles:
 		`      type: disk
     eth0:
       nictype: bridged
-      parent: ` + "bravebr0\n" +
+      parent: ` + vm.Settings.Profile + "br0\n" +
 		`      type: nic
 EOF`
 

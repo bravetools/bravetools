@@ -38,13 +38,6 @@ func deleteBraveHome() error {
 	return err
 }
 
-// func checkBravetoolsHome() bool {
-// 	userHome, _ := os.UserHomeDir()
-// 	bravetoolsHome := path.Join(userHome, ".bravetools")
-// 	checkPath, _ := shared.CheckPath(bravetoolsHome)
-// 	return checkPath
-// }
-
 func lxdCheck(vm Lxd) (status LxdStatus, lxcPath string, err error) {
 	switch vm.Settings.BackendSettings.Type {
 	case "lxd":
@@ -155,7 +148,7 @@ func initiateLxd(vm Lxd, whichLxc string) error {
 		whichLxc,
 		"network",
 		"create",
-		"bravebr0",
+		vm.Settings.Profile+"br0",
 		"ipv6.address=none",
 		bridge,
 		"ipv4.nat=true")
@@ -170,13 +163,13 @@ func initiateLxd(vm Lxd, whichLxc string) error {
 		whichLxc,
 		"network",
 		"attach-profile",
-		"bravebr0",
+		vm.Settings.Profile+"br0",
 		vm.Settings.Profile,
 		"eth0")
 	if err != nil {
 		_ = shared.ExecCommand(whichLxc, "profile", "delete", vm.Settings.Profile)
 		_ = shared.ExecCommand(whichLxc, "storage", "delete", vm.Settings.StoragePool.Name)
-		_ = shared.ExecCommand(whichLxc, "network", "delete", "bravebr0")
+		_ = shared.ExecCommand(whichLxc, "network", "delete", vm.Settings.Profile+"br0")
 
 		return errors.New("Failed to attach network to profile: " + err.Error())
 	}

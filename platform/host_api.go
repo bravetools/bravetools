@@ -956,7 +956,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 		return errors.New("failed to launch unit: " + err.Error())
 	}
 
-	err = AttachNetwork(lxdServer, unitParams.Name, "bravebr0", "eth0", "eth0")
+	err = AttachNetwork(lxdServer, unitParams.Name, bh.Settings.Name+"br0", "eth0", "eth0")
 	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to attach network: " + err.Error())
 	}
