@@ -30,7 +30,7 @@ func includeInitFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVarP(&hostConfigPath, "config", "c", "", "Path to the host configuration file [OPTIONAL]")
 	cmd.PersistentFlags().StringVarP(&storage, "storage", "s", "12", "Host storage size in GB[OPTIONAL]. default: 12")
 	cmd.PersistentFlags().StringVarP(&ram, "memory", "m", "4GB", "Host memory size [OPTIONAL]. default 4GB")
-	cmd.PersistentFlags().StringVarP(&network, "network", "n", "10.0.0.1", "Host network IP range [OPTIONAL]. default: 10.0.0.1")
+	cmd.PersistentFlags().StringVarP(&network, "network", "n", "", "Host network IP range [OPTIONAL]. default: randomly generate RFC1918 address")
 }
 
 func serverInit(cmd *cobra.Command, args []string) {
@@ -54,6 +54,14 @@ func serverInit(cmd *cobra.Command, args []string) {
 			fmt.Println(err.Error())
 		}
 		log.Fatal("unsupported host OS: ", hostOs)
+	}
+
+	if network == "" {
+		ip, err := shared.GenerateRandomRFC1919()
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+		network = ip
 	}
 
 	log.Println("Initialising a new Bravetools configuration")

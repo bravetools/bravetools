@@ -10,7 +10,6 @@ import (
 	"io"
 	"math/rand"
 	"net"
-	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -20,7 +19,7 @@ import (
 	"unicode"
 
 	"github.com/briandowns/spinner"
-	"gopkg.in/yaml.v2"
+	"github.com/lxc/lxd/shared"
 )
 
 var (
@@ -65,7 +64,7 @@ func ping(ip string, port string) error {
 
 	if conn != nil {
 		defer conn.Close()
-		return errors.New("Port " + port + " already assigned on host")
+		return errors.New("port " + port + " already assigned on host")
 	}
 
 	return err
@@ -83,78 +82,34 @@ func TCPPortStatus(ip string, ports []string) error {
 	return nil
 }
 
-// GetBravefileFromGitHub reads bravefile from a github URL
-func GetBravefileFromGitHub(name string) (*Bravefile, error) {
-	var bravefile Bravefile
-	var baseConfig string
+//GenerateRandomRFC1919 generates a random address in 10.x.x.1/24 range
+func GenerateRandomRFC1919() (string, error) {
+	for i := 0; i < 100; i++ {
+		cidr := fmt.Sprintf("10.%d.%d.1/24", rand.Intn(255), rand.Intn(255))
+		ip, _, err := net.ParseCIDR(cidr)
+		if err != nil {
+			continue
+		}
 
-	path := strings.SplitN(name, "/", -1)
-	if len(path) <= 3 {
-		return nil, fmt.Errorf("failed to retrieve image %q from github", name)
-	}
-	user := path[1]
-	repository := path[2]
-	project := strings.Join(path[3:], "/")
+		if pingIP(ip) {
+			continue
+		}
 
-	url := "https://raw.githubusercontent.com/" + user + "/" + repository + "/master/" + project + "/Bravefile"
-
-	response, err := http.Get(url)
-	if err != nil {
-		return nil, err
+		return ip.String(), nil
 	}
 
-	if response.StatusCode == http.StatusOK {
-		buf := new(bytes.Buffer)
-		buf.ReadFrom(response.Body)
-		baseConfig = buf.String()
-	}
-
-	if len(baseConfig) == 0 {
-		return nil, errors.New("Unable to download valid Bravefile. Check your URL")
-	}
-
-	err = yaml.Unmarshal([]byte(baseConfig), &bravefile)
-	if err != nil {
-		return nil, err
-	}
-
-	return &bravefile, nil
+	return "", fmt.Errorf("failed to automatically find an unused IPv4 subnet, manual configuration required")
 }
 
-// GetBravefileFromLXD generates a Bravefile for import of images from LXD repository
-func GetBravefileFromLXD(name string) (*Bravefile, error) {
-	var bravefile Bravefile
-	var baseConfig string
-
-	dist := strings.SplitN(name, "/", -1)
-
-	if len(dist) == 1 {
-		return nil, errors.New("brave base accepts image names in the format NAME/VERSION/ARCH. See https://images.linuxcontainers.org for a list of supported images")
+// pingIP sends a single ping packet to the specified IP, returns true if responds, false if not.
+func pingIP(ip net.IP) bool {
+	cmd := "ping"
+	if ip.To4() == nil {
+		cmd = "ping6"
 	}
 
-	version := strings.SplitN(dist[1], ".", 2)
-	distroVersion := version[0]
-
-	if len(version) > 1 {
-		distroVersion = strings.Join(version[:], "")
-	}
-
-	service := "brave-base-" + dist[0] + "-" + distroVersion
-
-	baseConfig = BRAVEFILE
-
-	nameRegexp, _ := regexp.Compile("<name>")
-	serviceRegexp, _ := regexp.Compile("<service>")
-
-	baseConfig = nameRegexp.ReplaceAllString(baseConfig, name)
-	baseConfig = serviceRegexp.ReplaceAllString(baseConfig, service)
-
-	err := yaml.Unmarshal([]byte(baseConfig), &bravefile)
-	if err != nil {
-		return nil, err
-	}
-
-	return &bravefile, nil
+	_, err := shared.RunCommand(cmd, "-n", "-q", ip.String(), "-c", "1", "-W", "1")
+	return err == nil
 }
 
 // CopyFile util function
@@ -334,7 +289,7 @@ func FileHash(filePath string) (string, error) {
 
 	file, err := os.Open(filePath)
 	if err != nil {
-		return MD5String, errors.New("Failed to open disk file: " + err.Error())
+		return MD5String, errors.New("failed to open disk file: " + err.Error())
 	}
 
 	defer file.Close()
@@ -342,7 +297,7 @@ func FileHash(filePath string) (string, error) {
 
 	//Copy the file in the hash interface and check for errors
 	if _, err := io.Copy(hash, file); err != nil {
-		return MD5String, errors.New("Failed to copy a file: " + err.Error())
+		return MD5String, errors.New("failed to copy a file: " + err.Error())
 	}
 
 	hashInBytes := hash.Sum(nil)[:16]

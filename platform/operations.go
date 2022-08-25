@@ -1183,7 +1183,6 @@ func DeleteImageByFingerprint(lxdServer lxd.InstanceServer, fingerprint string) 
 }
 
 // AttachNetwork attaches unit to internal network bridge
-// lxc network attach [remote]lxdbr0 [name] eth0 eth0
 func AttachNetwork(lxdServer lxd.InstanceServer, name string, bridge string, nic1 string, nic2 string) error {
 	network, _, err := lxdServer.GetNetwork(bridge)
 

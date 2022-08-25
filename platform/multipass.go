@@ -105,7 +105,7 @@ func (vm Multipass) BraveBackendInit() error {
 		"multipass-sshfs")
 
 	if err != nil {
-		return errors.New("Failed to update workspace: " + err.Error())
+		return errors.New("failed to update workspace: " + err.Error())
 	}
 
 	err = shared.ExecCommand("multipass",
@@ -114,7 +114,7 @@ func (vm Multipass) BraveBackendInit() error {
 		vm.Settings.Name+":/home/ubuntu"+shared.BraveHome)
 
 	if err != nil {
-		return errors.New("Unable to mount local volumes to multipass: " + err.Error())
+		return errors.New("unable to mount local volumes to multipass: " + err.Error())
 	}
 
 	err = shared.ExecCommand("multipass",
@@ -126,7 +126,7 @@ func (vm Multipass) BraveBackendInit() error {
 		"update")
 
 	if err != nil {
-		return errors.New("Failed to update workspace: " + err.Error())
+		return errors.New("failed to update workspace: " + err.Error())
 	}
 
 	shared.ExecCommand("multipass",
@@ -178,7 +178,7 @@ func (vm Multipass) BraveBackendInit() error {
 		"ubuntu")
 
 	if err != nil {
-		return errors.New("Failed to install packages in workspace: " + err.Error())
+		return errors.New("failed to install packages in workspace: " + err.Error())
 	}
 
 	fmt.Println("Installing required software ...")
@@ -198,7 +198,7 @@ pools:
 - name: ` + vm.Settings.StoragePool.Name + "\n" +
 		`  driver: zfs
 networks:
-- name: ` + vm.Settings.Profile + "br0\n" +
+- name: ` + "bravebr0\n" +
 		`  type: bridge
   config:` + "\n" +
 		"    ipv4.address: " + vm.Settings.Network.Bridge + "/24 \n" +
@@ -213,7 +213,7 @@ profiles:
 		`      type: disk
     eth0:
       nictype: bridged
-      parent: ` + vm.Settings.Profile + "br0\n" +
+      parent: ` + "bravebr0\n" +
 		`      type: nic
 EOF`
 
