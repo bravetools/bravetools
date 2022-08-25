@@ -127,7 +127,7 @@ func initiateLxd(vm Lxd, whichLxc string) error {
 		"create",
 		vm.Settings.Profile)
 	if err != nil {
-		return errors.New("Failed to create LXD profile: " + err.Error())
+		return errors.New("failed to create LXD profile: " + err.Error())
 	}
 
 	err = shared.ExecCommand(
@@ -139,7 +139,7 @@ func initiateLxd(vm Lxd, whichLxc string) error {
 		"size="+vm.Settings.StoragePool.Size)
 	if err != nil {
 		_ = shared.ExecCommand(whichLxc, "profile", "delete", vm.Settings.Profile)
-		return errors.New("Failed to create storage pool: " + err.Error())
+		return errors.New("failed to create storage pool: " + err.Error())
 	}
 
 	bridge := "ipv4.address=" + vm.Settings.Network.Bridge + "/24"
@@ -156,7 +156,7 @@ func initiateLxd(vm Lxd, whichLxc string) error {
 		_ = shared.ExecCommand(whichLxc, "profile", "delete", vm.Settings.Profile)
 		_ = shared.ExecCommand(whichLxc, "storage", "delete", vm.Settings.StoragePool.Name)
 
-		return errors.New("Failed to create network: " + err.Error())
+		return errors.New("failed to create network: " + err.Error())
 	}
 
 	err = shared.ExecCommand(
@@ -171,7 +171,7 @@ func initiateLxd(vm Lxd, whichLxc string) error {
 		_ = shared.ExecCommand(whichLxc, "storage", "delete", vm.Settings.StoragePool.Name)
 		_ = shared.ExecCommand(whichLxc, "network", "delete", vm.Settings.Profile+"br0")
 
-		return errors.New("Failed to attach network to profile: " + err.Error())
+		return errors.New("failed to attach network to profile: " + err.Error())
 	}
 
 	shared.ExecCommand(
@@ -239,7 +239,7 @@ func enableRemote(vm Lxd, whichLxc string) error {
 		"core.https_address",
 		"[::]:8443")
 	if err != nil {
-		return errors.New("Error connecting to workspace: " + err.Error())
+		return errors.New("error connecting to workspace: " + err.Error())
 	}
 
 	err = shared.ExecCommand(
@@ -249,7 +249,7 @@ func enableRemote(vm Lxd, whichLxc string) error {
 		"core.trust_password",
 		vm.Settings.Trust)
 	if err != nil {
-		return errors.New("Error setting workspace security: " + err.Error())
+		return errors.New("error setting workspace security: " + err.Error())
 	}
 
 	return nil
@@ -262,17 +262,17 @@ func (vm Lxd) Info() (Info, error) {
 
 	_, whichLxc, err := lxdCheck(vm)
 	if err != nil {
-		return backendInfo, errors.New("Failed to identify LXD: " + err.Error())
+		return backendInfo, errors.New("failed to identify LXD: " + err.Error())
 	}
 
 	name, err := os.Hostname()
 	if err != nil {
-		return backendInfo, errors.New("Failed to get host name: " + err.Error())
+		return backendInfo, errors.New("failed to get host name: " + err.Error())
 	}
 
 	conn, err := net.Dial("udp", "8.8.8.8:80")
 	if err != nil {
-		return backendInfo, errors.New("Failed to establish UDP connection: " + err.Error())
+		return backendInfo, errors.New("failed to establish UDP connection: " + err.Error())
 	}
 
 	defer conn.Close()
@@ -295,7 +295,7 @@ func (vm Lxd) Info() (Info, error) {
 		"--bytes")
 
 	if err != nil {
-		return backendInfo, errors.New("Unable to access host disk usage: " + err.Error())
+		return backendInfo, errors.New("unable to access host disk usage: " + err.Error())
 	}
 
 	scanner := bufio.NewScanner(strings.NewReader(storageInfo))

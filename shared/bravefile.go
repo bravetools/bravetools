@@ -181,7 +181,7 @@ func GetBravefileFromGitHub(name string) (*Bravefile, error) {
 	}
 
 	if len(baseConfig) == 0 {
-		return nil, errors.New("Unable to download valid Bravefile. Check your URL")
+		return nil, errors.New("unable to download valid Bravefile. Check your URL")
 	}
 
 	err = yaml.Unmarshal([]byte(baseConfig), &bravefile)
