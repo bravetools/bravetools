@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/bravetools/bravetools/shared"
 )
@@ -42,6 +43,17 @@ func NewBravehostRemote(settings BackendSettings) Remote {
 		Protocol: protocol,
 		Public:   false,
 	}
+}
+
+// ParseRemoteName unpacks remote and rest of image/service name and returns both
+func ParseRemoteName(image string) (remote string, imageName string) {
+	split := strings.SplitN(image, ":", 2)
+	if len(split) == 1 {
+		// Default remote
+		return shared.BravetoolsRemote, split[0]
+	}
+
+	return split[0], split[1]
 }
 
 // loadRemoteConfig loads a saved bravetools remote config
