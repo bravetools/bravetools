@@ -19,12 +19,13 @@ type Remote struct {
 	URL        string `json:"url"`
 	Protocol   string `json:"protocol"`
 	Public     bool   `json:"public"`
+	Profile    string `json:"profile"`
 	key        string
 	cert       string
 	servercert string
 }
 
-func NewBravehostRemote(settings BackendSettings) Remote {
+func NewBravehostRemote(settings BackendSettings, profileName string) Remote {
 	var protocol string
 	var url string
 
@@ -42,6 +43,7 @@ func NewBravehostRemote(settings BackendSettings) Remote {
 		URL:      url,
 		Protocol: protocol,
 		Public:   false,
+		Profile:  profileName,
 	}
 }
 

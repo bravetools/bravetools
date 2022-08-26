@@ -141,7 +141,7 @@ func serverInit(cmd *cobra.Command, args []string) {
 	}
 
 	log.Println("Registering a Remote")
-	host.Remote = platform.NewBravehostRemote(host.Settings.BackendSettings)
+	host.Remote = platform.NewBravehostRemote(host.Settings.BackendSettings, host.Settings.Profile)
 	err = platform.SaveRemote(host.Remote)
 	if err != nil {
 		if err := deleteBraveHome(userHome); err != nil {

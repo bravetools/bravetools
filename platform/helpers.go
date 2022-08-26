@@ -129,11 +129,11 @@ func createSharedVolume(lxdServer lxd.InstanceServer,
 	return nil
 }
 
-func importLXD(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *shared.Bravefile) (fingerprint string, err error) {
+func importLXD(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *shared.Bravefile, profileName string) (fingerprint string, err error) {
 	if err = ctx.Err(); err != nil {
 		return "", err
 	}
-	fingerprint, err = Launch(ctx, lxdServer, bravefile.PlatformService.Name, bravefile.Base.Image)
+	fingerprint, err = Launch(ctx, lxdServer, bravefile.PlatformService.Name, bravefile.Base.Image, profileName)
 	if err != nil {
 		return fingerprint, errors.New("failed to launch base unit: " + err.Error())
 	}
@@ -141,7 +141,7 @@ func importLXD(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *sha
 	return fingerprint, nil
 }
 
-func importGitHub(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *shared.Bravefile, bh *BraveHost) (fingerprint string, err error) {
+func importGitHub(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *shared.Bravefile, bh *BraveHost, profileName string) (fingerprint string, err error) {
 	if err = ctx.Err(); err != nil {
 		return "", err
 	}
@@ -171,11 +171,11 @@ func importGitHub(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *
 	remoteBravefile.Base.Image = remoteServiceName
 	remoteBravefile.PlatformService.Name = bravefile.PlatformService.Name
 
-	fingerprint, err = importLocal(ctx, lxdServer, remoteBravefile)
+	fingerprint, err = importLocal(ctx, lxdServer, remoteBravefile, profileName)
 	return fingerprint, err
 }
 
-func importLocal(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *shared.Bravefile) (fingerprint string, err error) {
+func importLocal(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *shared.Bravefile, profileName string) (fingerprint string, err error) {
 	if err = ctx.Err(); err != nil {
 		return "", err
 	}
@@ -196,7 +196,7 @@ func importLocal(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *s
 		return fingerprint, err
 	}
 
-	err = LaunchFromImage(lxdServer, bravefile.Base.Image, bravefile.PlatformService.Name)
+	err = LaunchFromImage(lxdServer, bravefile.Base.Image, bravefile.PlatformService.Name, profileName)
 	if err != nil {
 		return fingerprint, errors.New("failed to launch unit: " + err.Error())
 	}
@@ -456,13 +456,13 @@ func addIPRules(lxdServer lxd.InstanceServer, ct string, hostPort string, ctPort
 	return nil
 }
 
-func checkUnits(lxdServer lxd.InstanceServer, unitName string) error {
+func checkUnits(lxdServer lxd.InstanceServer, unitName string, profileName string) error {
 	if unitName == "" {
 		return errors.New("unit name cannot be empty")
 	}
 
 	// Unit Checks
-	unitList, err := GetUnits(lxdServer)
+	unitList, err := GetUnits(lxdServer, profileName)
 	if err != nil {
 		return err
 	}

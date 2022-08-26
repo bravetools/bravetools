@@ -295,7 +295,7 @@ func (bh *BraveHost) ListUnits(backend Backend) error {
 		return err
 	}
 
-	units, err := GetUnits(lxdServer)
+	units, err := GetUnits(lxdServer, bh.Remote.Profile)
 	if err != nil {
 		return errors.New("Failed to list units: " + err.Error())
 	}
@@ -409,7 +409,7 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 		return err
 	}
 
-	names, err := GetUnits(lxdServer)
+	names, err := GetUnits(lxdServer, bh.Remote.Profile)
 	if err != nil {
 		return errors.New("faild to access units")
 	}
@@ -516,7 +516,7 @@ func (bh *BraveHost) DeleteUnit(name string) error {
 		return err
 	}
 
-	unitList, err := GetUnits(lxdServer)
+	unitList, err := GetUnits(lxdServer, bh.Remote.Profile)
 	if err != nil {
 		return errors.New("failed to list existing units: " + err.Error())
 	}
@@ -580,7 +580,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		return err
 	}
 
-	err = checkUnits(lxdServer, bravefile.PlatformService.Name)
+	err = checkUnits(lxdServer, bravefile.PlatformService.Name, bh.Remote.Profile)
 	if err != nil {
 		return err
 	}
@@ -634,7 +634,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 			return err
 		}
 
-		imageFingerprint, err = importLXD(ctx, lxdServer, bravefile)
+		imageFingerprint, err = importLXD(ctx, lxdServer, bravefile, bh.Remote.Profile)
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
@@ -644,7 +644,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 			return err
 		}
 	case "github":
-		imageFingerprint, err = importGitHub(ctx, lxdServer, bravefile, bh)
+		imageFingerprint, err = importGitHub(ctx, lxdServer, bravefile, bh, bh.Remote.Profile)
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
@@ -664,7 +664,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 			return err
 		}
 
-		imageFingerprint, err = importLocal(ctx, lxdServer, bravefile)
+		imageFingerprint, err = importLocal(ctx, lxdServer, bravefile, bh.Remote.Profile)
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
@@ -899,13 +899,18 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 		return fmt.Errorf("failed to load remote %q for requested unit %q: %s", deployRemoteName, unitName, err.Error())
 	}
 
+	// Deployment LXD profile - if not specified use remote default profile
+	if unitParams.Profile == "" {
+		unitParams.Profile = deployRemote.Profile
+	}
+
 	lxdServer, err := GetLXDInstanceServer(deployRemote)
 	if err != nil {
 		return err
 	}
 
 	// Check if a unit with this name already exists - we don't want to delete it
-	err = checkUnits(lxdServer, unitName)
+	err = checkUnits(lxdServer, unitName, unitParams.Profile)
 	if err != nil {
 		return err
 	}
@@ -926,6 +931,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 	defer DeleteImageByFingerprint(lxdServer, fingerprint)
 
 	// Resource checks
+	// TODO: this should use a profile
 	err = CheckResources(unitParams.Image, backend, unitParams, bh)
 	if err != nil {
 		return err
@@ -950,7 +956,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 	}
 
 	// Launch unit and set up cleanup code to delete it if an error encountered during deployment
-	err = LaunchFromImage(lxdServer, unitName, unitName)
+	err = LaunchFromImage(lxdServer, unitName, unitName, unitParams.Profile)
 	defer func() {
 		if err != nil {
 			delErr := DeleteUnit(lxdServer, unitName)

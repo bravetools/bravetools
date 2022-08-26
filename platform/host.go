@@ -185,8 +185,7 @@ func ConfigureHost(settings HostSettings, remote Remote) error {
 	if err != nil {
 		return err
 	}
-
-	units, err := GetUnits(lxdServer)
+	units, err := GetUnits(lxdServer, settings.Profile)
 	if err != nil {
 		return errors.New("failed to list units: " + err.Error())
 	}
