@@ -176,9 +176,30 @@ func AddRemote(remote Remote, password string) error {
 	if err != nil {
 		return err
 	}
-	err = lxdServer.CreateCertificate(req)
+
+	// Ensure we are not already trusted by server before adding cert
+	server, _, err := lxdServer.GetServer()
 	if err != nil {
 		return err
+	}
+	if server.Auth != "trusted" {
+		err = lxdServer.CreateCertificate(req)
+		if err != nil {
+			return err
+		}
+
+		// Reconnect and check if now trusted
+		lxdServer, err = GetLXDInstanceServer(remote)
+		if err != nil {
+			return err
+		}
+		server, _, err = lxdServer.GetServer()
+		if err != nil {
+			return err
+		}
+		if server.Auth != "trusted" {
+			return errors.New("failed to authenticate with server - still not trusted after adding cert")
+		}
 	}
 
 	return nil
@@ -194,9 +215,13 @@ func RemoveRemote(name string) error {
 	if err != nil {
 		return err
 	}
-	err = os.Remove(certs)
-	if err != nil {
-		return err
+
+	// Remove associated cert if it exists
+	if shared.FileExists(certs) {
+		err = os.Remove(certs)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
