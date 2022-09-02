@@ -46,6 +46,7 @@ func init() {
 	BravetoolsCmd.AddCommand(baseBuild)
 	BravetoolsCmd.AddCommand(braveVersion)
 	BravetoolsCmd.AddCommand(braveCompose)
+	BravetoolsCmd.AddCommand(remoteCmd)
 
 	userHome, _ := os.UserHomeDir()
 	exists, err := shared.CheckPath(path.Join(userHome, shared.PlatformConfig))
