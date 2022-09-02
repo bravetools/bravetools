@@ -215,9 +215,13 @@ func RemoveRemote(name string) error {
 	if err != nil {
 		return err
 	}
-	err = os.Remove(certs)
-	if err != nil {
-		return err
+
+	// Remove associated cert if it exists
+	if shared.FileExists(certs) {
+		err = os.Remove(certs)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
