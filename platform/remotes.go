@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	"github.com/bravetools/bravetools/shared"
@@ -133,6 +134,25 @@ func SaveRemote(remote Remote) error {
 	}
 
 	return os.WriteFile(path, remoteJson, 0666)
+}
+
+func ListRemotes() (names []string, err error) {
+	userHome, err := os.UserHomeDir()
+	if err != nil {
+		return names, errors.New("failed to list remotes: " + err.Error())
+	}
+
+	dir, err := os.Open(path.Join(userHome, shared.BraveRemoteStore))
+	if err != nil {
+		return names, errors.New("failed to list remotes: " + err.Error())
+	}
+
+	names, err = dir.Readdirnames(-1)
+	for i := range names {
+		names[i] = strings.TrimSuffix(names[i], filepath.Ext(names[i]))
+	}
+
+	return names, err
 }
 
 func loadKey(path string) (string, error) {
