@@ -42,7 +42,7 @@ var remoteRemoveCmd = &cobra.Command{
 var remoteGetCmd = &cobra.Command{
 	Use:   "get",
 	Short: "Get a remote",
-	Long:  "",
+	Long:  "Returns a JSON string listing configuration of selected remote",
 	Args:  cobra.ExactArgs(1),
 	Run:   remoteGet,
 }
