@@ -295,7 +295,7 @@ func (bh *BraveHost) ListUnits(backend Backend) error {
 		return err
 	}
 
-	units, err := GetUnits(lxdServer)
+	units, err := GetUnits(lxdServer, bh.Remote.Profile)
 	if err != nil {
 		return errors.New("Failed to list units: " + err.Error())
 	}
@@ -409,7 +409,7 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 		return err
 	}
 
-	names, err := GetUnits(lxdServer)
+	names, err := GetUnits(lxdServer, bh.Remote.Profile)
 	if err != nil {
 		return errors.New("faild to access units")
 	}
@@ -516,7 +516,7 @@ func (bh *BraveHost) DeleteUnit(name string) error {
 		return err
 	}
 
-	unitList, err := GetUnits(lxdServer)
+	unitList, err := GetUnits(lxdServer, bh.Remote.Profile)
 	if err != nil {
 		return errors.New("failed to list existing units: " + err.Error())
 	}
@@ -580,7 +580,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		return err
 	}
 
-	err = checkUnits(lxdServer, bravefile.PlatformService.Name)
+	err = checkUnits(lxdServer, bravefile.PlatformService.Name, bh.Remote.Profile)
 	if err != nil {
 		return err
 	}
@@ -634,7 +634,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 			return err
 		}
 
-		imageFingerprint, err = importLXD(ctx, lxdServer, bravefile)
+		imageFingerprint, err = importLXD(ctx, lxdServer, bravefile, bh.Remote.Profile)
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
@@ -644,7 +644,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 			return err
 		}
 	case "github":
-		imageFingerprint, err = importGitHub(ctx, lxdServer, bravefile, bh)
+		imageFingerprint, err = importGitHub(ctx, lxdServer, bravefile, bh, bh.Remote.Profile)
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
@@ -664,7 +664,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 			return err
 		}
 
-		imageFingerprint, err = importLocal(ctx, lxdServer, bravefile)
+		imageFingerprint, err = importLocal(ctx, lxdServer, bravefile, bh.Remote.Profile)
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
@@ -890,15 +890,27 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 		return errors.New("unit image name cannot be empty")
 	}
 
-	lxdServer, err := GetLXDInstanceServer(bh.Remote)
+	fmt.Println(shared.Info("Deploying Unit " + unitParams.Name))
+
+	// Connect to deploy target remote
+	deployRemoteName, unitName := ParseRemoteName(unitParams.Name)
+	deployRemote, err := LoadRemoteSettings(deployRemoteName)
+	if err != nil {
+		return fmt.Errorf("failed to load remote %q for requested unit %q: %s", deployRemoteName, unitName, err.Error())
+	}
+
+	// Deployment LXD profile - if not specified use remote default profile
+	if unitParams.Profile == "" {
+		unitParams.Profile = deployRemote.Profile
+	}
+
+	lxdServer, err := GetLXDInstanceServer(deployRemote)
 	if err != nil {
 		return err
 	}
-	fmt.Println(shared.Info("Deploying Unit " + unitParams.Name))
 
 	// Check if a unit with this name already exists - we don't want to delete it
-
-	err = checkUnits(lxdServer, unitParams.Name)
+	err = checkUnits(lxdServer, unitName, unitParams.Profile)
 	if err != nil {
 		return err
 	}
@@ -919,6 +931,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 	defer DeleteImageByFingerprint(lxdServer, fingerprint)
 
 	// Resource checks
+	// TODO: this should use a profile
 	err = CheckResources(unitParams.Image, backend, unitParams, bh)
 	if err != nil {
 		return err
@@ -937,16 +950,16 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 		}
 	}()
 
-	_, err = ImportImage(lxdServer, image, unitParams.Name)
+	_, err = ImportImage(lxdServer, image, unitName)
 	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to import image: " + err.Error())
 	}
 
 	// Launch unit and set up cleanup code to delete it if an error encountered during deployment
-	err = LaunchFromImage(lxdServer, unitParams.Name, unitParams.Name)
+	err = LaunchFromImage(lxdServer, unitName, unitName, unitParams.Profile)
 	defer func() {
 		if err != nil {
-			delErr := DeleteUnit(lxdServer, unitParams.Name)
+			delErr := DeleteUnit(lxdServer, unitName)
 			if delErr != nil {
 				fmt.Println("failed to delete unit: " + delErr.Error())
 			}
@@ -956,22 +969,22 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 		return errors.New("failed to launch unit: " + err.Error())
 	}
 
-	err = AttachNetwork(lxdServer, unitParams.Name, bh.Settings.Name+"br0", "eth0", "eth0")
+	err = AttachNetwork(lxdServer, unitName, bh.Settings.Name+"br0", "eth0", "eth0")
 	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to attach network: " + err.Error())
 	}
 
-	err = ConfigDevice(lxdServer, unitParams.Name, "eth0", unitParams.IP)
+	err = ConfigDevice(lxdServer, unitName, "eth0", unitParams.IP)
 	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to set IP: " + err.Error())
 	}
 
-	err = Stop(lxdServer, unitParams.Name)
+	err = Stop(lxdServer, unitName)
 	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to stop unit: " + err.Error())
 	}
 
-	err = Start(lxdServer, unitParams.Name)
+	err = Start(lxdServer, unitName)
 	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("Failed to restart unit: " + err.Error())
 	}
@@ -1027,23 +1040,23 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 	if unitParams.Resources.GPU == "yes" {
 		config["nvidia.runtime"] = "true"
 		device := map[string]string{"type": "gpu"}
-		err = AddDevice(lxdServer, unitParams.Name, "gpu", device)
+		err = AddDevice(lxdServer, unitName, "gpu", device)
 		if err != nil {
 			return errors.New("failed to add GPU device: " + err.Error())
 		}
 	}
 
-	err = SetConfig(lxdServer, unitParams.Name, config)
+	err = SetConfig(lxdServer, unitName, config)
 	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("error configuring unit: " + err.Error())
 	}
 
-	err = Stop(lxdServer, unitParams.Name)
+	err = Stop(lxdServer, unitName)
 	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to stop unit: " + err.Error())
 	}
 
-	err = Start(lxdServer, unitParams.Name)
+	err = Start(lxdServer, unitName)
 	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to restart unit: " + err.Error())
 	}
@@ -1057,7 +1070,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 				return
 			}
 
-			err = addIPRules(lxdServer, unitParams.Name, ps[1], ps[0])
+			err = addIPRules(lxdServer, unitName, ps[1], ps[0])
 			if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 				return errors.New("unable to add Proxy Device: " + err.Error())
 			}
@@ -1085,7 +1098,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 
 	uuid, _ := uuid.NewUUID()
 	braveUnit.UID = uuid.String()
-	braveUnit.Name = unitParams.Name
+	braveUnit.Name = unitName
 	braveUnit.Date = time.Now().String()
 
 	var unitData db.UnitData

@@ -176,9 +176,30 @@ func AddRemote(remote Remote, password string) error {
 	if err != nil {
 		return err
 	}
-	err = lxdServer.CreateCertificate(req)
+
+	// Ensure we are not already trusted by server before adding cert
+	server, _, err := lxdServer.GetServer()
 	if err != nil {
 		return err
+	}
+	if server.Auth != "trusted" {
+		err = lxdServer.CreateCertificate(req)
+		if err != nil {
+			return err
+		}
+
+		// Reconnect and check if now trusted
+		lxdServer, err = GetLXDInstanceServer(remote)
+		if err != nil {
+			return err
+		}
+		server, _, err = lxdServer.GetServer()
+		if err != nil {
+			return err
+		}
+		if server.Auth != "trusted" {
+			return errors.New("failed to authenticate with server - still not trusted after adding cert")
+		}
 	}
 
 	return nil
@@ -194,9 +215,13 @@ func RemoveRemote(name string) error {
 	if err != nil {
 		return err
 	}
-	err = os.Remove(certs)
-	if err != nil {
-		return err
+
+	// Remove associated cert if it exists
+	if shared.FileExists(certs) {
+		err = os.Remove(certs)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -329,25 +354,13 @@ func GetVolume(lxdServer lxd.InstanceServer, pool string) (volume api.StorageVol
 }
 
 // GetBraveProfile ..
-func GetBraveProfile(lxdServer lxd.InstanceServer) (braveProfile shared.BraveProfile, err error) {
+func GetBraveProfile(lxdServer lxd.InstanceServer, profileName string) (braveProfile shared.BraveProfile, err error) {
 	srv, _, err := lxdServer.GetServer()
 	if err != nil {
 		log.Fatal("LXD server error: " + err.Error())
 	}
 	braveProfile.LxdVersion = srv.Environment.ServerVersion
 	pNames, _ := lxdServer.GetProfileNames()
-
-	host, err := NewBraveHost()
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	profileName := host.Settings.Profile
-
-	//profileName, err := getCurrentUsername()
-	//if err != nil {
-	//	log.Fatal(err.Error())
-	//}
 
 	for _, pName := range pNames {
 		if pName == profileName {
@@ -367,9 +380,9 @@ func GetBraveProfile(lxdServer lxd.InstanceServer) (braveProfile shared.BravePro
 	return braveProfile, errors.New("profile not found")
 }
 
-func containerHasProfile(container *api.Container, profile *shared.BraveProfile) bool {
+func containerHasProfile(container *api.Container, profileName string) bool {
 	for _, p := range container.ContainerPut.Profiles {
-		if p == profile.Name {
+		if p == profileName {
 			return true
 		}
 	}
@@ -377,12 +390,7 @@ func containerHasProfile(container *api.Container, profile *shared.BraveProfile)
 }
 
 // GetUnits returns all running units
-func GetUnits(lxdServer lxd.InstanceServer) (units []shared.BraveUnit, err error) {
-	userProfile, err := GetBraveProfile(lxdServer)
-	if err != nil {
-		return nil, err
-	}
-
+func GetUnits(lxdServer lxd.InstanceServer, profileName string) (units []shared.BraveUnit, err error) {
 	names, err := lxdServer.GetContainerNames()
 	if err != nil {
 		return nil, err
@@ -392,8 +400,8 @@ func GetUnits(lxdServer lxd.InstanceServer) (units []shared.BraveUnit, err error
 		var unit shared.BraveUnit
 		container, _, _ := lxdServer.GetContainer(n)
 
-		// Check if current user profile manages this container
-		if !containerHasProfile(container, &userProfile) {
+		// Check if selected user profile manages this container
+		if !containerHasProfile(container, profileName) {
 			continue
 		}
 
@@ -446,7 +454,7 @@ func GetUnits(lxdServer lxd.InstanceServer) (units []shared.BraveUnit, err error
 }
 
 // LaunchFromImage creates new unit based on image
-func LaunchFromImage(lxdServer lxd.InstanceServer, image string, name string) error {
+func LaunchFromImage(lxdServer lxd.InstanceServer, image string, name string, profileName string) error {
 	operation := shared.Info("Launching " + name)
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
 	s.Suffix = " " + operation
@@ -461,18 +469,6 @@ func LaunchFromImage(lxdServer lxd.InstanceServer, image string, name string) er
 		return err
 	}
 	req.Source.Alias = name
-
-	host, err := NewBraveHost()
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-
-	profileName := host.Settings.Profile
-
-	//profileName, err := getCurrentUsername()
-	//if err != nil {
-	//	log.Fatal(err.Error())
-	//}
 	req.Profiles = []string{profileName}
 
 	image = alias.Target
@@ -499,7 +495,7 @@ func LaunchFromImage(lxdServer lxd.InstanceServer, image string, name string) er
 // Launch starts a new unit based on standard image from linuxcontainers.org
 // Alias: "ubuntu/bionic/amd64"
 // Alias: "alpine/3.9/amd64"
-func Launch(ctx context.Context, localLxd lxd.InstanceServer, name string, alias string) (fingerprint string, err error) {
+func Launch(ctx context.Context, localLxd lxd.InstanceServer, name string, alias string, profileName string) (fingerprint string, err error) {
 	if err = ctx.Err(); err != nil {
 		return fingerprint, err
 	}
@@ -537,16 +533,6 @@ func Launch(ctx context.Context, localLxd lxd.InstanceServer, name string, alias
 			Fingerprint: fingerprint,
 		},
 	}
-
-	host, err := NewBraveHost()
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	profileName := host.Settings.Profile
-	//profileName, err := getCurrentUsername()
-	//if err != nil {
-	//	log.Fatal(err.Error())
-	//}
 
 	req.Profiles = []string{profileName}
 

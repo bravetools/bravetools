@@ -8,6 +8,8 @@ import (
 	"io"
 	"os"
 	"path"
+	"path/filepath"
+	"strings"
 
 	"github.com/bravetools/bravetools/shared"
 )
@@ -18,12 +20,13 @@ type Remote struct {
 	URL        string `json:"url"`
 	Protocol   string `json:"protocol"`
 	Public     bool   `json:"public"`
+	Profile    string `json:"profile"`
 	key        string
 	cert       string
 	servercert string
 }
 
-func NewBravehostRemote(settings BackendSettings) Remote {
+func NewBravehostRemote(settings BackendSettings, profileName string) Remote {
 	var protocol string
 	var url string
 
@@ -41,7 +44,19 @@ func NewBravehostRemote(settings BackendSettings) Remote {
 		URL:      url,
 		Protocol: protocol,
 		Public:   false,
+		Profile:  profileName,
 	}
+}
+
+// ParseRemoteName unpacks remote and rest of image/service name and returns both
+func ParseRemoteName(image string) (remote string, imageName string) {
+	split := strings.SplitN(image, ":", 2)
+	if len(split) == 1 {
+		// Default remote
+		return shared.BravetoolsRemote, split[0]
+	}
+
+	return split[0], split[1]
 }
 
 // loadRemoteConfig loads a saved bravetools remote config
@@ -119,6 +134,25 @@ func SaveRemote(remote Remote) error {
 	}
 
 	return os.WriteFile(path, remoteJson, 0666)
+}
+
+func ListRemotes() (names []string, err error) {
+	userHome, err := os.UserHomeDir()
+	if err != nil {
+		return names, errors.New("failed to list remotes: " + err.Error())
+	}
+
+	dir, err := os.Open(path.Join(userHome, shared.BraveRemoteStore))
+	if err != nil {
+		return names, errors.New("failed to list remotes: " + err.Error())
+	}
+
+	names, err = dir.Readdirnames(-1)
+	for i := range names {
+		names[i] = strings.TrimSuffix(names[i], filepath.Ext(names[i]))
+	}
+
+	return names, err
 }
 
 func loadKey(path string) (string, error) {
