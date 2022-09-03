@@ -122,6 +122,15 @@ func LoadRemoteSettings(remoteName string) (Remote, error) {
 }
 
 func SaveRemote(remote Remote) error {
+	remoteNames, err := ListRemotes()
+	if err != nil {
+		return err
+	}
+
+	if shared.StringInSlice(remote.Name, remoteNames) {
+		return errors.New("remote " + remote.Name + " already exists")
+	}
+
 	userHome, err := os.UserHomeDir()
 	if err != nil {
 		return fmt.Errorf("failed to save remote %q: %s", remote.Name, err.Error())

@@ -207,11 +207,21 @@ func AddRemote(remote Remote, password string) error {
 
 // RemoveRemote removes remote LXC host
 func RemoveRemote(name string) error {
+
+	remoteNames, err := ListRemotes()
+	if err != nil {
+		return err
+	}
+
+	if !shared.StringInSlice(name, remoteNames) {
+		return errors.New("remote " + name + " does not exist")
+	}
+
 	userHome, _ := os.UserHomeDir()
 	remotef := path.Join(userHome, shared.BraveRemoteStore, name+".json")
 	certs := path.Join(userHome, shared.BraveServerCertStore, name+".crt")
 
-	err := os.Remove(remotef)
+	err = os.Remove(remotef)
 	if err != nil {
 		return err
 	}
