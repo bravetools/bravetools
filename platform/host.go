@@ -24,6 +24,7 @@ type HostSettings struct {
 	Network         Network         `yaml:"network"`
 	BackendSettings BackendSettings `yaml:"backendsettings"`
 	Status          string          `yaml:"status"`
+	Remote          string          `yaml:"remote"`
 }
 
 // Storage ..
@@ -76,7 +77,7 @@ func NewBraveHost() (*BraveHost, error) {
 	}
 
 	// Load host remote if initialized
-	host.Remote, _ = LoadRemoteSettings(shared.BravetoolsRemote)
+	host.Remote, _ = LoadRemoteSettings(host.Settings.Remote)
 
 	host.Backend, err = NewHostBackend(host.Settings)
 	if err != nil {
@@ -148,6 +149,8 @@ func SetupHostConfiguration(params HostConfig, userHome string) (settings HostSe
 		}
 		settings.BackendSettings = backendSettings
 	}
+
+	settings.Remote = shared.BravetoolsRemote
 
 	doc, err := yaml.Marshal(settings)
 	if err != nil {
@@ -241,6 +244,10 @@ func loadHostSettings(userHome string) (HostSettings, error) {
 	err = yaml.Unmarshal(buf.Bytes(), &settings)
 	if err != nil {
 		return settings, errors.New("failed to parse configuration yaml: " + err.Error())
+	}
+
+	if settings.Remote == "" {
+		settings.Remote = shared.BravetoolsRemote
 	}
 
 	return settings, nil
