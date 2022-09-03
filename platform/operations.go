@@ -109,16 +109,6 @@ func CreateStoragePool(lxdServer lxd.InstanceServer, name string, size string) e
 // AddRemote adds remote LXC host
 func AddRemote(remote Remote, password string) error {
 	var err error
-
-	remoteNames, err := ListRemotes()
-	if err != nil {
-		return err
-	}
-
-	if shared.StringInSlice(remote.Name, remoteNames) {
-		return errors.New("remote " + remote.Name + " already exists")
-	}
-
 	userHome, _ := os.UserHomeDir()
 	certf := path.Join(userHome, shared.BraveClientCert)
 	keyf := path.Join(userHome, shared.BraveClientKey)
