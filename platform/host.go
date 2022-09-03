@@ -246,5 +246,9 @@ func loadHostSettings(userHome string) (HostSettings, error) {
 		return settings, errors.New("failed to parse configuration yaml: " + err.Error())
 	}
 
+	if settings.Remote == "" {
+		settings.Remote = shared.BravetoolsRemote
+	}
+
 	return settings, nil
 }
