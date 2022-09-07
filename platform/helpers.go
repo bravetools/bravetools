@@ -500,48 +500,6 @@ func checkUnits(lxdServer lxd.InstanceServer, unitName string, profileName strin
 	return nil
 }
 
-func imageExists(imageNameAndVersion string) bool {
-	homeDir, _ := os.UserHomeDir()
-	image := path.Join(homeDir, shared.ImageStore, imageNameAndVersion+".tar.gz")
-	return shared.FileExists(image)
-}
-
-func localImageSize(imageNameAndVersion string) (bytes int64, err error) {
-	homeDir, _ := os.UserHomeDir()
-	image := path.Join(homeDir, shared.ImageStore, imageNameAndVersion+".tar.gz")
-
-	info, err := os.Stat(image)
-	if err != nil {
-		return -1, err
-	}
-	if info.IsDir() {
-		return -1, fmt.Errorf("expected image path %q to be a file, found dir", image)
-	}
-
-	return info.Size(), nil
-}
-
-func resolveBaseImageLocation(baseImageNameAndVersion string) (location string, err error) {
-
-	if strings.HasPrefix(baseImageNameAndVersion, "github.com/") {
-		return "github", nil
-	}
-	if imageExists(baseImageNameAndVersion) {
-		return "local", nil
-	}
-
-	// Query public remote for alias
-	publicLxd, err := GetSimplestreamsLXDSever("https://images.linuxcontainers.org", nil)
-	if err != nil {
-		return "", err
-	}
-	if _, err := GetFingerprintByAlias(publicLxd, baseImageNameAndVersion); err == nil {
-		return "public", nil
-	}
-
-	return "", fmt.Errorf("image %q location could not be resolved", baseImageNameAndVersion)
-}
-
 func getBaseOnlyServices(composeFile *shared.ComposeFile) (serviceNames []string) {
 	for serviceName := range composeFile.Services {
 		if composeFile.Services[serviceName].Base && !composeFile.Services[serviceName].Build {
@@ -551,9 +509,13 @@ func getBaseOnlyServices(composeFile *shared.ComposeFile) (serviceNames []string
 	return serviceNames
 }
 
-func getBuildDependents(dependency string, composeFile *shared.ComposeFile) (serviceNames []string) {
+func getBuildDependents(dependency string, composeFile *shared.ComposeFile) (serviceNames []string, err error) {
 	for service := range composeFile.Services {
-		if imageExists(composeFile.Services[service].Image) {
+		image, err := ParseImageString(composeFile.Services[service].Image)
+		if err != nil {
+			return serviceNames, err
+		}
+		if imageExists(image) {
 			continue
 		}
 		for _, dependsOn := range composeFile.Services[service].Depends {
@@ -562,5 +524,5 @@ func getBuildDependents(dependency string, composeFile *shared.ComposeFile) (ser
 			}
 		}
 	}
-	return serviceNames
+	return serviceNames, nil
 }

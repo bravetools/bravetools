@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"runtime"
 	"strings"
 
 	"gopkg.in/yaml.v2"
@@ -13,8 +14,9 @@ import (
 
 // ImageDescription defines base image type and source
 type ImageDescription struct {
-	Image    string `yaml:"image"`
-	Location string `yaml:"location"`
+	Image        string `yaml:"image"`
+	Location     string `yaml:"location"`
+	Architecture string `yaml:architecture`
 }
 
 // Packages defines system packages to install in container
@@ -78,6 +80,9 @@ type Bravefile struct {
 // NewBravefile ..
 func NewBravefile() *Bravefile {
 	return &Bravefile{
+		Base: ImageDescription{
+			Architecture: runtime.GOARCH,
+		},
 		PlatformService: Service{
 			Resources: Resources{
 				CPU: DefaultUnitCpuLimit,

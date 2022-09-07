@@ -8,7 +8,7 @@ import (
 )
 
 // CheckResources ..
-func CheckResources(image string, backend Backend, unitParams *shared.Service, bh *BraveHost) error {
+func CheckResources(image BravetoolsImage, backend Backend, unitParams *shared.Service, bh *BraveHost) error {
 	info, err := backend.Info()
 	if err != nil {
 		return errors.New("failed to connect to host: " + err.Error())

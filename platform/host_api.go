@@ -658,7 +658,12 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 	if err != nil {
 		return err
 	}
-	if imageExists(bravefile.PlatformService.Image) {
+
+	imageStruct, err := ParseImageString(bravefile.PlatformService.Image)
+	if err != nil {
+		return err
+	}
+	if imageExists(imageStruct) {
 		return &ImageExistsError{Name: bravefile.PlatformService.Image}
 	}
 
@@ -729,7 +734,15 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		}
 	case "local":
 		// Check disk space
-		imgSize, err := localImageSize(bravefile.Base.Image)
+		localBaseImage, err := ParseImageString(bravefile.Base.Image)
+		if err != nil {
+			return err
+		}
+		if !imageExists(localBaseImage) {
+			return fmt.Errorf("base image %q required for building image %q does not exist", bravefile.Base.Image, bravefile.PlatformService.Image)
+		}
+
+		imgSize, err := localImageSize(localBaseImage)
 		if err != nil {
 			return err
 		}
@@ -817,13 +830,13 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		return errors.New("failed to publish image: " + err.Error())
 	}
 
-	err = ExportImage(lxdServer, unitFingerprint, bravefile.PlatformService.Name+"-"+bravefile.PlatformService.Version)
+	err = ExportImage(lxdServer, unitFingerprint, imageStruct.ToBasename())
 	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to export image: " + err.Error())
 	}
 
 	home, _ := os.UserHomeDir()
-	localImageFile := bravefile.PlatformService.Name + "-" + bravefile.PlatformService.Version + ".tar.gz"
+	localImageFile := imageStruct.ToBasename() + ".tar.gz"
 	localHashFile := localImageFile + ".md5"
 
 	defer func() {
@@ -1024,15 +1037,15 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 	if err != nil {
 		return err
 	}
-	if !imageExists(unitParams.Image) {
+	imageStruct, err := ParseImageString(unitParams.Image)
+	if err != nil {
+		return err
+	}
+	if !imageExists(imageStruct) {
 		return fmt.Errorf("image %q does not exist", unitParams.Image)
 	}
 
-	image := path.Join(homeDir, shared.ImageStore, unitParams.Image+".tar.gz")
-
-	if !shared.FileExists(image) {
-		return fmt.Errorf("image %q does not exist", unitParams.Image)
-	}
+	image := path.Join(homeDir, shared.ImageStore, imageStruct.ToBasename()+".tar.gz")
 
 	fingerprint, err := shared.FileSha256Hash(image)
 	if err != nil {
@@ -1042,7 +1055,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 
 	// Resource checks
 	// TODO: this should use a profile
-	err = CheckResources(unitParams.Image, backend, unitParams, bh)
+	err = CheckResources(imageStruct, backend, unitParams, bh)
 	if err != nil {
 		return err
 	}
@@ -1254,7 +1267,11 @@ func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (
 
 	// Remove base-only services if all images depending on them already exist
 	for _, baseService := range getBaseOnlyServices(composeFile) {
-		if len(getBuildDependents(baseService, composeFile)) == 0 {
+		dependentServices, err := getBuildDependents(baseService, composeFile)
+		if err != nil {
+			return err
+		}
+		if len(dependentServices) == 0 {
 			serviceIdx, err := shared.StrSliceIndexOf(topologicalOrdering, baseService)
 			if err != nil {
 				return err
