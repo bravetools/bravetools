@@ -70,7 +70,7 @@ func includeRemoteAddFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&remoteArgs.Protocol, "protocol", "lxd", "LXD server protocol to connect with (e.g. 'lxd', 'simplestreams')")
 	cmd.Flags().BoolVar(&remoteArgs.Public, "public", false, "Publicly available server with no authentication")
 	cmd.Flags().StringVar(&remoteArgs.Profile, "profile", "", "Name of LXD profile to use with this remote by default (e.g. 'bravetools')")
-	cmd.Flags().StringVar(&remoteArgs.Bridge, "bridge", "", "LXD-managed bridge to use for networking containers (e.g. lxdbr0)")
+	cmd.Flags().StringVar(&remoteArgs.Network, "network", "", "LXD-managed bridge to use for networking containers (e.g. lxdbr0)")
 	cmd.Flags().StringVar(&remotePassword, "password", "", "Trusted password to use when communicating with remote")
 }
 

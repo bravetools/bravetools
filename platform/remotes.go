@@ -21,7 +21,7 @@ type Remote struct {
 	Protocol   string `json:"protocol"`
 	Public     bool   `json:"public"`
 	Profile    string `json:"profile"`
-	Bridge     string `json:"bridge"`
+	Network    string `json:"network"`
 	key        string
 	cert       string
 	servercert string
@@ -46,7 +46,7 @@ func NewBravehostRemote(settings HostSettings) Remote {
 		Protocol: protocol,
 		Public:   false,
 		Profile:  settings.Profile,
-		Bridge:   settings.Network.Bridge,
+		Network:  settings.Network.Bridge,
 	}
 }
 
