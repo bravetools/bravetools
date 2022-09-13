@@ -34,6 +34,7 @@ func includeDeployFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVarP(&deployArgs.Profile, "profile", "", "", "LXD profile to deploy to. Defaults to bravetools local profile [OPTIONAL]")
 	cmd.Flags().StringSliceVarP(&deployArgs.Ports, "port", "p", []string{}, "Publish Unit port to host [OPTIONAL]")
 	cmd.Flags().StringVarP(&deployArgs.Name, "name", "n", "", "Assign name to deployed Unit")
+	cmd.Flags().StringVar(&deployArgs.Network, "network", "", "LXD-managed bridge to use for networking containers (e.g. lxdbr0)")
 }
 
 func deploy(cmd *cobra.Command, args []string) {

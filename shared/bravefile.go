@@ -44,6 +44,7 @@ type Service struct {
 	Image      string     `yaml:"image,omitempty"`
 	Version    string     `yaml:"version,omitempty"`
 	Profile    string     `yaml:"profile,omitempty"`
+	Network    string     `yaml:"network,omitempty"`
 	Docker     string     `yaml:"docker,omitempty"`
 	IP         string     `yaml:"ip"`
 	Ports      []string   `yaml:"ports"`

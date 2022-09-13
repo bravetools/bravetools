@@ -899,9 +899,12 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 		return fmt.Errorf("failed to load remote %q for requested unit %q: %s", deployRemoteName, unitName, err.Error())
 	}
 
-	// Deployment LXD profile - if not specified use remote default profile
+	// Load remote defaults for LXD resources for deployment (profile, network, storage) if not specified in Bravefile unitParams
 	if unitParams.Profile == "" {
 		unitParams.Profile = deployRemote.Profile
+	}
+	if unitParams.Network == "" {
+		unitParams.Network = deployRemote.Network
 	}
 
 	lxdServer, err := GetLXDInstanceServer(deployRemote)
@@ -969,11 +972,12 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 		return errors.New("failed to launch unit: " + err.Error())
 	}
 
-	err = AttachNetwork(lxdServer, unitName, deployRemote.Network, "eth0", "eth0")
+	err = AttachNetwork(lxdServer, unitName, unitParams.Network, "eth0", "eth0")
 	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to attach network: " + err.Error())
 	}
 
+	// Assign static IP
 	err = ConfigDevice(lxdServer, unitName, "eth0", unitParams.IP)
 	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to set IP: " + err.Error())
