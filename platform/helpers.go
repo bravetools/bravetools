@@ -141,7 +141,7 @@ func importLXD(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *sha
 	return fingerprint, nil
 }
 
-func importGitHub(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *shared.Bravefile, bh *BraveHost, profileName string) (fingerprint string, err error) {
+func importGitHub(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *shared.Bravefile, bh *BraveHost, profileName string, storagePool string) (fingerprint string, err error) {
 	if err = ctx.Err(); err != nil {
 		return "", err
 	}
@@ -171,11 +171,11 @@ func importGitHub(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *
 	remoteBravefile.Base.Image = remoteServiceName
 	remoteBravefile.PlatformService.Name = bravefile.PlatformService.Name
 
-	fingerprint, err = importLocal(ctx, lxdServer, remoteBravefile, profileName)
+	fingerprint, err = importLocal(ctx, lxdServer, remoteBravefile, profileName, storagePool)
 	return fingerprint, err
 }
 
-func importLocal(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *shared.Bravefile, profileName string) (fingerprint string, err error) {
+func importLocal(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *shared.Bravefile, profileName string, storagePool string) (fingerprint string, err error) {
 	if err = ctx.Err(); err != nil {
 		return "", err
 	}
@@ -196,7 +196,7 @@ func importLocal(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *s
 		return fingerprint, err
 	}
 
-	err = LaunchFromImage(lxdServer, bravefile.Base.Image, bravefile.PlatformService.Name, profileName)
+	err = LaunchFromImage(lxdServer, bravefile.Base.Image, bravefile.PlatformService.Name, profileName, storagePool)
 	if err != nil {
 		return fingerprint, errors.New("failed to launch unit: " + err.Error())
 	}

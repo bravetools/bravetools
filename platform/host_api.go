@@ -644,7 +644,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 			return err
 		}
 	case "github":
-		imageFingerprint, err = importGitHub(ctx, lxdServer, bravefile, bh, bh.Remote.Profile)
+		imageFingerprint, err = importGitHub(ctx, lxdServer, bravefile, bh, bh.Remote.Profile, bh.Remote.Storage)
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
@@ -664,7 +664,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 			return err
 		}
 
-		imageFingerprint, err = importLocal(ctx, lxdServer, bravefile, bh.Remote.Profile)
+		imageFingerprint, err = importLocal(ctx, lxdServer, bravefile, bh.Remote.Profile, bh.Remote.Storage)
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
@@ -906,6 +906,9 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 	if unitParams.Network == "" {
 		unitParams.Network = deployRemote.Network
 	}
+	if unitParams.Storage == "" {
+		unitParams.Storage = deployRemote.Storage
+	}
 
 	lxdServer, err := GetLXDInstanceServer(deployRemote)
 	if err != nil {
@@ -959,7 +962,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 	}
 
 	// Launch unit and set up cleanup code to delete it if an error encountered during deployment
-	err = LaunchFromImage(lxdServer, unitName, unitName, unitParams.Profile)
+	err = LaunchFromImage(lxdServer, unitName, unitName, unitParams.Profile, unitParams.Storage)
 	defer func() {
 		if err != nil {
 			delErr := DeleteUnit(lxdServer, unitName)
