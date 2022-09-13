@@ -131,6 +131,15 @@ func (s *Service) Merge(service *Service) {
 	if s.Version == "" {
 		s.Version = service.Version
 	}
+	if s.Profile == "" {
+		s.Profile = service.Profile
+	}
+	if s.Network == "" {
+		s.Network = service.Network
+	}
+	if s.Storage == "" {
+		s.Storage = service.Storage
+	}
 	if s.Docker == "" {
 		s.Docker = service.Docker
 	}
