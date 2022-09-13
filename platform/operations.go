@@ -483,11 +483,14 @@ func LaunchFromImage(lxdServer lxd.InstanceServer, image string, name string, pr
 
 	// Attach a specific disk when launching if requested
 	if storagePool != "" {
-		pool, _, err := lxdServer.GetStoragePool(storagePool)
-		if err != nil {
-			return err
+		if req.Devices == nil {
+			req.Devices = make(map[string]map[string]string)
 		}
-		req.Devices[storagePool] = pool.Writable().Config
+		req.Devices["root"] = map[string]string{
+			"path": "/",
+			"pool": storagePool,
+			"type": "disk",
+		}
 	}
 
 	image = alias.Target
