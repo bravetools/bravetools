@@ -910,6 +910,13 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 		unitParams.Storage = deployRemote.Storage
 	}
 
+	// As last resort if not provided in Bravefile or remote, try the Brave host settings - mostly for backward compatability
+	if unitParams.Profile == "" && unitParams.Network == "" && unitParams.Storage == "" {
+		unitParams.Profile = bh.Settings.Profile
+		unitParams.Network = bh.Settings.Name
+		unitParams.Storage = bh.Settings.StoragePool.Name
+	}
+
 	lxdServer, err := GetLXDInstanceServer(deployRemote)
 	if err != nil {
 		return err
