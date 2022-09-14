@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"os/user"
@@ -328,7 +329,8 @@ func (bh *BraveHost) ListUnits(backend Backend, remoteName string) error {
 
 			lxdServer, err := GetLXDInstanceServer(deployRemote)
 			if err != nil {
-				return err
+				log.Printf("failed to connect to %q remote, skipping", deployRemote.Name)
+				continue
 			}
 
 			remoteUnits, err := GetUnits(lxdServer, deployRemote.Profile)
