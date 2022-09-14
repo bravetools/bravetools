@@ -23,7 +23,7 @@ const PlatformConfig = BraveHome + "/config.yml"
 const ImageStore = BraveHome + "/images/"
 
 // Bravetools local remote name
-const BravetoolsRemote = "bravetools"
+const BravetoolsRemote = "local"
 
 // BraveRemoteStore is path to remotes dir
 const BraveRemoteStore = BraveHome + "/remotes"
