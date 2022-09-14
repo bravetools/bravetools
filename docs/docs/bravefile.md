@@ -87,6 +87,9 @@ Controls image properties, such as name, version, and run-time configuration. It
 ```yaml
 service:
   name: alpine-edge-bazel
+  profile: brave
+  network: lxdbr0
+  storage: brave-deploy-disk
   version: 0.27.1
   ip: ""
   ports: []
