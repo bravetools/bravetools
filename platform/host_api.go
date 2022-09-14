@@ -644,7 +644,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 			return err
 		}
 	case "github":
-		imageFingerprint, err = importGitHub(ctx, lxdServer, bravefile, bh, bh.Remote.Profile)
+		imageFingerprint, err = importGitHub(ctx, lxdServer, bravefile, bh, bh.Remote.Profile, bh.Remote.Storage)
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
@@ -664,7 +664,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 			return err
 		}
 
-		imageFingerprint, err = importLocal(ctx, lxdServer, bravefile, bh.Remote.Profile)
+		imageFingerprint, err = importLocal(ctx, lxdServer, bravefile, bh.Remote.Profile, bh.Remote.Storage)
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
@@ -899,9 +899,22 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 		return fmt.Errorf("failed to load remote %q for requested unit %q: %s", deployRemoteName, unitName, err.Error())
 	}
 
-	// Deployment LXD profile - if not specified use remote default profile
+	// Load remote defaults for LXD resources for deployment (profile, network, storage) if not specified in Bravefile unitParams
 	if unitParams.Profile == "" {
 		unitParams.Profile = deployRemote.Profile
+	}
+	if unitParams.Network == "" {
+		unitParams.Network = deployRemote.Network
+	}
+	if unitParams.Storage == "" {
+		unitParams.Storage = deployRemote.Storage
+	}
+
+	// As last resort if not provided in Bravefile or remote, try the Brave host settings - mostly for backward compatability
+	if unitParams.Profile == "" && unitParams.Network == "" && unitParams.Storage == "" {
+		unitParams.Profile = bh.Settings.Profile
+		unitParams.Network = bh.Settings.Name
+		unitParams.Storage = bh.Settings.StoragePool.Name
 	}
 
 	lxdServer, err := GetLXDInstanceServer(deployRemote)
@@ -956,7 +969,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 	}
 
 	// Launch unit and set up cleanup code to delete it if an error encountered during deployment
-	err = LaunchFromImage(lxdServer, unitName, unitName, unitParams.Profile)
+	err = LaunchFromImage(lxdServer, unitName, unitName, unitParams.Profile, unitParams.Storage)
 	defer func() {
 		if err != nil {
 			delErr := DeleteUnit(lxdServer, unitName)
@@ -969,11 +982,12 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 		return errors.New("failed to launch unit: " + err.Error())
 	}
 
-	err = AttachNetwork(lxdServer, unitName, bh.Settings.Name+"br0", "eth0", "eth0")
+	err = AttachNetwork(lxdServer, unitName, unitParams.Network, "eth0", "eth0")
 	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to attach network: " + err.Error())
 	}
 
+	// Assign static IP
 	err = ConfigDevice(lxdServer, unitName, "eth0", unitParams.IP)
 	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to set IP: " + err.Error())

@@ -44,6 +44,8 @@ type Service struct {
 	Image      string     `yaml:"image,omitempty"`
 	Version    string     `yaml:"version,omitempty"`
 	Profile    string     `yaml:"profile,omitempty"`
+	Storage    string     `yaml:"storage,omitempty"`
+	Network    string     `yaml:"network,omitempty"`
 	Docker     string     `yaml:"docker,omitempty"`
 	IP         string     `yaml:"ip"`
 	Ports      []string   `yaml:"ports"`
@@ -128,6 +130,15 @@ func (s *Service) Merge(service *Service) {
 	}
 	if s.Version == "" {
 		s.Version = service.Version
+	}
+	if s.Profile == "" {
+		s.Profile = service.Profile
+	}
+	if s.Network == "" {
+		s.Network = service.Network
+	}
+	if s.Storage == "" {
+		s.Storage = service.Storage
 	}
 	if s.Docker == "" {
 		s.Docker = service.Docker

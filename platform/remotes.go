@@ -21,22 +21,24 @@ type Remote struct {
 	Protocol   string `json:"protocol"`
 	Public     bool   `json:"public"`
 	Profile    string `json:"profile"`
+	Network    string `json:"network"`
+	Storage    string `json:"storage"`
 	key        string
 	cert       string
 	servercert string
 }
 
-func NewBravehostRemote(settings BackendSettings, profileName string) Remote {
+func NewBravehostRemote(settings HostSettings) Remote {
 	var protocol string
 	var url string
 
-	switch settings.Type {
+	switch settings.BackendSettings.Type {
 	case "lxd":
 		protocol = "unix"
 		url = "/var/snap/lxd/common/lxd/unix.socket"
 	default:
 		protocol = "lxd"
-		url = "https://" + settings.Resources.IP + ":8443"
+		url = "https://" + settings.BackendSettings.Resources.IP + ":8443"
 	}
 
 	return Remote{
@@ -44,7 +46,9 @@ func NewBravehostRemote(settings BackendSettings, profileName string) Remote {
 		URL:      url,
 		Protocol: protocol,
 		Public:   false,
-		Profile:  profileName,
+		Profile:  settings.Profile,
+		Network:  settings.Network.Bridge,
+		Storage:  settings.StoragePool.Name,
 	}
 }
 

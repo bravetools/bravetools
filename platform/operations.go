@@ -464,7 +464,7 @@ func GetUnits(lxdServer lxd.InstanceServer, profileName string) (units []shared.
 }
 
 // LaunchFromImage creates new unit based on image
-func LaunchFromImage(lxdServer lxd.InstanceServer, image string, name string, profileName string) error {
+func LaunchFromImage(lxdServer lxd.InstanceServer, image string, name string, profileName string, storagePool string) error {
 	operation := shared.Info("Launching " + name)
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
 	s.Suffix = " " + operation
@@ -480,6 +480,18 @@ func LaunchFromImage(lxdServer lxd.InstanceServer, image string, name string, pr
 	}
 	req.Source.Alias = name
 	req.Profiles = []string{profileName}
+
+	// Attach a specific disk when launching if requested
+	if storagePool != "" {
+		if req.Devices == nil {
+			req.Devices = make(map[string]map[string]string)
+		}
+		req.Devices["root"] = map[string]string{
+			"path": "/",
+			"pool": storagePool,
+			"type": "disk",
+		}
+	}
 
 	image = alias.Target
 	imgInfo, _, err := lxdServer.GetImage(image)
