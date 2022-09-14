@@ -7,15 +7,24 @@ import (
 )
 
 var braveListUnits = &cobra.Command{
-	Use:   "units",
+	Use:   "units [NAME]",
 	Short: "List Units",
-	Long:  `This function returns a list of all Units deployed on a remote Bravetools host`,
-	Run:   units,
+	Long: `This function returns a list of all Units deployed on a remote Bravetools host. 
+
+If a specific remote is not specified, all units across all remotes will be returned.`,
+	Run:  units,
+	Args: cobra.RangeArgs(0, 1),
 }
 
 func units(cmd *cobra.Command, args []string) {
 	checkBackend()
-	err := host.ListUnits(backend)
+
+	remoteName := ""
+	if len(args) == 1 {
+		remoteName = args[0]
+	}
+
+	err := host.ListUnits(backend, remoteName)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -280,7 +280,7 @@ func (bh *BraveHost) HostInfo(short bool) error {
 }
 
 // ListUnits prints all LXD containers on remote host
-func (bh *BraveHost) ListUnits(backend Backend) error {
+func (bh *BraveHost) ListUnits(backend Backend, remoteName string) error {
 	info, err := backend.Info()
 	if err != nil {
 		return err
@@ -290,14 +290,58 @@ func (bh *BraveHost) ListUnits(backend Backend) error {
 		return errors.New("cannot connect to Bravetools remote, ensure it is up and running")
 	}
 
-	lxdServer, err := GetLXDInstanceServer(bh.Remote)
-	if err != nil {
-		return err
-	}
+	var units []shared.BraveUnit
 
-	units, err := GetUnits(lxdServer, bh.Remote.Profile)
-	if err != nil {
-		return errors.New("Failed to list units: " + err.Error())
+	if remoteName != "" {
+		deployRemote, err := LoadRemoteSettings(remoteName)
+		if err != nil {
+			return err
+		}
+
+		lxdServer, err := GetLXDInstanceServer(deployRemote)
+		if err != nil {
+			return err
+		}
+
+		units, err = GetUnits(lxdServer, deployRemote.Profile)
+		if err != nil {
+			return errors.New("Failed to list units: " + err.Error())
+		}
+	} else {
+		// Load all units on all remotes
+
+		remoteNames, err := ListRemotes()
+		if err != nil {
+			return err
+		}
+
+		for i := range remoteNames {
+			deployRemote, err := LoadRemoteSettings(remoteNames[i])
+			if err != nil {
+				return err
+			}
+
+			// If no auth, this isn't a deploy remote unless unix protocol
+			if (deployRemote.key == "" || deployRemote.cert == "") && deployRemote.Protocol != "unix" {
+				continue
+			}
+
+			lxdServer, err := GetLXDInstanceServer(deployRemote)
+			if err != nil {
+				return err
+			}
+
+			remoteUnits, err := GetUnits(lxdServer, deployRemote.Profile)
+			if err != nil {
+				return errors.New("Failed to list units: " + err.Error())
+			}
+
+			// Prefix unit name with remote name
+			for j := range remoteUnits {
+				remoteUnits[j].Name = deployRemote.Name + ":" + remoteUnits[j].Name
+			}
+			units = append(units, remoteUnits...)
+		}
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
