@@ -142,13 +142,13 @@ func initiateLxd(vm Lxd, whichLxc string) error {
 		return errors.New("failed to create storage pool: " + err.Error())
 	}
 
-	bridge := "ipv4.address=" + vm.Settings.Network.Bridge + "/24"
+	bridge := "ipv4.address=" + vm.Settings.Network.IP + "/24"
 
 	err = shared.ExecCommand(
 		whichLxc,
 		"network",
 		"create",
-		vm.Settings.Profile+"br0",
+		vm.Settings.Network.Name,
 		"ipv6.address=none",
 		bridge,
 		"ipv4.nat=true")
@@ -163,13 +163,13 @@ func initiateLxd(vm Lxd, whichLxc string) error {
 		whichLxc,
 		"network",
 		"attach-profile",
-		vm.Settings.Profile+"br0",
+		vm.Settings.Network.Name,
 		vm.Settings.Profile,
 		"eth0")
 	if err != nil {
 		_ = shared.ExecCommand(whichLxc, "profile", "delete", vm.Settings.Profile)
 		_ = shared.ExecCommand(whichLxc, "storage", "delete", vm.Settings.StoragePool.Name)
-		_ = shared.ExecCommand(whichLxc, "network", "delete", vm.Settings.Profile+"br0")
+		_ = shared.ExecCommand(whichLxc, "network", "delete", vm.Settings.Network.Name)
 
 		return errors.New("failed to attach network to profile: " + err.Error())
 	}

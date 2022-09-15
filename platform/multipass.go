@@ -198,10 +198,10 @@ pools:
 - name: ` + vm.Settings.StoragePool.Name + "\n" +
 		`  driver: zfs
 networks:
-- name: ` + vm.Settings.Profile + "br0\n" +
+- name: ` + vm.Settings.Network.Name + "\n" +
 		`  type: bridge
   config:` + "\n" +
-		"    ipv4.address: " + vm.Settings.Network.Bridge + "/24 \n" +
+		"    ipv4.address: " + vm.Settings.Network.IP + "/24 \n" +
 		`    ipv4.nat: true
     ipv6.address: none
 profiles:
@@ -213,7 +213,7 @@ profiles:
 		`      type: disk
     eth0:
       nictype: bridged
-      parent: ` + vm.Settings.Profile + "br0\n" +
+      parent: ` + vm.Settings.Network.Name + "\n" +
 		`      type: nic
 EOF`
 

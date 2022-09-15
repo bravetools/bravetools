@@ -47,7 +47,7 @@ func NewBravehostRemote(settings HostSettings) Remote {
 		Protocol: protocol,
 		Public:   false,
 		Profile:  settings.Profile,
-		Network:  settings.Network.Bridge,
+		Network:  settings.Network.Name,
 		Storage:  settings.StoragePool.Name,
 	}
 }

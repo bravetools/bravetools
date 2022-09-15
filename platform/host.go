@@ -36,7 +36,8 @@ type Storage struct {
 
 // Network ..
 type Network struct {
-	Bridge string `yaml:"bridge"`
+	Name string `yaml:"name"`
+	IP   string `yaml:"ip"`
 }
 
 // BackendSettings ..
@@ -107,6 +108,8 @@ func SetupHostConfiguration(params HostConfig, userHome string) (settings HostSe
 	timestamp := time.Now()
 	storagePoolName := hostName + "-" + timestamp.Format("20060102150405")
 
+	networkBridgeName := hostName + "br0"
+
 	settings = HostSettings{
 		Name:    hostName,
 		Trust:   hostName,
@@ -117,7 +120,8 @@ func SetupHostConfiguration(params HostConfig, userHome string) (settings HostSe
 			Size: strconv.Itoa(poolSizeInt) + "GB",
 		},
 		Network: Network{
-			Bridge: params.Network,
+			Name: networkBridgeName,
+			IP:   params.Network,
 		},
 		Status: "inactive",
 	}
