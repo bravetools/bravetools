@@ -37,7 +37,7 @@ type Storage struct {
 // Network ..
 type Network struct {
 	Name string `yaml:"name"`
-	IP   string `yaml:"bridge"`
+	IP   string `yaml:"ip"`
 }
 
 // BackendSettings ..
