@@ -701,16 +701,6 @@ func DeleteUnit(lxdServer lxd.InstanceServer, name string) error {
 		return err
 	}
 
-	devices := []string{}
-	for key, value := range unit.Devices {
-		if value["type"] == "disk" {
-			devices = append(devices, key)
-		}
-	}
-	if len(devices) > 0 {
-		return errors.New("cannot delete unit " + name + " due to mounted disks. Umount them and try again")
-	}
-
 	if unit.Status == "Running" {
 
 		req := api.InstanceStatePut{
