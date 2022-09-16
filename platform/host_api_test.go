@@ -128,7 +128,7 @@ func Test_InitUnit(t *testing.T) {
 		t.Error("host.StopUnit: ", err)
 	}
 
-	err = host.StartUnit("alpine-test", host.Backend)
+	err = host.StartUnit("alpine-test")
 	if err != nil {
 		t.Error("host.StartUnit: ", err)
 	}

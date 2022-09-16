@@ -20,7 +20,7 @@ func start(cmd *cobra.Command, args []string) {
 		log.Fatal("missing name - please provide unit name")
 	}
 
-	err := host.StartUnit(args[0], backend)
+	err := host.StartUnit(args[0])
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)
