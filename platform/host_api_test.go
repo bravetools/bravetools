@@ -123,12 +123,12 @@ func Test_InitUnit(t *testing.T) {
 		t.Error("host.DeleteImageByName: ", err)
 	}
 
-	err = host.StopUnit("alpine-test", host.Backend)
+	err = host.StopUnit("alpine-test")
 	if err != nil {
 		t.Error("host.StopUnit: ", err)
 	}
 
-	err = host.StartUnit("alpine-test", host.Backend)
+	err = host.StartUnit("alpine-test")
 	if err != nil {
 		t.Error("host.StartUnit: ", err)
 	}

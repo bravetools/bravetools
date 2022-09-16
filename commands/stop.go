@@ -21,7 +21,7 @@ func stop(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	err := host.StopUnit(args[0], backend)
+	err := host.StopUnit(args[0])
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(1)

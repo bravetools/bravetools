@@ -304,7 +304,12 @@ func (bh *BraveHost) ListUnits(backend Backend, remoteName string) error {
 			return err
 		}
 
-		units, err = GetUnits(lxdServer, deployRemote.Profile)
+		deployProfile := deployRemote.Profile
+		if deployProfile == "" {
+			deployProfile = deployRemote.Profile
+		}
+
+		units, err = GetUnits(lxdServer, deployProfile)
 		if err != nil {
 			return errors.New("Failed to list units: " + err.Error())
 		}
@@ -557,12 +562,36 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 func (bh *BraveHost) DeleteUnit(name string) error {
 	var unitNames []string
 
-	lxdServer, err := GetLXDInstanceServer(bh.Remote)
+	remoteName, name := ParseRemoteName(name)
+
+	// If local remote, ensure the VM is started
+	if remoteName == shared.BravetoolsRemote {
+		info, err := bh.Backend.Info()
+		if err != nil {
+			return errors.New("Failed to get host info: " + err.Error())
+		}
+		if strings.ToLower(info.State) == "stopped" {
+			return errors.New("Backend is stopped")
+		}
+	}
+
+	remote, err := LoadRemoteSettings(remoteName)
 	if err != nil {
 		return err
 	}
 
-	unitList, err := GetUnits(lxdServer, bh.Remote.Profile)
+	lxdServer, err := GetLXDInstanceServer(remote)
+	if err != nil {
+		return err
+	}
+
+	// Remote profile to filter units by - try using deploy profile. If not, fallback to brave host profile.
+	remoteProfile := remote.Profile
+	if remoteProfile == "" {
+		remoteProfile = bh.Remote.Profile
+	}
+
+	unitList, err := GetUnits(lxdServer, remoteProfile)
 	if err != nil {
 		return errors.New("failed to list existing units: " + err.Error())
 	}
@@ -597,7 +626,6 @@ func (bh *BraveHost) DeleteUnit(name string) error {
 		return errors.New("failed to delete unit from database. Name: " + name + " Error: " + err.Error())
 	}
 
-	//fmt.Println("Unit deleted: ", name)
 	return nil
 }
 
@@ -878,16 +906,27 @@ func (bh *BraveHost) PublishUnit(name string, backend Backend) error {
 }
 
 // StopUnit stops unit using name
-func (bh *BraveHost) StopUnit(name string, backend Backend) error {
-	info, err := backend.Info()
-	if err != nil {
-		return errors.New("Failed to get host info: " + err.Error())
-	}
-	if strings.ToLower(info.State) == "stopped" {
-		return errors.New("Backend is stopped")
+func (bh *BraveHost) StopUnit(name string) error {
+
+	remoteName, name := ParseRemoteName(name)
+
+	// If local remote, ensure the VM is started
+	if remoteName == shared.BravetoolsRemote {
+		info, err := bh.Backend.Info()
+		if err != nil {
+			return errors.New("Failed to get host info: " + err.Error())
+		}
+		if strings.ToLower(info.State) == "stopped" {
+			return errors.New("Backend is stopped")
+		}
 	}
 
-	lxdServer, err := GetLXDInstanceServer(bh.Remote)
+	remote, err := LoadRemoteSettings(remoteName)
+	if err != nil {
+		return err
+	}
+
+	lxdServer, err := GetLXDInstanceServer(remote)
 	if err != nil {
 		return err
 	}
@@ -902,16 +941,26 @@ func (bh *BraveHost) StopUnit(name string, backend Backend) error {
 }
 
 // StartUnit restarts unit if running and starts if stopped.
-func (bh *BraveHost) StartUnit(name string, backend Backend) error {
-	info, err := backend.Info()
-	if err != nil {
-		return errors.New("Failed to get host info: " + err.Error())
-	}
-	if strings.ToLower(info.State) == "stopped" {
-		return errors.New("Backend is stopped")
+func (bh *BraveHost) StartUnit(name string) error {
+	remoteName, name := ParseRemoteName(name)
+
+	// If local remote, ensure the VM is started
+	if remoteName == shared.BravetoolsRemote {
+		info, err := bh.Backend.Info()
+		if err != nil {
+			return errors.New("Failed to get host info: " + err.Error())
+		}
+		if strings.ToLower(info.State) == "stopped" {
+			return errors.New("Backend is stopped")
+		}
 	}
 
-	lxdServer, err := GetLXDInstanceServer(bh.Remote)
+	remote, err := LoadRemoteSettings(remoteName)
+	if err != nil {
+		return err
+	}
+
+	lxdServer, err := GetLXDInstanceServer(remote)
 	if err != nil {
 		return err
 	}
