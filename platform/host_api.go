@@ -304,7 +304,12 @@ func (bh *BraveHost) ListUnits(backend Backend, remoteName string) error {
 			return err
 		}
 
-		units, err = GetUnits(lxdServer, deployRemote.Profile)
+		deployProfile := deployRemote.Profile
+		if deployProfile == "" {
+			deployProfile = deployRemote.Profile
+		}
+
+		units, err = GetUnits(lxdServer, deployProfile)
 		if err != nil {
 			return errors.New("Failed to list units: " + err.Error())
 		}
