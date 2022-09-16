@@ -1,7 +1,6 @@
 package platform
 
 import (
-	"context"
 	"log"
 	"testing"
 
@@ -82,8 +81,6 @@ func Test_InitUnit(t *testing.T) {
 		t.Fatal("failed to create host: ", err.Error())
 	}
 
-	ctx := context.Background()
-
 	bravefile := *shared.NewBravefile()
 	bravefile.Base.Image = "alpine/edge/amd64"
 	bravefile.Base.Location = "public"
@@ -121,17 +118,12 @@ func Test_InitUnit(t *testing.T) {
 		t.Error("host.InitUnit: ", err)
 	}
 
-	err = host.Postdeploy(ctx, &bravefile.PlatformService)
-	if err != nil {
-		t.Error("host.Postdeploy: ", err)
-	}
-
 	err = host.DeleteLocalImage("alpine-test-1.0")
 	if err != nil {
 		t.Error("host.DeleteImageByName: ", err)
 	}
 
-	err = host.StopUnit("alpine-test", host.Backend)
+	err = host.StopUnit("alpine-test")
 	if err != nil {
 		t.Error("host.StopUnit: ", err)
 	}
@@ -175,7 +167,7 @@ func Test_ListUnits(t *testing.T) {
 		t.Error("host.HostInfo: ", err)
 	}
 
-	err = host.ListUnits(host.Backend)
+	err = host.ListUnits(host.Backend, "")
 	if err != nil {
 		t.Error("host.ListLocalImages: ", err)
 	}

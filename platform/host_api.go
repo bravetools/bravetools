@@ -878,16 +878,27 @@ func (bh *BraveHost) PublishUnit(name string, backend Backend) error {
 }
 
 // StopUnit stops unit using name
-func (bh *BraveHost) StopUnit(name string, backend Backend) error {
-	info, err := backend.Info()
-	if err != nil {
-		return errors.New("Failed to get host info: " + err.Error())
-	}
-	if strings.ToLower(info.State) == "stopped" {
-		return errors.New("Backend is stopped")
+func (bh *BraveHost) StopUnit(name string) error {
+
+	remoteName, name := ParseRemoteName(name)
+
+	// If local remote, ensure the VM is started
+	if remoteName == shared.BravetoolsRemote {
+		info, err := bh.Backend.Info()
+		if err != nil {
+			return errors.New("Failed to get host info: " + err.Error())
+		}
+		if strings.ToLower(info.State) == "stopped" {
+			return errors.New("Backend is stopped")
+		}
 	}
 
-	lxdServer, err := GetLXDInstanceServer(bh.Remote)
+	remote, err := LoadRemoteSettings(remoteName)
+	if err != nil {
+		return err
+	}
+
+	lxdServer, err := GetLXDInstanceServer(remote)
 	if err != nil {
 		return err
 	}
