@@ -940,6 +940,8 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 
 	// Connect to deploy target remote
 	deployRemoteName, unitName := ParseRemoteName(unitParams.Name)
+	unitParams.Name = unitName
+
 	deployRemote, err := LoadRemoteSettings(deployRemoteName)
 	if err != nil {
 		return fmt.Errorf("failed to load remote %q for requested unit %q: %s", deployRemoteName, unitName, err.Error())
@@ -1137,7 +1139,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 		}
 	}
 
-	err = bh.Postdeploy(ctx, unitParams)
+	err = postdeploy(ctx, lxdServer, unitParams)
 	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return err
 	}
@@ -1176,30 +1178,6 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 	_, err = db.InsertUnitDB(database, braveUnit)
 	if err != nil {
 		return errors.New("failed to insert unit to database: " + err.Error())
-	}
-
-	return nil
-}
-
-// Postdeploy copy files and run commands on running service
-func (bh *BraveHost) Postdeploy(ctx context.Context, unitConfig *shared.Service) (err error) {
-	lxdServer, err := GetLXDInstanceServer(bh.Remote)
-	if err != nil {
-		return err
-	}
-
-	if unitConfig.Postdeploy.Copy != nil {
-		err = bravefileCopy(ctx, lxdServer, unitConfig.Postdeploy.Copy, unitConfig.Name)
-		if err != nil {
-			return err
-		}
-	}
-
-	if unitConfig.Postdeploy.Run != nil {
-		err = bravefileRun(ctx, lxdServer, unitConfig.Postdeploy.Run, unitConfig.Name)
-		if err != nil {
-			return errors.New(shared.Fatal("failed to execute command: " + err.Error()))
-		}
 	}
 
 	return nil
