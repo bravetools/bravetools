@@ -636,6 +636,9 @@ func Exec(ctx context.Context, lxdServer lxd.InstanceServer, name string, comman
 			return err
 		}
 		c, _, err := lxdServer.GetContainerState(name)
+		if err != nil {
+			return fmt.Errorf("failed to get container %q: %s", name, err.Error())
+		}
 		ip := c.Network["eth0"].Addresses[0].Address
 		isIP := isIPv4(ip)
 		if !isIP {

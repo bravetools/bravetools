@@ -345,6 +345,26 @@ func listHostImages(lxdServer lxd.ImageServer) ([]api.Image, error) {
 // 	return ifaces, nil
 // }
 
+// postdeploy copy files and run commands on running service
+func postdeploy(ctx context.Context, lxdServer lxd.InstanceServer, unitConfig *shared.Service) (err error) {
+
+	if unitConfig.Postdeploy.Copy != nil {
+		err = bravefileCopy(ctx, lxdServer, unitConfig.Postdeploy.Copy, unitConfig.Name)
+		if err != nil {
+			return err
+		}
+	}
+
+	if unitConfig.Postdeploy.Run != nil {
+		err = bravefileRun(ctx, lxdServer, unitConfig.Postdeploy.Run, unitConfig.Name)
+		if err != nil {
+			return errors.New(shared.Fatal("failed to execute command: " + err.Error()))
+		}
+	}
+
+	return nil
+}
+
 func bravefileCopy(ctx context.Context, lxdServer lxd.InstanceServer, copy []shared.CopyCommand, service string) error {
 	dir, _ := os.Getwd()
 	for _, c := range copy {
