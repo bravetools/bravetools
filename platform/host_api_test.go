@@ -175,7 +175,7 @@ func Test_ListUnits(t *testing.T) {
 		t.Error("host.HostInfo: ", err)
 	}
 
-	err = host.ListUnits(host.Backend)
+	err = host.ListUnits(host.Backend, "")
 	if err != nil {
 		t.Error("host.ListLocalImages: ", err)
 	}
