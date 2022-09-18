@@ -16,7 +16,10 @@ deployment options e.g. CPU and RAM should be configured through a configuration
 
 Deployment loads Unit specifications from a Bravefile, which is expected to be in the working directory.
 Parameters specificed in the Bravefile can be overridden using command line options. If Bravefile does not
-exist in the current working directory, Bravetools expects an image name as the first agrument.`,
+exist in the current working directory, Bravetools expects an image name as the first agrument.
+
+Deployment can be both local or to a remote Bravetools host. To specificify a remote host using command line argument
+set --name flag to <remote>:<instance>`,
 	Run: deploy,
 }
 var unitConfig string
