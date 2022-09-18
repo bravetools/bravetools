@@ -8,8 +8,8 @@ import (
 )
 
 var braveStart = &cobra.Command{
-	Use:   "start NAME",
-	Short: "Start Unit",
+	Use:   "start  [<remote>:]<instance>",
+	Short: "Start Unit <instance>",
 	Long:  ``,
 	Run:   start,
 }

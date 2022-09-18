@@ -7,9 +7,9 @@ import (
 )
 
 var braveListUnits = &cobra.Command{
-	Use:   "units [NAME]",
+	Use:   "units [<remote>]",
 	Short: "List Units",
-	Long: `This function returns a list of all Units deployed on a remote Bravetools host. 
+	Long: `This function returns a list of all Units deployed on all Bravetools hosts, including remotes. 
 
 If a specific remote is not specified, all units across all remotes will be returned.`,
 	Run:  units,

@@ -8,7 +8,7 @@ import (
 )
 
 var braveStop = &cobra.Command{
-	Use:   "stop NAME",
+	Use:   "stop [<remote>:]<instance>",
 	Short: "Stop Unit",
 	Long:  ``,
 	Run:   stop,

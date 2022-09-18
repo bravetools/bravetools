@@ -7,7 +7,7 @@ import (
 )
 
 var braveRemove = &cobra.Command{
-	Use:   "remove NAME",
+	Use:   "remove [<remote>:]<instance>",
 	Short: "Remove a Unit or an Image",
 	Long:  ``,
 	Run:   remove,
