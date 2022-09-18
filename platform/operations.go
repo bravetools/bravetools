@@ -314,7 +314,7 @@ func MountDirectory(lxdServer lxd.InstanceServer, sourcePath string, destUnit st
 
 	op, err := lxdServer.UpdateInstance(destUnit, inst.Writable(), etag)
 	if err != nil {
-		return errors.New("Failed to update unit settings: " + err.Error())
+		return errors.New("failed to update unit settings: " + err.Error())
 	}
 
 	err = op.Wait()
@@ -672,7 +672,7 @@ func Exec(ctx context.Context, lxdServer lxd.InstanceServer, name string, comman
 	op, err := lxdServer.ExecContainer(name, req, &args)
 
 	if err != nil {
-		return 1, errors.New("Error getting current state: " + err.Error())
+		return 1, errors.New("error getting current state: " + err.Error())
 	}
 
 	opWait := make(chan struct{})
@@ -688,7 +688,7 @@ func Exec(ctx context.Context, lxdServer lxd.InstanceServer, name string, comman
 	}
 
 	if err != nil {
-		return 1, errors.New("Error executing command: " + err.Error())
+		return 1, errors.New("error executing command: " + err.Error())
 	}
 	opAPI := op.Get()
 
@@ -944,7 +944,7 @@ func FilePush(lxdServer lxd.InstanceServer, name string, sourceFile string, targ
 	fInfo, err := os.Stat(sourceFile)
 
 	if err != nil {
-		return errors.New("Unable to read file " + sourceFile + ": " + err.Error())
+		return errors.New("unable to read file " + sourceFile + ": " + err.Error())
 	}
 
 	mode, uid, gid := lxdshared.GetOwnerMode(fInfo)
