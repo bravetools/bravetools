@@ -10,6 +10,33 @@ description: "Bravetools builds images automatically by reading instructions fro
 
 Bravetools creates reproducible environments by following instructions logged in a ``Bravefile``. A ``Bravefile`` adheres to a strict structure, which ensures reproducibility and makes it easy to manage complex system structures and operations.
 
+A ``Bravefile`` follows YAML format and at a high-level looks like this:
+
+```yaml
+base:
+  image: alpine/edge
+  location: public
+packages:
+  manager: apk
+  system:
+  - python3
+run:
+- command: ls
+  args:
+  - -a
+service:
+  name: alpine-python3
+  version: 1.0
+  image: alpine-python3-1.0
+  ip: ""
+  resources:
+    ram: "1GB"
+    cpu: 4
+    gpu: "no"
+```
+
+Running `brave build` followed by `brave deploy` on a ``Bravefile`` above, will pull a blank Alpine Edge system image for your CPU architecture, install python3, and make the container available on your network with 1GB of RAM and 4 CPUs.
+
 ## Key Components
 
 The minimal structural unit of a Bravefile is an **Entry**. ``Bravefile`` supports five entry types - base, system, copy, run, and service.
@@ -107,6 +134,8 @@ service:
     cpu: 4
     gpu: "no"
 ```
+
+If you're deploying to a remote Bravetools host, you can append `<remote>:` to the `name` field. Note that you have to ensure that `profile` and `network` options are set and reflect the set up of your remote LXD instance.
 
 ## Brave Configuration Language (BCL)
 
