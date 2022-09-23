@@ -138,16 +138,19 @@ func (bh *BraveHost) ListLocalImages() error {
 
 	if len(images) > 0 {
 		table := tablewriter.NewWriter(os.Stdout)
-		table.SetHeader([]string{"Image", "Created", "Size", "Hash"})
+		table.SetHeader([]string{"Image", "Version", "Arch", "Created", "Size", "Hash"})
 
 		for _, i := range images {
+			image, err := ImageFromFilename(filepath.Base(i))
+			if err != nil {
+				return fmt.Errorf("failed to parse image filename schema from %q", i)
+			}
+
 			fi, err := os.Stat(i)
 			if strings.Index(fi.Name(), ".") != 0 {
 				if err != nil {
 					return errors.New("failed to get image size: " + err.Error())
 				}
-
-				name := strings.Split(fi.Name(), ".tar.gz")[0]
 
 				size := fi.Size()
 
@@ -196,7 +199,7 @@ func (bh *BraveHost) ListLocalImages() error {
 				hashString := string(hash)
 				hashString = strings.TrimRight(hashString, "\r\n")
 
-				r := []string{name, timeUnit, shared.FormatByteCountSI(size), hashString}
+				r := []string{image.Name, image.Version, image.Architecture, timeUnit, shared.FormatByteCountSI(size), hashString}
 				table.Append(r)
 			}
 		}
