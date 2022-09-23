@@ -666,6 +666,10 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 	if err != nil {
 		return err
 	}
+	// If version explicitly provided separately that overrides version specified in image field
+	if bravefile.PlatformService.Version != "" {
+		imageStruct.Version = bravefile.PlatformService.Version
+	}
 	if imageExists(imageStruct) {
 		return &ImageExistsError{Name: bravefile.PlatformService.Image}
 	}
@@ -1043,6 +1047,9 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 	imageStruct, err := ParseImageString(unitParams.Image)
 	if err != nil {
 		return err
+	}
+	if unitParams.Version != "" {
+		imageStruct.Version = unitParams.Version
 	}
 	if !imageExists(imageStruct) {
 		return fmt.Errorf("image %q does not exist", unitParams.Image)
