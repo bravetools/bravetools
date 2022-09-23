@@ -344,8 +344,10 @@ func (bh *BraveHost) ListUnits(backend Backend, remoteName string) error {
 			}
 
 			// Prefix unit name with remote name
-			for j := range remoteUnits {
-				remoteUnits[j].Name = deployRemote.Name + ":" + remoteUnits[j].Name
+			if deployRemote.Name != shared.BravetoolsRemote {
+				for j := range remoteUnits {
+					remoteUnits[j].Name = deployRemote.Name + ":" + remoteUnits[j].Name
+				}
 			}
 			units = append(units, remoteUnits...)
 		}
