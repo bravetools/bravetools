@@ -642,6 +642,22 @@ func (e *ImageExistsError) Error() string {
 
 // BuildImage creates an image based on Bravefile
 func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
+
+	imageStruct, err := ParseImageString(bravefile.PlatformService.Image)
+	if err != nil {
+		return err
+	}
+	// If version explicitly provided separately that overrides version specified in image field
+	if bravefile.PlatformService.Version != "" {
+		imageStruct.Version = bravefile.PlatformService.Version
+	}
+	// Ensure that the up-to-date "version" value is in the Bravefile for later use
+	bravefile.PlatformService.Version = imageStruct.Version
+
+	if imageExists(imageStruct) {
+		return &ImageExistsError{Name: imageStruct.String()}
+	}
+
 	fmt.Println(shared.Info("Building Image: " + bravefile.PlatformService.Image + " Version: " + bravefile.PlatformService.Version))
 
 	if strings.ContainsAny(bravefile.PlatformService.Name, "/_. !@£$%^&*(){}:;`~,?") {
@@ -660,18 +676,6 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 	err = checkUnits(lxdServer, bravefile.PlatformService.Name, bh.Remote.Profile)
 	if err != nil {
 		return err
-	}
-
-	imageStruct, err := ParseImageString(bravefile.PlatformService.Image)
-	if err != nil {
-		return err
-	}
-	// If version explicitly provided separately that overrides version specified in image field
-	if bravefile.PlatformService.Version != "" {
-		imageStruct.Version = bravefile.PlatformService.Version
-	}
-	if imageExists(imageStruct) {
-		return &ImageExistsError{Name: imageStruct.String()}
 	}
 
 	// Intercept SIGINT, propagate cancel and cleanup artefacts
@@ -1007,6 +1011,19 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 
 	fmt.Println(shared.Info("Deploying Unit " + unitParams.Name))
 
+	imageStruct, err := ParseImageString(unitParams.Image)
+	if err != nil {
+		return err
+	}
+	if unitParams.Version != "" {
+		imageStruct.Version = unitParams.Version
+	}
+	unitParams.Version = imageStruct.Version
+
+	if !imageExists(imageStruct) {
+		return fmt.Errorf("image %q does not exist", imageStruct.String())
+	}
+
 	// Connect to deploy target remote
 	deployRemoteName, unitName := ParseRemoteName(unitParams.Name)
 	unitParams.Name = unitName
@@ -1043,16 +1060,6 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 	err = checkUnits(lxdServer, unitName, unitParams.Profile)
 	if err != nil {
 		return err
-	}
-	imageStruct, err := ParseImageString(unitParams.Image)
-	if err != nil {
-		return err
-	}
-	if unitParams.Version != "" {
-		imageStruct.Version = unitParams.Version
-	}
-	if !imageExists(imageStruct) {
-		return fmt.Errorf("image %q does not exist", imageStruct.String())
 	}
 
 	image := path.Join(homeDir, shared.ImageStore, imageStruct.ToBasename()+".tar.gz")
