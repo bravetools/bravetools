@@ -138,16 +138,19 @@ func (bh *BraveHost) ListLocalImages() error {
 
 	if len(images) > 0 {
 		table := tablewriter.NewWriter(os.Stdout)
-		table.SetHeader([]string{"Image", "Created", "Size", "Hash"})
+		table.SetHeader([]string{"Image", "Version", "Arch", "Created", "Size", "Hash"})
 
 		for _, i := range images {
+			image, err := ImageFromFilename(filepath.Base(i))
+			if err != nil {
+				return fmt.Errorf("failed to parse image filename schema from %q", i)
+			}
+
 			fi, err := os.Stat(i)
 			if strings.Index(fi.Name(), ".") != 0 {
 				if err != nil {
 					return errors.New("failed to get image size: " + err.Error())
 				}
-
-				name := strings.Split(fi.Name(), ".tar.gz")[0]
 
 				size := fi.Size()
 
@@ -196,7 +199,7 @@ func (bh *BraveHost) ListLocalImages() error {
 				hashString := string(hash)
 				hashString = strings.TrimRight(hashString, "\r\n")
 
-				r := []string{name, timeUnit, shared.FormatByteCountSI(size), hashString}
+				r := []string{image.Name, image.Version, image.Architecture, timeUnit, shared.FormatByteCountSI(size), hashString}
 				table.Append(r)
 			}
 		}
@@ -641,6 +644,22 @@ func (e *ImageExistsError) Error() string {
 
 // BuildImage creates an image based on Bravefile
 func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
+
+	imageStruct, err := ParseImageString(bravefile.PlatformService.Image)
+	if err != nil {
+		return err
+	}
+	// If version explicitly provided separately that overrides version specified in image field
+	if bravefile.PlatformService.Version != "" {
+		imageStruct.Version = bravefile.PlatformService.Version
+	}
+	// Ensure that the up-to-date "version" value is in the Bravefile for later use
+	bravefile.PlatformService.Version = imageStruct.Version
+
+	if imageExists(imageStruct) {
+		return &ImageExistsError{Name: imageStruct.String()}
+	}
+
 	fmt.Println(shared.Info("Building Image: " + bravefile.PlatformService.Image + " Version: " + bravefile.PlatformService.Version))
 
 	if strings.ContainsAny(bravefile.PlatformService.Name, "/_. !@£$%^&*(){}:;`~,?") {
@@ -659,9 +678,6 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 	err = checkUnits(lxdServer, bravefile.PlatformService.Name, bh.Remote.Profile)
 	if err != nil {
 		return err
-	}
-	if imageExists(bravefile.PlatformService.Image) {
-		return &ImageExistsError{Name: bravefile.PlatformService.Image}
 	}
 
 	// Intercept SIGINT, propagate cancel and cleanup artefacts
@@ -731,7 +747,15 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		}
 	case "local":
 		// Check disk space
-		imgSize, err := localImageSize(bravefile.Base.Image)
+		localBaseImage, err := ParseImageString(bravefile.Base.Image)
+		if err != nil {
+			return err
+		}
+		if !imageExists(localBaseImage) {
+			return fmt.Errorf("base image %q required for building image %q does not exist", localBaseImage.String(), imageStruct.String())
+		}
+
+		imgSize, err := localImageSize(localBaseImage)
 		if err != nil {
 			return err
 		}
@@ -819,13 +843,13 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		return errors.New("failed to publish image: " + err.Error())
 	}
 
-	err = ExportImage(lxdServer, unitFingerprint, bravefile.PlatformService.Name+"-"+bravefile.PlatformService.Version)
+	err = ExportImage(lxdServer, unitFingerprint, imageStruct.ToBasename())
 	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to export image: " + err.Error())
 	}
 
 	home, _ := os.UserHomeDir()
-	localImageFile := bravefile.PlatformService.Name + "-" + bravefile.PlatformService.Version + ".tar.gz"
+	localImageFile := imageStruct.ToBasename() + ".tar.gz"
 	localHashFile := localImageFile + ".md5"
 
 	defer func() {
@@ -989,6 +1013,19 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 
 	fmt.Println(shared.Info("Deploying Unit " + unitParams.Name))
 
+	imageStruct, err := ParseImageString(unitParams.Image)
+	if err != nil {
+		return err
+	}
+	if unitParams.Version != "" {
+		imageStruct.Version = unitParams.Version
+	}
+	unitParams.Version = imageStruct.Version
+
+	if !imageExists(imageStruct) {
+		return fmt.Errorf("image %q does not exist", imageStruct.String())
+	}
+
 	// Connect to deploy target remote
 	deployRemoteName, unitName := ParseRemoteName(unitParams.Name)
 	unitParams.Name = unitName
@@ -1026,15 +1063,8 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 	if err != nil {
 		return err
 	}
-	if !imageExists(unitParams.Image) {
-		return fmt.Errorf("image %q does not exist", unitParams.Image)
-	}
 
-	image := path.Join(homeDir, shared.ImageStore, unitParams.Image+".tar.gz")
-
-	if !shared.FileExists(image) {
-		return fmt.Errorf("image %q does not exist", unitParams.Image)
-	}
+	image := path.Join(homeDir, shared.ImageStore, imageStruct.ToBasename()+".tar.gz")
 
 	fingerprint, err := shared.FileSha256Hash(image)
 	if err != nil {
@@ -1044,7 +1074,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 
 	// Resource checks
 	// TODO: this should use a profile
-	err = CheckResources(unitParams.Image, backend, unitParams, bh)
+	err = CheckResources(imageStruct, backend, unitParams, bh)
 	if err != nil {
 		return err
 	}
@@ -1256,7 +1286,11 @@ func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (
 
 	// Remove base-only services if all images depending on them already exist
 	for _, baseService := range getBaseOnlyServices(composeFile) {
-		if len(getBuildDependents(baseService, composeFile)) == 0 {
+		dependentServices, err := getBuildDependents(baseService, composeFile)
+		if err != nil {
+			return err
+		}
+		if len(dependentServices) == 0 {
 			serviceIdx, err := shared.StrSliceIndexOf(topologicalOrdering, baseService)
 			if err != nil {
 				return err
