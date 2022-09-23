@@ -671,7 +671,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		imageStruct.Version = bravefile.PlatformService.Version
 	}
 	if imageExists(imageStruct) {
-		return &ImageExistsError{Name: bravefile.PlatformService.Image}
+		return &ImageExistsError{Name: imageStruct.String()}
 	}
 
 	// Intercept SIGINT, propagate cancel and cleanup artefacts
@@ -746,7 +746,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 			return err
 		}
 		if !imageExists(localBaseImage) {
-			return fmt.Errorf("base image %q required for building image %q does not exist", bravefile.Base.Image, bravefile.PlatformService.Image)
+			return fmt.Errorf("base image %q required for building image %q does not exist", localBaseImage.String(), imageStruct.String())
 		}
 
 		imgSize, err := localImageSize(localBaseImage)
@@ -1052,7 +1052,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 		imageStruct.Version = unitParams.Version
 	}
 	if !imageExists(imageStruct) {
-		return fmt.Errorf("image %q does not exist", unitParams.Image)
+		return fmt.Errorf("image %q does not exist", imageStruct.String())
 	}
 
 	image := path.Join(homeDir, shared.ImageStore, imageStruct.ToBasename()+".tar.gz")

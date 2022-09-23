@@ -59,6 +59,11 @@ func (imageStruct BravetoolsImage) ToBasename() string {
 	return strings.Join(fields, "_")
 }
 
+func (imageStruct BravetoolsImage) String() string {
+	fields := []string{imageStruct.Name, imageStruct.Version, imageStruct.Architecture}
+	return strings.Join(fields, "/")
+}
+
 func ImageFromFilename(filename string) (BravetoolsImage, error) {
 	filename = strings.TrimSuffix(filename, ".tar.gz")
 	split := strings.Split(filename, "_")
