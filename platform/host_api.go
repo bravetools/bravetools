@@ -16,7 +16,6 @@ import (
 	"syscall"
 	"time"
 
-	"io/ioutil"
 	"path/filepath"
 
 	"github.com/bravetools/bravetools/db"
@@ -87,16 +86,24 @@ func (bh *BraveHost) AddRemote() error {
 // ImportLocalImage import tarball into local images folder
 func (bh *BraveHost) ImportLocalImage(sourcePath string) error {
 	home, _ := os.UserHomeDir()
+	imageStore := path.Join(home, shared.ImageStore)
 
 	_, imageName := filepath.Split(sourcePath)
 
-	imagePath := path.Join(home, shared.ImageStore, imageName)
-	hashFile := imagePath + ".md5"
+	image, err := ImageFromFilename(imageName)
+	if err != nil {
+		return err
+	}
 
-	_, err := os.Stat(imagePath)
-	if !os.IsNotExist(err) {
+	if imageExists(image) {
 		return errors.New("image " + imageName + " already exists in local image store")
 	}
+
+	imagePath := filepath.Join(imageStore, image.ToBasename())
+	if err != nil {
+		return err
+	}
+	hashFile := imagePath + ".md5"
 
 	err = shared.CopyFile(sourcePath, imagePath)
 	if err != nil {
@@ -164,40 +171,10 @@ func (bh *BraveHost) ListLocalImages() error {
 					timeUnit = "just now"
 				}
 
-				localImageFile := path.Join(home, shared.ImageStore, filepath.Base(fi.Name()))
-				hashFileName := localImageFile + ".md5"
-
-				hash, err := ioutil.ReadFile(hashFileName)
+				hashString, err := getImageHash(image)
 				if err != nil {
-					if os.IsNotExist(err) {
-
-						imageHash, err := shared.FileHash(localImageFile)
-						if err != nil {
-							return errors.New("failed to generate image hash: " + err.Error())
-						}
-
-						f, err := os.Create(hashFileName)
-						if err != nil {
-							return errors.New(err.Error())
-						}
-						defer f.Close()
-
-						_, err = f.WriteString(imageHash)
-						if err != nil {
-							return errors.New(err.Error())
-						}
-
-						hash, err = ioutil.ReadFile(hashFileName)
-						if err != nil {
-							return errors.New(err.Error())
-						}
-					} else {
-						return errors.New("couldn't load image hash: " + err.Error())
-					}
+					return err
 				}
-
-				hashString := string(hash)
-				hashString = strings.TrimRight(hashString, "\r\n")
 
 				r := []string{image.Name, image.Version, image.Architecture, timeUnit, shared.FormatByteCountSI(size), hashString}
 				table.Append(r)
@@ -226,14 +203,23 @@ func (bh *BraveHost) ListLocalImages() error {
 
 // DeleteLocalImage deletes a local image
 func (bh *BraveHost) DeleteLocalImage(name string) error {
-	home, _ := os.UserHomeDir()
-
-	imageStruct, err := ParseImageString(name)
+	image, err := ParseImageString(name)
 	if err != nil {
 		return err
 	}
-
-	imagePath := path.Join(home, shared.ImageStore, imageStruct.ToBasename()+".tar.gz")
+	if !imageExists(image) {
+		image, err = ParseLegacyImageString(name)
+		if err != nil {
+			return err
+		}
+		if !imageExists(image) {
+			return fmt.Errorf("image %q does not exist", name)
+		}
+	}
+	imagePath, err := getImageFilepath(image)
+	if err != nil {
+		return err
+	}
 	imageHash := imagePath + ".md5"
 
 	err = os.Remove(imagePath)
@@ -651,13 +637,17 @@ func (e *ImageExistsError) Error() string {
 // BuildImage creates an image based on Bravefile
 func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 
-	imageStruct, err := ParseImageString(bravefile.PlatformService.Image)
+	var imageStruct BravetoolsImage
+	var err error
+
+	// If version explicitly provided separately this is a legacy Bravefile
+	if bravefile.PlatformService.Version == "" {
+		imageStruct, err = ParseImageString(bravefile.PlatformService.Image)
+	} else {
+		imageStruct, err = ParseLegacyImageString(bravefile.PlatformService.Image)
+	}
 	if err != nil {
 		return err
-	}
-	// If version explicitly provided separately that overrides version specified in image field
-	if bravefile.PlatformService.Version != "" {
-		imageStruct.Version = bravefile.PlatformService.Version
 	}
 	// Ensure that the up-to-date "version" value is in the Bravefile for later use
 	bravefile.PlatformService.Version = imageStruct.Version
@@ -666,10 +656,10 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 		return &ImageExistsError{Name: imageStruct.String()}
 	}
 
-	fmt.Println(shared.Info("Building Image: " + bravefile.PlatformService.Image + " Version: " + bravefile.PlatformService.Version))
+	fmt.Println(shared.Info("Building Image: " + imageStruct.String()))
 
 	if strings.ContainsAny(bravefile.PlatformService.Name, "/_. !@£$%^&*(){}:;`~,?") {
-		return errors.New("image names should not contain special characters")
+		return errors.New("unit names should not contain special characters")
 	}
 
 	if bravefile.PlatformService.Name == "" {
@@ -758,7 +748,14 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 			return err
 		}
 		if !imageExists(localBaseImage) {
-			return fmt.Errorf("base image %q required for building image %q does not exist", localBaseImage.String(), imageStruct.String())
+			// Check legacy bravefile
+			localBaseImage, err = ParseLegacyImageString(bravefile.Base.Image)
+			if err != nil {
+				return err
+			}
+			if !imageExists(localBaseImage) {
+				return fmt.Errorf("base image %q required for building image %q does not exist", localBaseImage.String(), imageStruct.String())
+			}
 		}
 
 		imgSize, err := localImageSize(localBaseImage)
@@ -1012,20 +1009,24 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 	if unitParams.Name == "" {
 		return errors.New("unit name cannot be empty")
 	}
-	homeDir, _ := os.UserHomeDir()
 	if unitParams.Image == "" {
 		return errors.New("unit image name cannot be empty")
 	}
 
 	fmt.Println(shared.Info("Deploying Unit " + unitParams.Name))
 
-	imageStruct, err := ParseImageString(unitParams.Image)
+	var imageStruct BravetoolsImage
+
+	// If version explicitly provided separately this is a legacy Bravefile
+	if unitParams.Version == "" {
+		imageStruct, err = ParseImageString(unitParams.Image)
+	} else {
+		imageStruct, err = ParseLegacyImageString(unitParams.Image)
+	}
 	if err != nil {
 		return err
 	}
-	if unitParams.Version != "" {
-		imageStruct.Version = unitParams.Version
-	}
+	// Ensure that the up-to-date "version" value is in the Bravefile for later use
 	unitParams.Version = imageStruct.Version
 
 	if !imageExists(imageStruct) {
@@ -1070,8 +1071,10 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 		return err
 	}
 
-	image := path.Join(homeDir, shared.ImageStore, imageStruct.ToBasename()+".tar.gz")
-
+	image, err := getImageFilepath(imageStruct)
+	if err != nil {
+		return err
+	}
 	fingerprint, err := shared.FileSha256Hash(image)
 	if err != nil {
 		return fmt.Errorf("failed to obtain image hash %q", unitParams.Image)
