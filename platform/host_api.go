@@ -918,7 +918,7 @@ func (bh *BraveHost) PublishUnit(name string, backend Backend) error {
 	timestamp := time.Now()
 
 	// Create an image based on running container and export it. Image saved as tar.gz in project local directory.
-	fmt.Println("Publishing unit ...")
+	fmt.Printf("Publishing unit %q\n", name)
 
 	unitFingerprint, err := Publish(lxdServer, name, timestamp.Format("20060102150405"))
 	defer DeleteImageByFingerprint(lxdServer, unitFingerprint)
@@ -963,7 +963,7 @@ func (bh *BraveHost) StopUnit(name string) error {
 		return err
 	}
 
-	fmt.Print("Stopping unit: ", name)
+	fmt.Println("Stopping unit: ", name)
 	err = Stop(lxdServer, name)
 	if err != nil {
 		return errors.New("Failed to stop unit: " + err.Error())
@@ -997,7 +997,7 @@ func (bh *BraveHost) StartUnit(name string) error {
 		return err
 	}
 
-	fmt.Print("Starting unit: ", name)
+	fmt.Println("Starting unit: ", name)
 	err = Start(lxdServer, name)
 	if err != nil {
 		return errors.New("Failed to start unit: " + err.Error())
