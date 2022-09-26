@@ -227,10 +227,16 @@ func (bh *BraveHost) ListLocalImages() error {
 // DeleteLocalImage deletes a local image
 func (bh *BraveHost) DeleteLocalImage(name string) error {
 	home, _ := os.UserHomeDir()
-	imagePath := path.Join(home, shared.ImageStore, name+".tar.gz")
+
+	imageStruct, err := ParseImageString(name)
+	if err != nil {
+		return err
+	}
+
+	imagePath := path.Join(home, shared.ImageStore, imageStruct.ToBasename()+".tar.gz")
 	imageHash := imagePath + ".md5"
 
-	err := os.Remove(imagePath)
+	err = os.Remove(imagePath)
 	if err != nil {
 		return err
 	}
@@ -573,7 +579,7 @@ func (bh *BraveHost) DeleteUnit(name string) error {
 	if remoteName == shared.BravetoolsRemote {
 		info, err := bh.Backend.Info()
 		if err != nil {
-			return errors.New("Failed to get host info: " + err.Error())
+			return errors.New("failed to get host info: " + err.Error())
 		}
 		if strings.ToLower(info.State) == "stopped" {
 			return errors.New("Backend is stopped")
