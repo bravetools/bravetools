@@ -25,14 +25,14 @@ Available Commands:
   deploy      Deploy Unit from image
   help        Help about any command
   images      List images
-  import      Import an LXD image tarball into local Bravetools image repository
+  import      Import LXD image tarballs into local Bravetools image repository
   info        Display workspace information
   init        Create a new Bravetools host
   mount       Mount a directory to a Unit
-  publish     Publish deployed Unit as image
-  remove      Remove a Unit or an Image
-  start       Start Unit
-  stop        Stop Unit
+  publish     Publish deployed Units as images
+  remove      Remove Units or Images
+  start       Start Units
+  stop        Stop Units
   umount      Unmount <disk> from UNIT
   units       List Units
   version     Show current bravetools version
