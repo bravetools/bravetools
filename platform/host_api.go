@@ -227,10 +227,16 @@ func (bh *BraveHost) ListLocalImages() error {
 // DeleteLocalImage deletes a local image
 func (bh *BraveHost) DeleteLocalImage(name string) error {
 	home, _ := os.UserHomeDir()
-	imagePath := path.Join(home, shared.ImageStore, name+".tar.gz")
+
+	imageStruct, err := ParseImageString(name)
+	if err != nil {
+		return err
+	}
+
+	imagePath := path.Join(home, shared.ImageStore, imageStruct.ToBasename()+".tar.gz")
 	imageHash := imagePath + ".md5"
 
-	err := os.Remove(imagePath)
+	err = os.Remove(imagePath)
 	if err != nil {
 		return err
 	}
