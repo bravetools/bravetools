@@ -573,7 +573,7 @@ func (bh *BraveHost) DeleteUnit(name string) error {
 	if remoteName == shared.BravetoolsRemote {
 		info, err := bh.Backend.Info()
 		if err != nil {
-			return errors.New("Failed to get host info: " + err.Error())
+			return errors.New("failed to get host info: " + err.Error())
 		}
 		if strings.ToLower(info.State) == "stopped" {
 			return errors.New("Backend is stopped")

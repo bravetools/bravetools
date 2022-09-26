@@ -180,7 +180,13 @@ func importLocal(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *s
 		return "", err
 	}
 	home, _ := os.UserHomeDir()
-	path := filepath.Join(home, shared.ImageStore, bravefile.Base.Image) + ".tar.gz"
+
+	imageStruct, err := ParseImageString(bravefile.PlatformService.Image)
+	if err != nil {
+		return "", err
+	}
+
+	path := path.Join(home, shared.ImageStore, imageStruct.ToBasename()+".tar.gz")
 
 	fingerprint, err = shared.FileSha256Hash(path)
 	if err != nil {
