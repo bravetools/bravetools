@@ -37,6 +37,15 @@ func TestParseImageStringNoName(t *testing.T) {
 	}
 }
 
+func TestParseImageStringLegacy(t *testing.T) {
+	name := "alpine-3.16"
+	image, err := ParseLegacyImageString(name)
+	if err != nil {
+		t.Fatalf(err.Error())
+	}
+	t.Logf("%+v", image)
+}
+
 func TestImageFromFilename(t *testing.T) {
 	name := "alpine_3.16_amd64.tar.gz"
 	image, err := ImageFromFilename(name)

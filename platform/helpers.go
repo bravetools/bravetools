@@ -145,8 +145,6 @@ func importGitHub(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *
 	if err = ctx.Err(); err != nil {
 		return "", err
 	}
-	home, _ := os.UserHomeDir()
-	imageLocation := filepath.Join(home, shared.ImageStore)
 
 	path := bravefile.Base.Image
 	if !strings.HasPrefix(path, "github.com/") {
@@ -157,19 +155,33 @@ func importGitHub(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *
 		return fingerprint, err
 	}
 
-	remoteServiceName := remoteBravefile.PlatformService.Name + "-" + remoteBravefile.PlatformService.Version
+	var imageStruct BravetoolsImage
 
-	if _, err := os.Stat(filepath.Join(imageLocation, remoteServiceName+".tar.gz")); os.IsNotExist(err) {
+	// If version explicitly provided separately this is a legacy Bravefile
+	if remoteBravefile.PlatformService.Version == "" {
+		imageStruct, err = ParseImageString(remoteBravefile.PlatformService.Image)
+	} else {
+		imageStruct, err = ParseLegacyImageString(remoteBravefile.PlatformService.Image)
+	}
+	if err != nil {
+		return fingerprint, err
+	}
+	// Ensure that the up-to-date "version" value is in the Bravefile for later use
+	remoteBravefile.PlatformService.Version = imageStruct.Version
+
+	if !imageExists(imageStruct) {
 		err = bh.BuildImage(remoteBravefile)
 		if err != nil {
 			return fingerprint, err
 		}
 	} else {
-		fmt.Println("Found local image " + remoteServiceName + ". Skipping GitHub build")
+		fmt.Println("Found local image " + imageStruct.String() + ". Skipping GitHub build")
 	}
 
-	remoteBravefile.Base.Image = remoteServiceName
+	remoteBravefile.Base.Image = imageStruct.String()
 	remoteBravefile.PlatformService.Name = bravefile.PlatformService.Name
+	// Since we are using new image format above, we need to set version to "" to prevent parsing as legacy image name
+	remoteBravefile.PlatformService.Version = ""
 
 	fingerprint, err = importLocal(ctx, lxdServer, remoteBravefile, profileName, storagePool)
 	return fingerprint, err
@@ -179,14 +191,24 @@ func importLocal(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *s
 	if err = ctx.Err(); err != nil {
 		return "", err
 	}
-	home, _ := os.UserHomeDir()
+	var imageStruct BravetoolsImage
 
-	imageStruct, err := ParseImageString(bravefile.PlatformService.Image)
+	// If version explicitly provided separately this is a legacy Bravefile
+	if bravefile.PlatformService.Version == "" {
+		imageStruct, err = ParseImageString(bravefile.Base.Image)
+	} else {
+		imageStruct, err = ParseLegacyImageString(bravefile.Base.Image)
+	}
 	if err != nil {
 		return "", err
 	}
+	// Ensure that the up-to-date "version" value is in the Bravefile for later use
+	bravefile.PlatformService.Version = imageStruct.Version
 
-	path := path.Join(home, shared.ImageStore, imageStruct.ToBasename()+".tar.gz")
+	path, err := getImageFilepath(imageStruct)
+	if err != nil {
+		return "", err
+	}
 
 	fingerprint, err = shared.FileSha256Hash(path)
 	if err != nil {
@@ -517,11 +539,21 @@ func getBaseOnlyServices(composeFile *shared.ComposeFile) (serviceNames []string
 
 func getBuildDependents(dependency string, composeFile *shared.ComposeFile) (serviceNames []string, err error) {
 	for service := range composeFile.Services {
-		image, err := ParseImageString(composeFile.Services[service].Image)
+		var imageStruct BravetoolsImage
+
+		// If version explicitly provided separately this is a legacy Bravefile
+		if composeFile.Services[service].Version == "" {
+			imageStruct, err = ParseImageString(composeFile.Services[service].Image)
+		} else {
+			imageStruct, err = ParseLegacyImageString(composeFile.Services[service].Image)
+		}
 		if err != nil {
 			return serviceNames, err
 		}
-		if imageExists(image) {
+		// Ensure that the up-to-date "version" value is in the compose file for later use
+		composeFile.Services[service].Version = imageStruct.Version
+
+		if imageExists(imageStruct) {
 			continue
 		}
 		for _, dependsOn := range composeFile.Services[service].Depends {
