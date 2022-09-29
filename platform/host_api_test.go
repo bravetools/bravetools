@@ -190,6 +190,12 @@ func Test_Compose(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Composefile specifies static IP addresses for containers, test will fail on bravetools setups where LXD bridge is on different IP range
+	// For this test, will just clear static IP addresses
+	for _, service := range composefile.Services {
+		service.IP = ""
+	}
+
 	err = host.Compose(host.Backend, composefile)
 	if err != nil {
 		t.Error("host.BuildImage: ", err)
