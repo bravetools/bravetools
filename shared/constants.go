@@ -1,17 +1,5 @@
 package shared
 
-// BRAVEFILE variable - minimal Bravefile template
-const BRAVEFILE = `
-base:
-  image: <name>
-  location: public
-
-service:
-  image: <service>
-  name: <service>
-  version: 1.0
-`
-
 const BraveHome = "/.bravetools"
 const BraveCertStore = BraveHome + "/certs"
 const BraveServerCertStore = BraveHome + "/servercerts"

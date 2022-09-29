@@ -4,6 +4,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/bravetools/bravetools/platform"
 	"github.com/bravetools/bravetools/shared"
 
 	"github.com/spf13/cobra"
@@ -33,7 +34,7 @@ func buildBase(cmd *cobra.Command, args []string) {
 		}
 
 	} else {
-		bravefile, err = shared.GetBravefileFromLXD(args[0])
+		bravefile, err = platform.GetBravefileFromLXD(args[0])
 		if err != nil {
 			log.Fatal(err)
 		}

@@ -649,8 +649,6 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 	if err != nil {
 		return err
 	}
-	// Ensure that the up-to-date "version" value is in the Bravefile for later use
-	bravefile.PlatformService.Version = imageStruct.Version
 
 	if imageExists(imageStruct) {
 		return &ImageExistsError{Name: imageStruct.String()}
@@ -840,7 +838,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 	}
 
 	// Create an image based on running container and export it. Image saved as tar.gz in project local directory.
-	unitFingerprint, err := Publish(lxdServer, bravefile.PlatformService.Name, bravefile.PlatformService.Version)
+	unitFingerprint, err := Publish(lxdServer, bravefile.PlatformService.Name, imageStruct.String())
 	defer DeleteImageByFingerprint(lxdServer, unitFingerprint)
 	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to publish image: " + err.Error())
