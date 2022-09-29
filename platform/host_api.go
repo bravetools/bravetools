@@ -1010,6 +1010,9 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 	if unitParams.Image == "" {
 		return errors.New("unit image name cannot be empty")
 	}
+	if strings.ContainsAny(unitParams.Name, "/_. !@£$%^&*(){}:;`~,?") {
+		return errors.New("unit names should not contain special characters")
+	}
 
 	fmt.Println(shared.Info("Deploying Unit " + unitParams.Name))
 
