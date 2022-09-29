@@ -1027,8 +1027,6 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 	if err != nil {
 		return err
 	}
-	// Ensure that the up-to-date "version" value is in the Bravefile for later use
-	unitParams.Version = imageStruct.Version
 
 	if !imageExists(imageStruct) {
 		return fmt.Errorf("image %q does not exist", imageStruct.String())
