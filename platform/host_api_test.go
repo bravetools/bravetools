@@ -13,7 +13,9 @@ func Test_DeleteLocalImage(t *testing.T) {
 		t.Fatal("failed to create host: ", err.Error())
 	}
 
-	bravefile, err := GetBravefileFromLXD("alpine/edge/amd64")
+	imageName := "alpine/edge/amd64"
+
+	bravefile, err := GetBravefileFromLXD(imageName)
 	if err != nil {
 		t.Error("platform.GetBravefileFromLXD: ", err)
 	}
@@ -23,7 +25,7 @@ func Test_DeleteLocalImage(t *testing.T) {
 		t.Error("host.BuildImage: ", err)
 	}
 
-	err = host.DeleteLocalImage("alpine/edge/amd64")
+	err = host.DeleteLocalImage(imageName)
 	if err != nil {
 		t.Error("host.DeleteImageByName: ", err)
 	}
@@ -62,6 +64,7 @@ func Test_BuildImage(t *testing.T) {
 	bravefile.Run = []shared.RunCommand{*runCommand}
 
 	bravefile.PlatformService.Name = "alpine-test"
+	bravefile.PlatformService.Image = "alpine-test-1.0"
 	bravefile.PlatformService.Version = "1.0"
 
 	err = host.BuildImage(&bravefile)
@@ -69,7 +72,7 @@ func Test_BuildImage(t *testing.T) {
 		t.Error("host.BuildImage: ", err)
 	}
 
-	err = host.DeleteLocalImage("alpine-test-1.0")
+	err = host.DeleteLocalImage(bravefile.PlatformService.Image)
 	if err != nil {
 		t.Error("host.DeleteImageByName: ", err)
 	}
