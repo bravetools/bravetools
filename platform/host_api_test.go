@@ -121,22 +121,22 @@ func Test_InitUnit(t *testing.T) {
 		t.Error("host.InitUnit: ", err)
 	}
 
-	err = host.DeleteLocalImage("alpine-test-1.0")
+	err = host.DeleteLocalImage(bravefile.PlatformService.Image)
 	if err != nil {
 		t.Error("host.DeleteImageByName: ", err)
 	}
 
-	err = host.StopUnit("alpine-test")
+	err = host.StopUnit(bravefile.PlatformService.Name)
 	if err != nil {
 		t.Error("host.StopUnit: ", err)
 	}
 
-	err = host.StartUnit("alpine-test")
+	err = host.StartUnit(bravefile.PlatformService.Name)
 	if err != nil {
 		t.Error("host.StartUnit: ", err)
 	}
 
-	err = host.DeleteUnit("alpine-test")
+	err = host.DeleteUnit(bravefile.PlatformService.Name)
 	if err != nil {
 		t.Error("host.DeleteUnit: ", err)
 	}
