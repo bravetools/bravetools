@@ -662,13 +662,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 
 	fmt.Println(shared.Info("Building Image: " + imageStruct.String()))
 
-	if strings.ContainsAny(bravefile.PlatformService.Name, "/_. !@£$%^&*(){}:;`~,?") {
-		return errors.New("unit names should not contain special characters")
-	}
-
-	if bravefile.PlatformService.Name == "" {
-		return errors.New("service Name is empty")
-	}
+	bravefile.PlatformService.Name = "brave-build-" + strings.ReplaceAll(strings.ReplaceAll(imageStruct.ToBasename(), "_", "-"), ".", "-")
 
 	lxdServer, err := GetLXDInstanceServer(bh.Remote)
 	if err != nil {
