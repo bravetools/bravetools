@@ -15,7 +15,7 @@ import (
 type ImageDescription struct {
 	Image        string `yaml:"image"`
 	Location     string `yaml:"location"`
-	Architecture string `yaml:architecture`
+	Architecture string `yaml:"architecture"`
 }
 
 // Packages defines system packages to install in container
