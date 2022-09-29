@@ -67,6 +67,10 @@ func ParseLegacyImageString(imageString string) (imageStruct BravetoolsImage, er
 		return imageStruct, fmt.Errorf("failed to parse legacy Bravefile image field %q - expected %q at end", imageString, "-[version]")
 	}
 
+	if split[0] == "" {
+		return imageStruct, fmt.Errorf("image name not provided in %q. Legacy Bravefiles image name format is [name]-[version]", imageString)
+	}
+
 	// Default struct
 	// Architecture defaults to runtime arch
 	imageStruct = BravetoolsImage{
