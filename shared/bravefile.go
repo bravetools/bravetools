@@ -69,7 +69,8 @@ type Resources struct {
 
 // Bravefile describes unit configuration
 type Bravefile struct {
-	Base            ImageDescription `yaml:"base"`
+	Image           string           `yaml:"image,omitempty"`
+	Base            ImageDescription `yaml:"base,omitempty"`
 	SystemPackages  Packages         `yaml:"packages,omitempty"`
 	Run             []RunCommand     `yaml:"run,omitempty"`
 	Copy            []CopyCommand    `yaml:"copy,omitempty"`

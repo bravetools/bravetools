@@ -640,11 +640,17 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 	var imageStruct BravetoolsImage
 	var err error
 
+	// The image to build - if not in build section, use Image defined in Service section
+	imageString := bravefile.Image
+	if imageString == "" {
+		imageString = bravefile.PlatformService.Image
+	}
+
 	// If version explicitly provided separately this is a legacy Bravefile
-	if bravefile.PlatformService.Version == "" {
-		imageStruct, err = ParseImageString(bravefile.PlatformService.Image)
+	if bravefile.PlatformService.Version == "" || bravefile.Image != "" {
+		imageStruct, err = ParseImageString(imageString)
 	} else {
-		imageStruct, err = ParseLegacyImageString(bravefile.PlatformService.Image)
+		imageStruct, err = ParseLegacyImageString(imageString)
 	}
 	if err != nil {
 		return err
