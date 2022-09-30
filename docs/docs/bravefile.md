@@ -13,6 +13,7 @@ Bravetools creates reproducible environments by following instructions logged in
 A ``Bravefile`` follows YAML format and at a high-level looks like this:
 
 ```yaml
+image: alpine-python3/1.0
 base:
   image: alpine/edge
   location: public
@@ -25,9 +26,7 @@ run:
   args:
   - -a
 service:
-  name: alpine-python3
-  version: 1.0
-  image: alpine-python3-1.0
+  name: python3
   ip: ""
   resources:
     ram: "1GB"
@@ -35,11 +34,25 @@ service:
     gpu: "no"
 ```
 
-Running `brave build` followed by `brave deploy` on a ``Bravefile`` above, will pull a blank Alpine Edge system image for your CPU architecture, install python3, and make the container available on your network with 1GB of RAM and 4 CPUs.
+Running `brave build` followed by `brave deploy` on a ``Bravefile`` above, will pull a blank Alpine Edge system image for your CPU architecture, install python3, and make the container available on your network with 1GB of RAM and 4 CPUs. Image itself, will be sotred as `alpine-python3` and can be viewed by running `brave images`.
+
+```bash
+IMAGE         	VERSION	ARCH 	CREATED 	SIZE	HASH
+alpine-python3	latest 	arm64	just now	20MB	e40460891f90e73ceb17f9952919a571
+```
 
 ## Key Components
 
-The minimal structural unit of a Bravefile is an **Entry**. ``Bravefile`` supports five entry types - base, system, copy, run, and service.
+The minimal structural unit of a Bravefile is an **Entry**. ``Bravefile`` supports five entry types - image, base, system, copy, run, and service.
+
+### image
+`image` refers to the target image to be built using the instractions in your ``Bravefile``. General syntax is [NAME]/[VERSION]/[ARCH]. If [ARCH] is not specified, Bravetools will automatically determine your host's CPU architecture and build an appropriate image.
+
+Image name defined at the top of a ``Bravefile`` will also be used in the 
+
+```yaml
+image: alpine-python3/1.0
+```
 
 ### base
 Describes base requirements for your image, such as base image and location of the image file.
@@ -67,14 +80,7 @@ Describes system packages to be installed through a specified package manager. S
 packages:
   manager: apk
   system:
-  - bash
-  - curl
-  - openjdk8
-  - gcc
-  - g++
-  - linux-headers
-  - zip
-  - python3-dev
+  - python3
 ```
 
 ### copy
@@ -101,11 +107,9 @@ Executes commands on the Brave image during build time. This **Entity** supports
 
 ```yaml
 run:
-- command: ln
+- command: ls
   args:
-  - -s
-  - /usr/bin/python3
-  - /usr/bin/python
+  - -a
 ```
 
 ### service
@@ -113,12 +117,15 @@ Controls image properties, such as name, version, and run-time configuration. It
 
 ```yaml
 service:
-  name: alpine-edge-bazel
-  image: alpine-edge-bazel-0.27.1
+  #image is required in this section if it was not specified at the top of your Bravefile
+  image: alpine-python3/1.0
+  name: python3
+  # Profile name is optional and defaults to your local profile if deploying locally
   profile: brave
+  # Networl name is optional and defaults to your local LXD network
   network: lxdbr0
+  # Storage device is optional and defaults to your local LXD storage device
   storage: brave-deploy-disk
-  version: 0.27.1
   ip: ""
   ports: []
   postdeploy:
