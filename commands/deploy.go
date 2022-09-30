@@ -75,6 +75,11 @@ func deploy(cmd *cobra.Command, args []string) {
 	deployArgs.Merge(&bravefile.PlatformService)
 	bravefile.PlatformService = *deployArgs
 
+	// If Service section does not define an Image, use the Build-section Image field
+	if bravefile.PlatformService.Image == "" {
+		bravefile.PlatformService.Image = bravefile.Image
+	}
+
 	err = host.InitUnit(backend, &bravefile.PlatformService)
 	if err != nil {
 		log.Fatal(err)
