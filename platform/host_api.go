@@ -635,7 +635,7 @@ func (e *ImageExistsError) Error() string {
 }
 
 // BuildImage creates an image based on Bravefile
-func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
+func (bh *BraveHost) BuildImage(bravefile shared.Bravefile) error {
 
 	var imageStruct BravetoolsImage
 	var err error
@@ -720,7 +720,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 			return err
 		}
 
-		imageFingerprint, err = importLXD(ctx, lxdServer, bravefile, bh.Remote.Profile)
+		imageFingerprint, err = importLXD(ctx, lxdServer, &bravefile, bh.Remote.Profile)
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
@@ -730,7 +730,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 			return err
 		}
 	case "github":
-		imageFingerprint, err = importGitHub(ctx, lxdServer, bravefile, bh, bh.Remote.Profile, bh.Remote.Storage)
+		imageFingerprint, err = importGitHub(ctx, lxdServer, &bravefile, bh, bh.Remote.Profile, bh.Remote.Storage)
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
@@ -765,7 +765,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 			return err
 		}
 
-		imageFingerprint, err = importLocal(ctx, lxdServer, bravefile, bh.Remote.Profile, bh.Remote.Storage)
+		imageFingerprint, err = importLocal(ctx, lxdServer, &bravefile, bh.Remote.Profile, bh.Remote.Storage)
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
@@ -1002,7 +1002,7 @@ func (bh *BraveHost) StartUnit(name string) error {
 }
 
 // InitUnit starts unit from supplied image
-func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err error) {
+func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err error) {
 	// Check for missing mandatory fields
 	if unitParams.Name == "" {
 		return errors.New("unit name cannot be empty")
@@ -1082,7 +1082,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 
 	// Resource checks
 	// TODO: this should use a profile
-	err = CheckResources(imageStruct, backend, unitParams, bh)
+	err = CheckResources(imageStruct, backend, &unitParams, bh)
 	if err != nil {
 		return err
 	}
@@ -1228,7 +1228,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 		}
 	}
 
-	err = postdeploy(ctx, lxdServer, unitParams)
+	err = postdeploy(ctx, lxdServer, &unitParams)
 	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return err
 	}
@@ -1330,7 +1330,7 @@ func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (
 				}
 				os.Chdir(buildDir)
 
-				err = bh.BuildImage(service.BravefileBuild)
+				err = bh.BuildImage(*service.BravefileBuild)
 				switch errType := err.(type) {
 				case nil:
 					// Cleanup image later if error in compose
@@ -1375,7 +1375,7 @@ func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (
 			os.Chdir(deployDir)
 
 			// Cleanup each unit if error in compose
-			err = bh.InitUnit(backend, &service.Service)
+			err = bh.InitUnit(backend, service.Service)
 			if err != nil {
 				return err
 			}

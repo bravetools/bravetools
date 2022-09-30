@@ -168,7 +168,7 @@ func importGitHub(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *
 	}
 
 	if !imageExists(imageStruct) {
-		err = bh.BuildImage(remoteBravefile)
+		err = bh.BuildImage(*remoteBravefile)
 		if err != nil {
 			return fingerprint, err
 		}

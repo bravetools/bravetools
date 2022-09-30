@@ -20,7 +20,7 @@ func Test_DeleteLocalImage(t *testing.T) {
 		t.Error("platform.GetBravefileFromLXD: ", err)
 	}
 
-	err = host.BuildImage(bravefile)
+	err = host.BuildImage(*bravefile)
 	if err != nil {
 		t.Error("host.BuildImage: ", err)
 	}
@@ -67,7 +67,7 @@ func Test_BuildImage(t *testing.T) {
 	bravefile.PlatformService.Image = "alpine-test-1.0"
 	bravefile.PlatformService.Version = "1.0"
 
-	err = host.BuildImage(&bravefile)
+	err = host.BuildImage(bravefile)
 	if err != nil {
 		t.Error("host.BuildImage: ", err)
 	}
@@ -111,7 +111,7 @@ func Test_InitUnit(t *testing.T) {
 		},
 	}
 
-	err = host.BuildImage(&bravefile)
+	err = host.BuildImage(bravefile)
 	if err != nil {
 		t.Error("host.BuildImage: ", err)
 	}

@@ -80,7 +80,7 @@ func deploy(cmd *cobra.Command, args []string) {
 		bravefile.PlatformService.Image = bravefile.Image
 	}
 
-	err = host.InitUnit(backend, &bravefile.PlatformService)
+	err = host.InitUnit(backend, bravefile.PlatformService)
 	if err != nil {
 		log.Fatal(err)
 	}
