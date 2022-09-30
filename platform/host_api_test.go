@@ -13,17 +13,19 @@ func Test_DeleteLocalImage(t *testing.T) {
 		t.Fatal("failed to create host: ", err.Error())
 	}
 
-	bravefile, err := shared.GetBravefileFromLXD("alpine/edge/amd64")
+	imageName := "alpine/edge/amd64"
+
+	bravefile, err := GetBravefileFromLXD(imageName)
 	if err != nil {
-		t.Error("shared.GetBravefileFromLXD: ", err)
+		t.Error("platform.GetBravefileFromLXD: ", err)
 	}
 
-	err = host.BuildImage(bravefile)
+	err = host.BuildImage(*bravefile)
 	if err != nil {
 		t.Error("host.BuildImage: ", err)
 	}
 
-	err = host.DeleteLocalImage("brave-base-alpine-edge-1.0")
+	err = host.DeleteLocalImage(imageName)
 	if err != nil {
 		t.Error("host.DeleteImageByName: ", err)
 	}
@@ -62,14 +64,15 @@ func Test_BuildImage(t *testing.T) {
 	bravefile.Run = []shared.RunCommand{*runCommand}
 
 	bravefile.PlatformService.Name = "alpine-test"
+	bravefile.PlatformService.Image = "alpine-test-1.0"
 	bravefile.PlatformService.Version = "1.0"
 
-	err = host.BuildImage(&bravefile)
+	err = host.BuildImage(bravefile)
 	if err != nil {
 		t.Error("host.BuildImage: ", err)
 	}
 
-	err = host.DeleteLocalImage("alpine-test-1.0")
+	err = host.DeleteLocalImage(bravefile.PlatformService.Image)
 	if err != nil {
 		t.Error("host.DeleteImageByName: ", err)
 	}
@@ -108,7 +111,7 @@ func Test_InitUnit(t *testing.T) {
 		},
 	}
 
-	err = host.BuildImage(&bravefile)
+	err = host.BuildImage(bravefile)
 	if err != nil {
 		t.Error("host.BuildImage: ", err)
 	}
@@ -118,22 +121,22 @@ func Test_InitUnit(t *testing.T) {
 		t.Error("host.InitUnit: ", err)
 	}
 
-	err = host.DeleteLocalImage("alpine-test-1.0")
+	err = host.DeleteLocalImage(bravefile.PlatformService.Image)
 	if err != nil {
 		t.Error("host.DeleteImageByName: ", err)
 	}
 
-	err = host.StopUnit("alpine-test")
+	err = host.StopUnit(bravefile.PlatformService.Name)
 	if err != nil {
 		t.Error("host.StopUnit: ", err)
 	}
 
-	err = host.StartUnit("alpine-test")
+	err = host.StartUnit(bravefile.PlatformService.Name)
 	if err != nil {
 		t.Error("host.StartUnit: ", err)
 	}
 
-	err = host.DeleteUnit("alpine-test")
+	err = host.DeleteUnit(bravefile.PlatformService.Name)
 	if err != nil {
 		t.Error("host.DeleteUnit: ", err)
 	}
@@ -185,6 +188,12 @@ func Test_Compose(t *testing.T) {
 	err = composefile.Load("../test/compose/python-multi-service/brave-compose.yaml")
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	// Composefile specifies static IP addresses for containers, test will fail on bravetools setups where LXD bridge is on different IP range
+	// For this test, will just clear static IP addresses
+	for _, service := range composefile.Services {
+		service.IP = ""
 	}
 
 	err = host.Compose(host.Backend, composefile)

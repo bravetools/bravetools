@@ -40,7 +40,7 @@ func build(cmd *cobra.Command, args []string) {
 		log.Fatal("Failed to load Bravefile: ", err)
 	}
 
-	err = host.BuildImage(bravefile)
+	err = host.BuildImage(*bravefile)
 	switch errType := err.(type) {
 	case nil:
 	case *platform.ImageExistsError:

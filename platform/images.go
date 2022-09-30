@@ -67,6 +67,10 @@ func ParseLegacyImageString(imageString string) (imageStruct BravetoolsImage, er
 		return imageStruct, fmt.Errorf("failed to parse legacy Bravefile image field %q - expected %q at end", imageString, "-[version]")
 	}
 
+	if split[0] == "" {
+		return imageStruct, fmt.Errorf("image name not provided in %q. Legacy Bravefiles image name format is [name]-[version]", imageString)
+	}
+
 	// Default struct
 	// Architecture defaults to runtime arch
 	imageStruct = BravetoolsImage{
@@ -264,4 +268,22 @@ func resolveBaseImageLocation(imageString string) (location string, err error) {
 	}
 
 	return "", fmt.Errorf("image %q location could not be resolved", imageString)
+}
+
+// GetBravefileFromLXD generates a Bravefile for import of images from LXD repository
+func GetBravefileFromLXD(name string) (*shared.Bravefile, error) {
+	bravefile := shared.NewBravefile()
+
+	image, err := ParseImageString(name)
+	if err != nil {
+		return nil, err
+	}
+
+	bravefile.Base.Image = image.String()
+	bravefile.Base.Location = "public"
+
+	bravefile.PlatformService.Name = ""
+	bravefile.PlatformService.Image = image.String()
+
+	return bravefile, nil
 }

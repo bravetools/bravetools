@@ -635,22 +635,26 @@ func (e *ImageExistsError) Error() string {
 }
 
 // BuildImage creates an image based on Bravefile
-func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
+func (bh *BraveHost) BuildImage(bravefile shared.Bravefile) error {
 
 	var imageStruct BravetoolsImage
 	var err error
 
+	// The image to build - if not in build section, use Image defined in Service section
+	imageString := bravefile.Image
+	if imageString == "" {
+		imageString = bravefile.PlatformService.Image
+	}
+
 	// If version explicitly provided separately this is a legacy Bravefile
-	if bravefile.PlatformService.Version == "" {
-		imageStruct, err = ParseImageString(bravefile.PlatformService.Image)
+	if bravefile.PlatformService.Version == "" || bravefile.Image != "" {
+		imageStruct, err = ParseImageString(imageString)
 	} else {
-		imageStruct, err = ParseLegacyImageString(bravefile.PlatformService.Image)
+		imageStruct, err = ParseLegacyImageString(imageString)
 	}
 	if err != nil {
 		return err
 	}
-	// Ensure that the up-to-date "version" value is in the Bravefile for later use
-	bravefile.PlatformService.Version = imageStruct.Version
 
 	if imageExists(imageStruct) {
 		return &ImageExistsError{Name: imageStruct.String()}
@@ -658,13 +662,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 
 	fmt.Println(shared.Info("Building Image: " + imageStruct.String()))
 
-	if strings.ContainsAny(bravefile.PlatformService.Name, "/_. !@£$%^&*(){}:;`~,?") {
-		return errors.New("unit names should not contain special characters")
-	}
-
-	if bravefile.PlatformService.Name == "" {
-		return errors.New("service Name is empty")
-	}
+	bravefile.PlatformService.Name = "brave-build-" + strings.ReplaceAll(strings.ReplaceAll(imageStruct.ToBasename(), "_", "-"), ".", "-")
 
 	lxdServer, err := GetLXDInstanceServer(bh.Remote)
 	if err != nil {
@@ -722,7 +720,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 			return err
 		}
 
-		imageFingerprint, err = importLXD(ctx, lxdServer, bravefile, bh.Remote.Profile)
+		imageFingerprint, err = importLXD(ctx, lxdServer, &bravefile, bh.Remote.Profile)
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
@@ -732,7 +730,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 			return err
 		}
 	case "github":
-		imageFingerprint, err = importGitHub(ctx, lxdServer, bravefile, bh, bh.Remote.Profile, bh.Remote.Storage)
+		imageFingerprint, err = importGitHub(ctx, lxdServer, &bravefile, bh, bh.Remote.Profile, bh.Remote.Storage)
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
@@ -767,7 +765,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 			return err
 		}
 
-		imageFingerprint, err = importLocal(ctx, lxdServer, bravefile, bh.Remote.Profile, bh.Remote.Storage)
+		imageFingerprint, err = importLocal(ctx, lxdServer, &bravefile, bh.Remote.Profile, bh.Remote.Storage)
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
@@ -840,7 +838,7 @@ func (bh *BraveHost) BuildImage(bravefile *shared.Bravefile) error {
 	}
 
 	// Create an image based on running container and export it. Image saved as tar.gz in project local directory.
-	unitFingerprint, err := Publish(lxdServer, bravefile.PlatformService.Name, bravefile.PlatformService.Version)
+	unitFingerprint, err := Publish(lxdServer, bravefile.PlatformService.Name, imageStruct.String())
 	defer DeleteImageByFingerprint(lxdServer, unitFingerprint)
 	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to publish image: " + err.Error())
@@ -1004,13 +1002,16 @@ func (bh *BraveHost) StartUnit(name string) error {
 }
 
 // InitUnit starts unit from supplied image
-func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err error) {
+func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err error) {
 	// Check for missing mandatory fields
 	if unitParams.Name == "" {
 		return errors.New("unit name cannot be empty")
 	}
 	if unitParams.Image == "" {
 		return errors.New("unit image name cannot be empty")
+	}
+	if strings.ContainsAny(unitParams.Name, "/_. !@£$%^&*(){}:;`~,?") {
+		return errors.New("unit names should not contain special characters")
 	}
 
 	fmt.Println(shared.Info("Deploying Unit " + unitParams.Name))
@@ -1026,8 +1027,6 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 	if err != nil {
 		return err
 	}
-	// Ensure that the up-to-date "version" value is in the Bravefile for later use
-	unitParams.Version = imageStruct.Version
 
 	if !imageExists(imageStruct) {
 		return fmt.Errorf("image %q does not exist", imageStruct.String())
@@ -1083,7 +1082,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 
 	// Resource checks
 	// TODO: this should use a profile
-	err = CheckResources(imageStruct, backend, unitParams, bh)
+	err = CheckResources(imageStruct, backend, &unitParams, bh)
 	if err != nil {
 		return err
 	}
@@ -1229,7 +1228,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams *shared.Service) (err 
 		}
 	}
 
-	err = postdeploy(ctx, lxdServer, unitParams)
+	err = postdeploy(ctx, lxdServer, &unitParams)
 	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return err
 	}
@@ -1331,7 +1330,7 @@ func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (
 				}
 				os.Chdir(buildDir)
 
-				err = bh.BuildImage(service.BravefileBuild)
+				err = bh.BuildImage(*service.BravefileBuild)
 				switch errType := err.(type) {
 				case nil:
 					// Cleanup image later if error in compose
@@ -1376,7 +1375,7 @@ func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (
 			os.Chdir(deployDir)
 
 			// Cleanup each unit if error in compose
-			err = bh.InitUnit(backend, &service.Service)
+			err = bh.InitUnit(backend, service.Service)
 			if err != nil {
 				return err
 			}

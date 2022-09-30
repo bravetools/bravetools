@@ -166,11 +166,9 @@ func importGitHub(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *
 	if err != nil {
 		return fingerprint, err
 	}
-	// Ensure that the up-to-date "version" value is in the Bravefile for later use
-	remoteBravefile.PlatformService.Version = imageStruct.Version
 
 	if !imageExists(imageStruct) {
-		err = bh.BuildImage(remoteBravefile)
+		err = bh.BuildImage(*remoteBravefile)
 		if err != nil {
 			return fingerprint, err
 		}
@@ -202,8 +200,6 @@ func importLocal(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *s
 	if err != nil {
 		return "", err
 	}
-	// Ensure that the up-to-date "version" value is in the Bravefile for later use
-	bravefile.PlatformService.Version = imageStruct.Version
 
 	path, err := getImageFilepath(imageStruct)
 	if err != nil {
