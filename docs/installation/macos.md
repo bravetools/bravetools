@@ -27,7 +27,13 @@ On macOS, Bravetool requires [multipass](multipass.run). Multipass uses Mac's na
 
 ## Install Bravetools
 
-Latest stable release of Bravetools can be installed by:
+### Stable release
+1. Download the [latest stable release](https://github.com/bravetools/bravetools/releases) for your host platform
+2. Add the `brave` binary to your `$PATH`.
+3. Run `brave init` to get going.
+
+### Development release
+Bleeding edge release of Bravetools can be installed by:
 
 ```bash
 git clone https://github.com/beringresearch/bravetools
