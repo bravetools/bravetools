@@ -656,6 +656,15 @@ func (bh *BraveHost) BuildImage(bravefile shared.Bravefile) error {
 		return err
 	}
 
+	// Image architecture must match base image architecture
+	baseImageStruct, err := ParseImageString(bravefile.Base.Image)
+	if err != nil {
+		return err
+	}
+	if imageStruct.Architecture != baseImageStruct.Architecture {
+		return fmt.Errorf("target image architecture [%s] does not match base image [%s]", imageStruct.Architecture, baseImageStruct.Architecture)
+	}
+
 	if imageExists(imageStruct) {
 		return &ImageExistsError{Name: imageStruct.String()}
 	}

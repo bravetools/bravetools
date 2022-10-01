@@ -31,7 +31,13 @@ To run effectively on Windows, Bravetool requires [multipass](multipass.run). Mu
 
 ## Install Bravetools
 
-Latest stable release of Bravetools can be installed by:
+### Stable release
+1. Download the [latest stable release](https://github.com/bravetools/bravetools/releases) for your host platform
+2. Add the `brave` binary to your `$PATH`.
+3. Run `brave init` to get going.
+
+### Development release
+Bleeding edge release of Bravetools can be installed by:
 
 ```bash
 git clone https://github.com/beringresearch/bravetools
@@ -39,4 +45,4 @@ cd bravetools
 go build -ldflags=“-s -X github.com/bravetools/bravetools/shared.braveVersion=VERSION” -o brave.exe
 ```
 
-Where VERSION reflects the latest stable release of Bravetools e.g `shared.braveVersion=1.53`
+Where VERSION reflects the latest stable release of Bravetools e.g `shared.braveVersion=1.56`
