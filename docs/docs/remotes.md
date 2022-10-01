@@ -83,6 +83,24 @@ myremote
 local
 ```
 
+### Configuring Bravetools Remotes
+
+When a new remote is added, its configuration is stored in `~/.bravetools/remotes/$REMOTE_NAME.json`:
+
+```json
+{
+    "name": "macpine",
+    "url": "https://127.0.0.1:8443",
+    "protocol": "lxd",
+    "public": false,
+    "profile": "default",
+    "network": "lxdbr0",
+    "storage": ""
+}
+```
+
+`profile` and `network` parameters refer to LXD profile and bridge on your remote respectively. You may need to alter these values, depending on your remote set up and manually edit `profile` and `network` fields to reflect your remote LXD configuration.
+
 ## Configuring Bravetools to use Remotes for image builds
 
 By default, Bravetools uses a `local` remote for an image build. On Mac/Windows, this is a Multipass VM, whilst on Linux host this is your local LXD server. Sometimes, it may be desirable to use a remote LXD server to cary out Image builds. For example, if your remote has a different CPU architecture (arm64 vs x86) or has more allocated resources.
