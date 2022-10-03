@@ -49,9 +49,9 @@ Bravetools supports `zfs` (default) and `btrfs` file systems.
 Bleeding edge release of Bravetools can be installed by:
 
 ```bash
-git clone https://github.com/beringresearch/bravetools
+git clone https://github.com/bravetools/bravetools
 cd bravetools
-make darwin
+make ubuntu
 ```
 
 If this is your first time setting up Bravetools, run `brave init` to initialise the required profile, storage pool, and LXD bridge.
