@@ -10,7 +10,7 @@ Bravetools runs on Linux, MacOS, and Windows.
 # Features
 
 * [Build, version control, and share reproducible application and environment images](https://bravetools.github.io/bravetools/docs/bravefile/).
-* [Compose multi-container system](https://bravetools.github.io/bravetools/docs/compose/) in a simple and declarative way.
+* [Compose multi-container systems](https://bravetools.github.io/bravetools/docs/compose/) in a simple and declarative way.
 * [Deploy your systems](https://bravetools.github.io/bravetools/docs/cli/brave_deploy/) locally or remotely.
 
 And [many more](https://bravetools.github.io/bravetools/intro/use_cases/).
