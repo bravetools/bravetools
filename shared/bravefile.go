@@ -111,6 +111,16 @@ func (bravefile *Bravefile) Load(file string) error {
 			"- define version in 'image' field using <image_name>[/version][/arch]", file)
 	}
 
+	if bravefile.Image == "" && bravefile.PlatformService.Image == "" {
+		return fmt.Errorf("image not defined in bravefile")
+	}
+
+	if bravefile.Image != "" && bravefile.PlatformService.Image != "" {
+		if bravefile.Image != bravefile.PlatformService.Image {
+			return fmt.Errorf("two different images defined in same Bravfile: %q and %q", bravefile.Image, bravefile.PlatformService.Image)
+		}
+	}
+
 	return nil
 }
 
