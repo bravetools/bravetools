@@ -15,7 +15,7 @@ To get started with Bravetools on macOS, make sure you [meet the prerequisites](
 
 Your Mac must meet the following requirements to successfully install Bravetools:
 
-- **macOS must be version 10.13 or newer**. That is, Catalina, Mojave, or High Sierra. We recommend upgrading to the latest version of macOS.
+- **macOS must be version 10.13 or newer**. We recommend upgrading to the latest version of macOS.
 - At least 8 GB of RAM.
 
 ### Software requirements
@@ -36,7 +36,7 @@ On macOS, Bravetool requires [multipass](multipass.run). Multipass uses Mac's na
 Bleeding edge release of Bravetools can be installed by:
 
 ```bash
-git clone https://github.com/beringresearch/bravetools
+git clone https://github.com/bravetools/bravetools
 cd bravetools
 make darwin
 ```

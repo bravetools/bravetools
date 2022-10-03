@@ -40,7 +40,7 @@ To run effectively on Windows, Bravetool requires [multipass](multipass.run). Mu
 Bleeding edge release of Bravetools can be installed by:
 
 ```bash
-git clone https://github.com/beringresearch/bravetools
+git clone https://github.com/bravetools/bravetools
 cd bravetools
 go build -ldflags=“-s -X github.com/bravetools/bravetools/shared.braveVersion=VERSION” -o brave.exe
 ```

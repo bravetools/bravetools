@@ -8,8 +8,10 @@ description: "Bravetools is an end-to-end System Container management platform. 
 # Bravetools
 {: .fs-9 }
 
-Bravetools is an open source tool for creating and managing System Containers for multiple platforms using a single source configuration. Bravetools makes it easy to build, deploy, and scale machine images.
+Bravetools is an open source tool for creating and managing applications and environments using System Containers. It uses a single source configuration to make it easy to build, deploy, and scale machine images.
 {: .fs-6 .fw-300 }
+
+Bravetools runs on Linux, MacOS, and Windows.
 
 [Get started now](installation){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 } [View it on GitHub](https://github.com/bravetools/bravetools){: .btn .fs-5 .mb-4 .mb-md-0 }
 
