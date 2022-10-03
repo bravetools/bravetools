@@ -546,8 +546,6 @@ func getBuildDependents(dependency string, composeFile *shared.ComposeFile) (ser
 		if err != nil {
 			return serviceNames, err
 		}
-		// Ensure that the up-to-date "version" value is in the compose file for later use
-		composeFile.Services[service].Version = imageStruct.Version
 
 		if imageExists(imageStruct) {
 			continue
