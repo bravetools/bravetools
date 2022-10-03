@@ -106,6 +106,11 @@ func (bravefile *Bravefile) Load(file string) error {
 		return err
 	}
 
+	if bravefile.Image != "" && bravefile.PlatformService.Version != "" {
+		return fmt.Errorf("bravefile at path %q uses legacy 'version' field in service section and 'image' field in build section "+
+			"- define version in 'image' field using <image_name>[/version][/arch]", file)
+	}
+
 	return nil
 }
 

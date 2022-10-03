@@ -63,12 +63,11 @@ func ParseImageString(imageString string) (imageStruct BravetoolsImage, err erro
 func ParseLegacyImageString(imageString string) (imageStruct BravetoolsImage, err error) {
 	// Legacy Bravefile - these have the version prepended to end of name and no arch
 	split := strings.Split(imageString, "-")
+	if split[0] == "" {
+		return imageStruct, errors.New("image name not provided")
+	}
 	if len(split) == 1 {
 		return imageStruct, fmt.Errorf("failed to parse legacy Bravefile image field %q - expected %q at end", imageString, "-[version]")
-	}
-
-	if split[0] == "" {
-		return imageStruct, fmt.Errorf("image name not provided in %q. Legacy Bravefiles image name format is [name]-[version]", imageString)
 	}
 
 	// Default struct
