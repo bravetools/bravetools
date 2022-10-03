@@ -646,6 +646,11 @@ func (bh *BraveHost) BuildImage(bravefile shared.Bravefile) error {
 		imageString = bravefile.PlatformService.Image
 	}
 
+	err = bravefile.ValidateBuild()
+	if err != nil {
+		return fmt.Errorf("failed to build image: %s", err)
+	}
+
 	// If version explicitly provided separately this is a legacy Bravefile
 	if bravefile.PlatformService.Version == "" || bravefile.Image != "" {
 		imageStruct, err = ParseImageString(imageString)
@@ -1013,14 +1018,9 @@ func (bh *BraveHost) StartUnit(name string) error {
 // InitUnit starts unit from supplied image
 func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err error) {
 	// Check for missing mandatory fields
-	if unitParams.Name == "" {
-		return errors.New("unit name cannot be empty")
-	}
-	if unitParams.Image == "" {
-		return errors.New("unit image name cannot be empty")
-	}
-	if strings.ContainsAny(unitParams.Name, "/_. !@£$%^&*(){}:;`~,?") {
-		return errors.New("unit names should not contain special characters")
+	err = unitParams.ValidateDeploy()
+	if err != nil {
+		return err
 	}
 
 	fmt.Println(shared.Info("Deploying Unit " + unitParams.Name))
@@ -1316,11 +1316,16 @@ func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (
 		}
 	}
 
-	// Validate Bravefiles
+	// Validate Services
 	for _, serviceName := range topologicalOrdering {
-		service := composeFile.Services[serviceName]
-		err := service.BravefileBuild.Validate()
+		service, exist := composeFile.Services[serviceName]
+		if !exist {
+			err = fmt.Errorf("service name %q does not exist in Services", serviceName)
+			return err
+		}
+		err = service.ValidateDeploy()
 		if err != nil {
+			err = fmt.Errorf("failed to deploy service %q: %s", serviceName, err)
 			return err
 		}
 	}
@@ -1332,6 +1337,11 @@ func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (
 		// Load bravefile settings as defaults, overwrite if specified in composefile
 		if service.Bravefile != "" {
 			if service.Build || service.Base {
+				err = service.BravefileBuild.ValidateBuild()
+				if err != nil {
+					return fmt.Errorf("invalid Bravefile for service %q: %s", service.Name, err)
+				}
+
 				// Switch to build context dir
 				buildDir := service.Context
 				if buildDir == "" {
