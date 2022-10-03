@@ -461,7 +461,7 @@ func bravefileRun(ctx context.Context, lxdServer lxd.InstanceServer, run []share
 			args = append(args, content)
 		}
 
-		status, err := Exec(ctx, lxdServer, service, args, ExecArgs{env: c.Env})
+		status, err := Exec(ctx, lxdServer, service, args, ExecArgs{env: c.Env, detach: c.Detach})
 		if err != nil {
 			return err
 		}
