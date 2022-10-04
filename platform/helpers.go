@@ -191,12 +191,7 @@ func importLocal(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *s
 	}
 	var imageStruct BravetoolsImage
 
-	// If version explicitly provided separately this is a legacy Bravefile
-	if bravefile.PlatformService.Version == "" {
-		imageStruct, err = ParseImageString(bravefile.Base.Image)
-	} else {
-		imageStruct, err = ParseLegacyImageString(bravefile.Base.Image)
-	}
+	imageStruct, err = ParseImageString(bravefile.Base.Image)
 	if err != nil {
 		return "", err
 	}
@@ -546,8 +541,6 @@ func getBuildDependents(dependency string, composeFile *shared.ComposeFile) (ser
 		if err != nil {
 			return serviceNames, err
 		}
-		// Ensure that the up-to-date "version" value is in the compose file for later use
-		composeFile.Services[service].Version = imageStruct.Version
 
 		if imageExists(imageStruct) {
 			continue

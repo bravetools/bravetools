@@ -84,9 +84,14 @@ func (composeFile *ComposeFile) Load(file string) error {
 			service.BravefileBuild = NewBravefile()
 			err = service.BravefileBuild.Load(service.Bravefile)
 			if err != nil {
-				return fmt.Errorf("failed to load bravefile %q", service.Bravefile)
+				return fmt.Errorf("failed to load bravefile %q: %s", service.Bravefile, err)
 			}
 			service.Service.Merge(&service.BravefileBuild.PlatformService)
+
+			// Take Image field from build section if none in Service section
+			if service.Image == "" {
+				service.Image = service.BravefileBuild.Image
+			}
 		}
 	}
 

@@ -106,21 +106,48 @@ func (bravefile *Bravefile) Load(file string) error {
 		return err
 	}
 
+	if bravefile.Image != "" && bravefile.PlatformService.Version != "" {
+		return fmt.Errorf("bravefile at path %q uses legacy 'version' field in service section and 'image' field in build section "+
+			"- define version in 'image' field using <image_name>[/version][/arch]", file)
+	}
+
+	if bravefile.Image == "" && bravefile.PlatformService.Image == "" {
+		return fmt.Errorf("image not defined in bravefile")
+	}
+
+	if bravefile.Image != "" && bravefile.PlatformService.Image != "" {
+		if bravefile.Image != bravefile.PlatformService.Image {
+			return fmt.Errorf("two different images defined in same Bravfile: %q and %q", bravefile.Image, bravefile.PlatformService.Image)
+		}
+	}
+
 	return nil
 }
 
-// Validate validates Bravefile
-func (bravefile *Bravefile) Validate() error {
+// Validate validates Bravefile for build
+func (bravefile *Bravefile) ValidateBuild() error {
 	if bravefile.Base.Image == "" {
 		return errors.New("invalid Bravefile: empty Base Image name")
 	}
 
-	if bravefile.PlatformService.Name == "" {
-		return errors.New("invalid Bravefile: empty Service Name")
+	if bravefile.Image == "" && bravefile.PlatformService.Image == "" {
+		return errors.New("invalid Bravefile: empty Service Image name")
 	}
 
-	if bravefile.PlatformService.Image == "" {
-		return errors.New("invalid Bravefile: empty Service Image name")
+	return nil
+}
+
+func (service *Service) ValidateDeploy() error {
+	if service.Name == "" {
+		return errors.New("invalid Service: empty Service Name")
+	}
+
+	if service.Image == "" {
+		return fmt.Errorf("invalid Service %q: empty Image name", service.Name)
+	}
+
+	if strings.ContainsAny(service.Name, "/_. !@£$%^&*(){}:;`~,?") {
+		return errors.New("unit names should not contain special characters")
 	}
 
 	return nil

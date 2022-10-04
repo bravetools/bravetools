@@ -116,7 +116,7 @@ func Test_InitUnit(t *testing.T) {
 		t.Error("host.BuildImage: ", err)
 	}
 
-	err = host.InitUnit(host.Backend, &bravefile.PlatformService)
+	err = host.InitUnit(host.Backend, bravefile.PlatformService)
 	if err != nil {
 		t.Error("host.InitUnit: ", err)
 	}
