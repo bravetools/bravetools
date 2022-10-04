@@ -380,3 +380,8 @@ func (vm Lxd) Info() (Info, error) {
 func (vm Lxd) Running() (bool, error) {
 	return true, nil
 }
+
+// Start starts the backend if it is not already running
+func (vm Lxd) Start() error {
+	return nil
+}

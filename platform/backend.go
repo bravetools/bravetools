@@ -7,6 +7,7 @@ type Backend interface {
 	BraveBackendInit() error
 	Info() (Info, error)
 	Running() (bool, error)
+	Start() error
 }
 
 // Info describes Brave Platform

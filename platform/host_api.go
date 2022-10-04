@@ -554,12 +554,9 @@ func (bh *BraveHost) DeleteUnit(name string) error {
 
 	// If local remote, ensure the VM is started
 	if remoteName == shared.BravetoolsRemote {
-		running, err := bh.Backend.Running()
+		err := bh.Backend.Start()
 		if err != nil {
-			return errors.New("Failed to get host info: " + err.Error())
-		}
-		if !running {
-			return errors.New("Backend is stopped")
+			return errors.New("Failed to start backend: " + err.Error())
 		}
 	}
 
@@ -950,12 +947,9 @@ func (bh *BraveHost) StopUnit(name string) error {
 
 	// If local remote, ensure the VM is started
 	if remoteName == shared.BravetoolsRemote {
-		running, err := bh.Backend.Running()
+		err := bh.Backend.Start()
 		if err != nil {
-			return errors.New("Failed to get host info: " + err.Error())
-		}
-		if !running {
-			return errors.New("Backend is stopped")
+			return errors.New("Failed to start backend: " + err.Error())
 		}
 	}
 
@@ -984,12 +978,9 @@ func (bh *BraveHost) StartUnit(name string) error {
 
 	// If local remote, ensure the VM is started
 	if remoteName == shared.BravetoolsRemote {
-		running, err := bh.Backend.Running()
+		err := bh.Backend.Start()
 		if err != nil {
-			return errors.New("Failed to get host info: " + err.Error())
-		}
-		if !running {
-			return errors.New("Backend is stopped")
+			return errors.New("Failed to start backend: " + err.Error())
 		}
 	}
 
@@ -1044,12 +1035,9 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 
 	// If local remote, check if running
 	if deployRemoteName == shared.BravetoolsRemote {
-		running, err := bh.Backend.Running()
+		err := bh.Backend.Start()
 		if err != nil {
-			return errors.New("Failed to get host info: " + err.Error())
-		}
-		if !running {
-			return errors.New("Backend is stopped")
+			return errors.New("Failed to start backend: " + err.Error())
 		}
 	}
 

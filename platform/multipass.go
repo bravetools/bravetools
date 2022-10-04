@@ -404,6 +404,12 @@ func (vm Multipass) Running() (bool, error) {
 	return false, nil
 }
 
+// Start starts the backend if it is not already running
+func (vm Multipass) Start() error {
+	cmd := exec.Command("multipass", "start", vm.Settings.Name)
+	return cmd.Run()
+}
+
 func (vm Multipass) getInfo() (Info, error) {
 
 	backendInfo := NewInfo()
