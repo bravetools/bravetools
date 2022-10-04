@@ -375,3 +375,8 @@ func (vm Lxd) Info() (Info, error) {
 
 	return backendInfo, nil
 }
+
+// Running returns whether backend is running
+func (vm Lxd) Running() (bool, error) {
+	return true, nil
+}

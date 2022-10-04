@@ -379,6 +379,31 @@ func (vm Multipass) Info() (backendInfo Info, err error) {
 	return backendInfo, nil
 }
 
+// Info shows all VMs and their state
+func (vm Multipass) Running() (bool, error) {
+	operation := shared.Info("Gathering multipass settings")
+	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
+	s.Suffix = " " + operation
+	s.Start()
+	defer s.Stop()
+
+	_, err := checkMultipass()
+
+	if err != nil {
+		return false, errors.New("multipass process not found: " + err.Error())
+	}
+
+	backendInfo, err := vm.getInfo()
+	if err != nil {
+		return false, errors.New("error contacting multipass vm: " + err.Error())
+	}
+
+	if backendInfo.State == "Running" {
+		return true, nil
+	}
+	return false, nil
+}
+
 func (vm Multipass) getInfo() (Info, error) {
 
 	backendInfo := NewInfo()
