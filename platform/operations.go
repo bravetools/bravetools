@@ -810,8 +810,8 @@ func Stop(lxdServer lxd.InstanceServer, name string) error {
 }
 
 // Publish unit
-// lxc publish -f [remote]:[name] [remote]: --alias [name-version]
-func Publish(lxdServer lxd.InstanceServer, name string, version string) (fingerprint string, err error) {
+// lxc publish -f [remote]:[name] [remote]: --alias [name-suffix]
+func Publish(lxdServer lxd.InstanceServer, name string, suffix string) (fingerprint string, err error) {
 	operation := shared.Info("Publishing " + name)
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
 	s.Suffix = " " + operation
@@ -864,7 +864,10 @@ func Publish(lxdServer lxd.InstanceServer, name string, version string) (fingerp
 	fingerprint = opAPI.Metadata["fingerprint"].(string)
 
 	aliasPost := api.ImageAliasesPost{}
-	aliasPost.Name = name + "-" + version
+	aliasPost.Name = name
+	if suffix != "" {
+		aliasPost.Name += "-" + suffix
+	}
 	aliasPost.Target = fingerprint
 	err = lxdServer.CreateImageAlias(aliasPost)
 	if err != nil {

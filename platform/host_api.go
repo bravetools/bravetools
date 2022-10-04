@@ -852,7 +852,7 @@ func (bh *BraveHost) BuildImage(bravefile shared.Bravefile) error {
 	}
 
 	// Create an image based on running container and export it. Image saved as tar.gz in project local directory.
-	unitFingerprint, err := Publish(lxdServer, bravefile.PlatformService.Name, imageStruct.String())
+	unitFingerprint, err := Publish(lxdServer, bravefile.PlatformService.Name, "")
 	defer DeleteImageByFingerprint(lxdServer, unitFingerprint)
 	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to publish image: " + err.Error())
