@@ -64,19 +64,6 @@ func CheckHostPorts(hostURL string, forwardedPorts []string) (err error) {
 	return nil
 }
 
-func getFreeSpace(storageUsage StorageUsage) (freeSpace int64, err error) {
-	usedStorageBytes, err := shared.SizeCountToInt(storageUsage.UsedStorage)
-	if err != nil {
-		return freeSpace, errors.New("failed to retrieve backend disk usage:" + err.Error())
-	}
-	totalStorageBytes, err := shared.SizeCountToInt(storageUsage.TotalStorage)
-	if err != nil {
-		return freeSpace, errors.New("failed to retrieve backend disk space:" + err.Error())
-	}
-
-	return totalStorageBytes - usedStorageBytes, nil
-}
-
 func CheckStoragePoolSpace(lxdServer lxd.InstanceServer, storagePool string, requestedSpace int64) (err error) {
 	res, err := lxdServer.GetStoragePoolResources(storagePool)
 	if err != nil {
@@ -91,25 +78,6 @@ func CheckStoragePoolSpace(lxdServer lxd.InstanceServer, storagePool string, req
 		}
 		return fmt.Errorf("requested size exceeds available space on storage pool - %q requested but %q available",
 			shared.FormatByteCountSI(requestedSpace), shared.FormatByteCountSI(int64(freeSpace)))
-	}
-
-	return nil
-}
-
-// CheckBackendDiskSpace checks whether backend has enough disk space for requested allocation
-func CheckBackendDiskSpace(backend Backend, requestedSpace int64) (err error) {
-	info, err := backend.Info()
-	if err != nil {
-		return errors.New("Failed to connect to host: " + err.Error())
-	}
-
-	freeSpace, err := getFreeSpace(info.Disk)
-	if err != nil {
-		return err
-	}
-
-	if requestedSpace >= freeSpace {
-		return errors.New("requested unit size exceeds available disk space on bravetools host. To increase storage pool size modify $HOME/.bravetools/config.yml and run brave configure")
 	}
 
 	return nil
