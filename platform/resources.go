@@ -2,50 +2,51 @@ package platform
 
 import (
 	"errors"
+	"fmt"
+	"net"
+	"net/url"
 	"strings"
 
 	"github.com/bravetools/bravetools/shared"
+	lxd "github.com/lxc/lxd/client"
 )
 
-// CheckResources ..
-func CheckResources(image BravetoolsImage, backend Backend, unitParams *shared.Service, bh *BraveHost) error {
-	info, err := backend.Info()
+// CheckMemory checks if the LXD server host has sufficient RAM to deploy requested unit
+func CheckMemory(lxdServer lxd.InstanceServer, ramString string) error {
+	resources, err := lxdServer.GetServerResources()
 	if err != nil {
-		return errors.New("failed to connect to host: " + err.Error())
+		return errors.New("failed to retrieve LXD server resources: " + err.Error())
 	}
 
-	requestedImageSize, err := localImageSize(image)
+	requestedMemorySize, err := shared.SizeCountToInt(ramString)
 	if err != nil {
 		return err
 	}
-	freeDiskSpace, err := getFreeSpace(info.Disk)
-	if err != nil {
-		return err
+	freeMemorySize := resources.Memory.Total - resources.Memory.Used
+
+	if uint64(requestedMemorySize) > freeMemorySize {
+		return errors.New("Requested unit memory (" + ramString + ") exceeds available memory on bravetools host")
 	}
 
-	if requestedImageSize*5 > freeDiskSpace {
-		return errors.New("requested unit size exceeds available disk space on bravetools host. To increase storage pool size modify $HOME/.bravetools/config.yml and run brave configure")
-	}
+	return nil
+}
 
-	requestedMemorySize, err := shared.SizeCountToInt(unitParams.Resources.RAM)
+// CheckHostPorts ensures required forwarded ports are free by attempting to connect.
+// If a connection is established the port is already taken
+func CheckHostPorts(hostURL string, forwardedPorts []string) (err error) {
+	parsedURL, err := url.Parse(hostURL)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to parse host URL %q: %s", hostURL, err)
 	}
-	freeMemorySize, err := getFreeSpace(info.Memory)
+	host, _, err := net.SplitHostPort(parsedURL.Host)
 	if err != nil {
-		return err
-	}
-
-	if requestedMemorySize > freeMemorySize {
-		return errors.New("Requested unit memory (" + unitParams.Resources.RAM + ") exceeds available memory on bravetools host")
+		return fmt.Errorf("failed to parse host URL %q: %s", hostURL, err)
 	}
 
 	// Networking Checks
-	hostIP := info.IPv4
-	ports := unitParams.Ports
 	var hostPorts []string
-	if len(ports) > 0 {
-		for _, p := range ports {
+	if len(forwardedPorts) > 0 {
+		for _, p := range forwardedPorts {
 			ps := strings.Split(p, ":")
 			if len(ps) < 2 {
 				return errors.New("invalid port forwarding definition. Appropriate format is UNIT_PORT:HOST_PORT")
@@ -54,7 +55,7 @@ func CheckResources(image BravetoolsImage, backend Backend, unitParams *shared.S
 		}
 	}
 
-	err = shared.TCPPortStatus(hostIP, hostPorts)
+	err = shared.TCPPortStatus(host, hostPorts)
 	if err != nil {
 		return err
 	}

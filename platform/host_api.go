@@ -1090,8 +1090,11 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 	defer DeleteImageByFingerprint(lxdServer, fingerprint)
 
 	// Resource checks
-	// TODO: this should use a profile
-	err = CheckResources(imageStruct, backend, &unitParams, bh)
+	err = CheckMemory(lxdServer, unitParams.Resources.RAM)
+	if err != nil {
+		return err
+	}
+	err = CheckHostPorts(deployRemote.URL, unitParams.Ports)
 	if err != nil {
 		return err
 	}
