@@ -3,6 +3,7 @@ package platform
 import (
 	"errors"
 	"fmt"
+	"math"
 	"net"
 	"net/url"
 	"strings"
@@ -74,6 +75,25 @@ func getFreeSpace(storageUsage StorageUsage) (freeSpace int64, err error) {
 	}
 
 	return totalStorageBytes - usedStorageBytes, nil
+}
+
+func CheckStoragePoolSpace(lxdServer lxd.InstanceServer, storagePool string, requestedSpace int64) (err error) {
+	res, err := lxdServer.GetStoragePoolResources(storagePool)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve storage information for storage pool %q from lxd server", storagePool)
+	}
+	freeSpace := res.Space.Total - res.Space.Used
+
+	if freeSpace <= uint64(requestedSpace) {
+		// Potential uint64 -> int64 int overflow - just setting to max for now
+		if freeSpace > math.MaxInt64 {
+			freeSpace = math.MaxInt64
+		}
+		return fmt.Errorf("requested size exceeds available space on storage pool - %q requested but %q available",
+			shared.FormatByteCountSI(requestedSpace), shared.FormatByteCountSI(int64(freeSpace)))
+	}
+
+	return nil
 }
 
 // CheckBackendDiskSpace checks whether backend has enough disk space for requested allocation

@@ -729,7 +729,7 @@ func (bh *BraveHost) BuildImage(bravefile shared.Bravefile) error {
 		if err != nil {
 			return err
 		}
-		err = CheckBackendDiskSpace(bh.Backend, img.Size)
+		err = CheckStoragePoolSpace(lxdServer, bh.Settings.StoragePool.Name, img.Size)
 		if err != nil {
 			return err
 		}
@@ -774,7 +774,7 @@ func (bh *BraveHost) BuildImage(bravefile shared.Bravefile) error {
 		if err != nil {
 			return err
 		}
-		err = CheckBackendDiskSpace(bh.Backend, imgSize)
+		err = CheckStoragePoolSpace(lxdServer, bh.Settings.StoragePool.Name, imgSize)
 		if err != nil {
 			return err
 		}
