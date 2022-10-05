@@ -1087,9 +1087,19 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 	if err != nil {
 		return fmt.Errorf("failed to obtain image hash %q", unitParams.Image)
 	}
+	imgSize, err := localImageSize(imageStruct)
+	if err != nil {
+		return fmt.Errorf("failed to get image size for image %q", imageStruct.String())
+	}
 	defer DeleteImageByFingerprint(lxdServer, fingerprint)
 
 	// Resource checks
+	if unitParams.Storage != "" {
+		err = CheckStoragePoolSpace(lxdServer, unitParams.Storage, imgSize)
+		if err != nil {
+			return err
+		}
+	}
 	err = CheckMemory(lxdServer, unitParams.Resources.RAM)
 	if err != nil {
 		return err
