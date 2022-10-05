@@ -476,7 +476,10 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 		sourcePath = sourceSlice[1]
 	} else if len(sourceSlice) == 1 {
 		sourceUnit = ""
-		sourcePath = source
+		sourcePath, err = filepath.Abs(source)
+		if err != nil {
+			return err
+		}
 	}
 
 	sharedDirectory := filepath.Base(sourcePath)
