@@ -919,7 +919,13 @@ func (bh *BraveHost) PublishUnit(name string, backend Backend) error {
 		return errors.New("failed to get host info: " + err.Error())
 	}
 
-	lxdServer, err := GetLXDInstanceServer(bh.Remote)
+	remoteName, name := ParseRemoteName(name)
+	remote, err := LoadRemoteSettings(remoteName)
+	if err != nil {
+		return err
+	}
+
+	lxdServer, err := GetLXDInstanceServer(remote)
 	if err != nil {
 		return err
 	}
