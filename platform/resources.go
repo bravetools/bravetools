@@ -2,50 +2,52 @@ package platform
 
 import (
 	"errors"
+	"fmt"
+	"math"
+	"net"
+	"net/url"
 	"strings"
 
 	"github.com/bravetools/bravetools/shared"
+	lxd "github.com/lxc/lxd/client"
 )
 
-// CheckResources ..
-func CheckResources(image BravetoolsImage, backend Backend, unitParams *shared.Service, bh *BraveHost) error {
-	info, err := backend.Info()
+// CheckMemory checks if the LXD server host has sufficient RAM to deploy requested unit
+func CheckMemory(lxdServer lxd.InstanceServer, ramString string) error {
+	resources, err := lxdServer.GetServerResources()
 	if err != nil {
-		return errors.New("failed to connect to host: " + err.Error())
+		return errors.New("failed to retrieve LXD server resources: " + err.Error())
 	}
 
-	requestedImageSize, err := localImageSize(image)
+	requestedMemorySize, err := shared.SizeCountToInt(ramString)
 	if err != nil {
 		return err
 	}
-	freeDiskSpace, err := getFreeSpace(info.Disk)
-	if err != nil {
-		return err
+	freeMemorySize := resources.Memory.Total - resources.Memory.Used
+
+	if uint64(requestedMemorySize) > freeMemorySize {
+		return errors.New("Requested unit memory (" + ramString + ") exceeds available memory on bravetools host")
 	}
 
-	if requestedImageSize*5 > freeDiskSpace {
-		return errors.New("requested unit size exceeds available disk space on bravetools host. To increase storage pool size modify $HOME/.bravetools/config.yml and run brave configure")
-	}
+	return nil
+}
 
-	requestedMemorySize, err := shared.SizeCountToInt(unitParams.Resources.RAM)
+// CheckHostPorts ensures required forwarded ports are free by attempting to connect.
+// If a connection is established the port is already taken
+func CheckHostPorts(hostURL string, forwardedPorts []string) (err error) {
+	parsedURL, err := url.Parse(hostURL)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to parse host URL %q: %s", hostURL, err)
 	}
-	freeMemorySize, err := getFreeSpace(info.Memory)
+	host, _, err := net.SplitHostPort(parsedURL.Host)
 	if err != nil {
-		return err
-	}
-
-	if requestedMemorySize > freeMemorySize {
-		return errors.New("Requested unit memory (" + unitParams.Resources.RAM + ") exceeds available memory on bravetools host")
+		return fmt.Errorf("failed to parse host URL %q: %s", hostURL, err)
 	}
 
 	// Networking Checks
-	hostIP := info.IPv4
-	ports := unitParams.Ports
 	var hostPorts []string
-	if len(ports) > 0 {
-		for _, p := range ports {
+	if len(forwardedPorts) > 0 {
+		for _, p := range forwardedPorts {
 			ps := strings.Split(p, ":")
 			if len(ps) < 2 {
 				return errors.New("invalid port forwarding definition. Appropriate format is UNIT_PORT:HOST_PORT")
@@ -54,7 +56,7 @@ func CheckResources(image BravetoolsImage, backend Backend, unitParams *shared.S
 		}
 	}
 
-	err = shared.TCPPortStatus(hostIP, hostPorts)
+	err = shared.TCPPortStatus(host, hostPorts)
 	if err != nil {
 		return err
 	}
@@ -62,33 +64,20 @@ func CheckResources(image BravetoolsImage, backend Backend, unitParams *shared.S
 	return nil
 }
 
-func getFreeSpace(storageUsage StorageUsage) (freeSpace int64, err error) {
-	usedStorageBytes, err := shared.SizeCountToInt(storageUsage.UsedStorage)
+func CheckStoragePoolSpace(lxdServer lxd.InstanceServer, storagePool string, requestedSpace int64) (err error) {
+	res, err := lxdServer.GetStoragePoolResources(storagePool)
 	if err != nil {
-		return freeSpace, errors.New("failed to retrieve backend disk usage:" + err.Error())
+		return fmt.Errorf("failed to retrieve storage information for storage pool %q from lxd server", storagePool)
 	}
-	totalStorageBytes, err := shared.SizeCountToInt(storageUsage.TotalStorage)
-	if err != nil {
-		return freeSpace, errors.New("failed to retrieve backend disk space:" + err.Error())
-	}
+	freeSpace := res.Space.Total - res.Space.Used
 
-	return totalStorageBytes - usedStorageBytes, nil
-}
-
-// CheckBackendDiskSpace checks whether backend has enough disk space for requested allocation
-func CheckBackendDiskSpace(backend Backend, requestedSpace int64) (err error) {
-	info, err := backend.Info()
-	if err != nil {
-		return errors.New("Failed to connect to host: " + err.Error())
-	}
-
-	freeSpace, err := getFreeSpace(info.Disk)
-	if err != nil {
-		return err
-	}
-
-	if requestedSpace >= freeSpace {
-		return errors.New("requested unit size exceeds available disk space on bravetools host. To increase storage pool size modify $HOME/.bravetools/config.yml and run brave configure")
+	if freeSpace <= uint64(requestedSpace) {
+		// Potential uint64 -> int64 int overflow - just setting to max for now
+		if freeSpace > math.MaxInt64 {
+			freeSpace = math.MaxInt64
+		}
+		return fmt.Errorf("requested size exceeds available space on storage pool - %q requested but %q available",
+			shared.FormatByteCountSI(requestedSpace), shared.FormatByteCountSI(int64(freeSpace)))
 	}
 
 	return nil

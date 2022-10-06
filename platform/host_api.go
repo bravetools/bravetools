@@ -729,7 +729,7 @@ func (bh *BraveHost) BuildImage(bravefile shared.Bravefile) error {
 		if err != nil {
 			return err
 		}
-		err = CheckBackendDiskSpace(bh.Backend, img.Size)
+		err = CheckStoragePoolSpace(lxdServer, bh.Settings.StoragePool.Name, img.Size)
 		if err != nil {
 			return err
 		}
@@ -774,7 +774,7 @@ func (bh *BraveHost) BuildImage(bravefile shared.Bravefile) error {
 		if err != nil {
 			return err
 		}
-		err = CheckBackendDiskSpace(bh.Backend, imgSize)
+		err = CheckStoragePoolSpace(lxdServer, bh.Settings.StoragePool.Name, imgSize)
 		if err != nil {
 			return err
 		}
@@ -852,7 +852,7 @@ func (bh *BraveHost) BuildImage(bravefile shared.Bravefile) error {
 	}
 
 	// Create an image based on running container and export it. Image saved as tar.gz in project local directory.
-	unitFingerprint, err := Publish(lxdServer, bravefile.PlatformService.Name, imageStruct.String())
+	unitFingerprint, err := Publish(lxdServer, bravefile.PlatformService.Name, "")
 	defer DeleteImageByFingerprint(lxdServer, unitFingerprint)
 	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("failed to publish image: " + err.Error())
@@ -1087,11 +1087,24 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 	if err != nil {
 		return fmt.Errorf("failed to obtain image hash %q", unitParams.Image)
 	}
+	imgSize, err := localImageSize(imageStruct)
+	if err != nil {
+		return fmt.Errorf("failed to get image size for image %q", imageStruct.String())
+	}
 	defer DeleteImageByFingerprint(lxdServer, fingerprint)
 
 	// Resource checks
-	// TODO: this should use a profile
-	err = CheckResources(imageStruct, backend, &unitParams, bh)
+	if unitParams.Storage != "" {
+		err = CheckStoragePoolSpace(lxdServer, unitParams.Storage, imgSize)
+		if err != nil {
+			return err
+		}
+	}
+	err = CheckMemory(lxdServer, unitParams.Resources.RAM)
+	if err != nil {
+		return err
+	}
+	err = CheckHostPorts(deployRemote.URL, unitParams.Ports)
 	if err != nil {
 		return err
 	}

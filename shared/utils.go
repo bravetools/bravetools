@@ -51,8 +51,8 @@ func Color(colorString string) func(...interface{}) string {
 	return sprint
 }
 
-func ping(ip string, port string) error {
-	address, err := net.ResolveTCPAddr("tcp", ip+":"+port)
+func ping(host string, port string) error {
+	address, err := net.ResolveTCPAddr("tcp", host+":"+port)
 	if err != nil {
 		return err
 	}
@@ -71,9 +71,9 @@ func ping(ip string, port string) error {
 }
 
 // TCPPortStatus checks if multiple ports are available on the host
-func TCPPortStatus(ip string, ports []string) error {
+func TCPPortStatus(host string, ports []string) error {
 	for _, port := range ports {
-		err := ping(ip, port)
+		err := ping(host, port)
 		if err != nil {
 			return err
 		}
