@@ -99,7 +99,7 @@ func (bh *BraveHost) ImportLocalImage(sourcePath string) error {
 		return errors.New("image " + imageName + " already exists in local image store")
 	}
 
-	imagePath := filepath.Join(imageStore, image.ToBasename())
+	imagePath := filepath.Join(imageStore, image.ToBasename()+".tar.gz")
 	if err != nil {
 		return err
 	}
