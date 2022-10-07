@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"os/user"
 	"path"
@@ -42,6 +43,7 @@ func getCurrentUsername() (username string, err error) {
 	return username, nil
 }
 
+// createSharedVolume creates a volume in storage pool and mounts it to both source unit and target unit
 func createSharedVolume(lxdServer lxd.InstanceServer,
 	storagePoolName string,
 	sharedDirectory string,
@@ -121,7 +123,10 @@ func createSharedVolume(lxdServer lxd.InstanceServer,
 	// 3. Add storage volume as a disk device to target unit
 	err = AddDevice(lxdServer, destUnit, sharedDirectory, shareSettings)
 	if err != nil {
-		bh.UmountShare(sourceUnit, sharedDirectory)
+		cleanupErr := bh.UmountShare(sourceUnit, sharedDirectory)
+		if cleanupErr != nil {
+			log.Println(cleanupErr)
+		}
 		return errors.New("failed to mount to destination: " + err.Error())
 	}
 
