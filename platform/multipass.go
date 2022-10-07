@@ -379,6 +379,68 @@ func (vm Multipass) Info() (backendInfo Info, err error) {
 	return backendInfo, nil
 }
 
+// Info shows all VMs and their state
+func (vm Multipass) Running() (bool, error) {
+	operation := shared.Info("Gathering multipass settings")
+	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
+	s.Suffix = " " + operation
+	s.Start()
+	defer s.Stop()
+
+	_, err := checkMultipass()
+
+	if err != nil {
+		return false, errors.New("multipass process not found: " + err.Error())
+	}
+
+	backendInfo, err := vm.getInfo()
+	if err != nil {
+		return false, errors.New("error contacting multipass vm: " + err.Error())
+	}
+
+	if backendInfo.State == "Running" {
+		return true, nil
+	}
+	return false, nil
+}
+
+// Start starts the backend if it is not already running
+func (vm Multipass) Start() error {
+	// Actually starting the VM takes longer compared to confirming that it is still running
+	// This longer running process should be messaged to the user else it looks like the program hangs
+	// However, short pauses when VM is actually running make the message flash and dissapear, creating noise.
+
+	// Below we ensure the VM is started - only if the process takes longer than 1 second is the spinner shown
+
+	done := make(chan struct{})
+	var err error
+
+	go func() {
+		defer close(done)
+		cmd := exec.Command("multipass", "start", vm.Settings.Name)
+		err = cmd.Run()
+	}()
+
+	// Race completion of above command against 1 second timer
+	// If three seconds pass before completion of command, start spinner and then await completion of command
+	select {
+	case <-done:
+	case <-time.After(1 * time.Second):
+		operation := shared.Info("Ensuring multipass VM is started")
+		s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
+		s.Suffix = " " + operation
+		s.Start()
+		defer s.Stop()
+		<-done
+	}
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (vm Multipass) getInfo() (Info, error) {
 
 	backendInfo := NewInfo()

@@ -277,15 +277,6 @@ func (bh *BraveHost) HostInfo(short bool) error {
 
 // ListUnits prints all LXD containers on remote host
 func (bh *BraveHost) ListUnits(backend Backend, remoteName string) error {
-	info, err := backend.Info()
-	if err != nil {
-		return err
-	}
-
-	if info.State == "Stopped" {
-		return errors.New("cannot connect to Bravetools remote, ensure it is up and running")
-	}
-
 	var units []shared.BraveUnit
 
 	if remoteName != "" {
@@ -563,12 +554,9 @@ func (bh *BraveHost) DeleteUnit(name string) error {
 
 	// If local remote, ensure the VM is started
 	if remoteName == shared.BravetoolsRemote {
-		info, err := bh.Backend.Info()
+		err := bh.Backend.Start()
 		if err != nil {
-			return errors.New("failed to get host info: " + err.Error())
-		}
-		if strings.ToLower(info.State) == "stopped" {
-			return errors.New("Backend is stopped")
+			return errors.New("Failed to start backend: " + err.Error())
 		}
 	}
 
@@ -959,12 +947,9 @@ func (bh *BraveHost) StopUnit(name string) error {
 
 	// If local remote, ensure the VM is started
 	if remoteName == shared.BravetoolsRemote {
-		info, err := bh.Backend.Info()
+		err := bh.Backend.Start()
 		if err != nil {
-			return errors.New("Failed to get host info: " + err.Error())
-		}
-		if strings.ToLower(info.State) == "stopped" {
-			return errors.New("Backend is stopped")
+			return errors.New("Failed to start backend: " + err.Error())
 		}
 	}
 
@@ -993,12 +978,9 @@ func (bh *BraveHost) StartUnit(name string) error {
 
 	// If local remote, ensure the VM is started
 	if remoteName == shared.BravetoolsRemote {
-		info, err := bh.Backend.Info()
+		err := bh.Backend.Start()
 		if err != nil {
-			return errors.New("Failed to get host info: " + err.Error())
-		}
-		if strings.ToLower(info.State) == "stopped" {
-			return errors.New("Backend is stopped")
+			return errors.New("Failed to start backend: " + err.Error())
 		}
 	}
 
@@ -1050,6 +1032,14 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 	// Connect to deploy target remote
 	deployRemoteName, unitName := ParseRemoteName(unitParams.Name)
 	unitParams.Name = unitName
+
+	// If local remote, check if running
+	if deployRemoteName == shared.BravetoolsRemote {
+		err := bh.Backend.Start()
+		if err != nil {
+			return errors.New("Failed to start backend: " + err.Error())
+		}
+	}
 
 	deployRemote, err := LoadRemoteSettings(deployRemoteName)
 	if err != nil {
