@@ -488,18 +488,13 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 		}
 	}
 
-	sharedDirectory := filepath.Base(sourcePath)
-	sharedDirectory = filepath.Join("/home/ubuntu", "volumes", sharedDirectory)
+	sharedDirectory := path.Join("/home/ubuntu", "volumes", filepath.Base(sourcePath))
 
 	switch backend {
 	case "multipass":
 
-		hostOs := runtime.GOOS
-		if hostOs == "windows" {
-			sourcePath = filepath.FromSlash(sourcePath)
-			destPath = strings.Replace(destPath, string(filepath.Separator), "/", -1)
-			sharedDirectory = strings.Replace(sharedDirectory, string(filepath.Separator), "/", -1)
-		}
+		sourcePath = filepath.FromSlash(sourcePath)
+		destPath = filepath.ToSlash(destPath)
 
 		if sourceUnit == "" {
 			err := shared.ExecCommand("multipass",
