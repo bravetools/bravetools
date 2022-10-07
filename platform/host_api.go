@@ -2,6 +2,7 @@ package platform
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -384,6 +385,7 @@ func (bh *BraveHost) ListUnits(backend Backend, remoteName string) error {
 
 // UmountShare ..
 func (bh *BraveHost) UmountShare(unit string, target string) error {
+
 	backend := bh.Settings.BackendSettings.Type
 
 	lxdServer, err := GetLXDInstanceServer(bh.Remote)
@@ -391,9 +393,13 @@ func (bh *BraveHost) UmountShare(unit string, target string) error {
 		return err
 	}
 
+	// Device name is derived from unit and target path
+	deviceName := "brave_" + fmt.Sprintf("%x", sha256.Sum224([]byte(unit+target)))
+
 	switch backend {
 	case "multipass":
-		path, err := DeleteDevice(lxdServer, unit, target)
+
+		path, err := DeleteDevice(lxdServer, unit, deviceName)
 		if err != nil {
 			return errors.New("Failed to umount " + target + ": " + err.Error())
 		}
@@ -424,7 +430,7 @@ func (bh *BraveHost) UmountShare(unit string, target string) error {
 		}
 
 	case "lxd":
-		_, err := DeleteDevice(lxdServer, unit, target)
+		_, err := DeleteDevice(lxdServer, unit, deviceName)
 		if err != nil {
 			return errors.New("failed to umount " + target + ": " + err.Error())
 		}
