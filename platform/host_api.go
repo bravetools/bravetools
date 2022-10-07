@@ -506,11 +506,11 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 
 			err = MountDirectory(lxdServer, sharedDirectory, destUnit, destPath)
 			if err != nil {
-				err = shared.ExecCommand("multipass",
+				cleanupErr := shared.ExecCommand("multipass",
 					"umount",
 					bh.Settings.Name+":"+sharedDirectory)
-				if err != nil {
-					return err
+				if cleanupErr != nil {
+					log.Println("failed to cleanup multipass mount")
 				}
 				return errors.New("Failed to mount " + sourcePath + " to " + destUnit + ":" + destPath + " : " + err.Error())
 			}
