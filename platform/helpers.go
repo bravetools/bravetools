@@ -67,7 +67,7 @@ func createSharedVolume(lxdServer lxd.InstanceServer,
 			"volume",
 			"create",
 			storagePoolName,
-			sharedDirectory)
+			path.Base(sharedDirectory))
 		if err != nil {
 			return errors.New("Failed to create storage volume: " + sharedDirectory + ": " + err.Error())
 		}
@@ -79,7 +79,7 @@ func createSharedVolume(lxdServer lxd.InstanceServer,
 			"volume",
 			"create",
 			storagePoolName,
-			sharedDirectory)
+			path.Base(sharedDirectory))
 		if err != nil {
 			return errors.New("Failed to create storage volume: " + sharedDirectory + ": " + err.Error())
 		}
@@ -88,7 +88,7 @@ func createSharedVolume(lxdServer lxd.InstanceServer,
 	shareSettings := map[string]string{}
 	shareSettings["path"] = destPath
 	shareSettings["pool"] = storagePoolName
-	shareSettings["source"] = sharedDirectory
+	shareSettings["source"] = path.Base(sharedDirectory)
 	shareSettings["type"] = "disk"
 
 	// 2. Add storage volume as a disk device to source unit
@@ -106,7 +106,7 @@ func createSharedVolume(lxdServer lxd.InstanceServer,
 				"volume",
 				"delete",
 				storagePoolName,
-				sharedDirectory)
+				path.Base(sharedDirectory))
 			return errors.New("Failed to mount to source: " + err.Error())
 		case "lxd":
 			shared.ExecCommand(
@@ -115,7 +115,7 @@ func createSharedVolume(lxdServer lxd.InstanceServer,
 				"volume",
 				"delete",
 				storagePoolName,
-				sharedDirectory)
+				path.Base(sharedDirectory))
 			return errors.New("failed to mount to source: " + err.Error())
 		}
 	}
