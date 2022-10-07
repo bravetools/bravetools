@@ -3,6 +3,7 @@ package platform
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"crypto/x509"
 	"errors"
 	"fmt"
@@ -299,7 +300,9 @@ func MountDirectory(lxdServer lxd.InstanceServer, sourcePath string, destUnit st
 		return err
 	}
 
-	devname := "disk" + shared.RandomSequence(2)
+	hashStr := "brave_" + fmt.Sprintf("%x", sha256.Sum224([]byte(destUnit+destPath)))
+
+	devname := hashStr
 	_, ok := inst.Devices[devname]
 	if ok {
 		return errors.New("unable to mount directory as duplicate device found")
