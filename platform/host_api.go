@@ -517,6 +517,7 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 				bh.Settings.StoragePool.Name,
 				sharedDirectory,
 				sourceUnit,
+				sourcePath,
 				destUnit,
 				destPath,
 				bh)
@@ -535,6 +536,7 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 				bh.Settings.StoragePool.Name,
 				sharedDirectory,
 				sourceUnit,
+				sourcePath,
 				destUnit,
 				destPath,
 				bh)

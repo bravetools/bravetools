@@ -49,13 +49,14 @@ func createSharedVolume(lxdServer lxd.InstanceServer,
 	storagePoolName string,
 	sharedDirectory string,
 	sourceUnit string,
+	sourcePath string,
 	destUnit string,
 	destPath string,
 	bh *BraveHost) error {
 
 	backend := bh.Settings.BackendSettings.Type
 
-	volumeName := getDiskDeviceHash(sourceUnit, destPath)
+	volumeName := getDiskDeviceHash(sourceUnit, sourcePath)
 
 	switch backend {
 	case "multipass":
@@ -88,15 +89,16 @@ func createSharedVolume(lxdServer lxd.InstanceServer,
 		}
 	}
 
-	shareSettings := map[string]string{}
-	shareSettings["path"] = destPath
-	shareSettings["pool"] = storagePoolName
-	shareSettings["source"] = volumeName
-	shareSettings["type"] = "disk"
+	sourceShareSettings := map[string]string{
+		"path":   sourcePath,
+		"pool":   storagePoolName,
+		"source": volumeName,
+		"type":   "disk",
+	}
 
 	// 2. Add storage volume as a disk device to source unit
-	sourceDeviceName := getDiskDeviceHash(sourceUnit, destPath)
-	err := AddDevice(lxdServer, sourceUnit, sourceDeviceName, shareSettings)
+	sourceDeviceName := getDiskDeviceHash(sourceUnit, sourcePath)
+	err := AddDevice(lxdServer, sourceUnit, sourceDeviceName, sourceShareSettings)
 	if err != nil {
 		switch backend {
 		case "multipass":
@@ -124,9 +126,16 @@ func createSharedVolume(lxdServer lxd.InstanceServer,
 		}
 	}
 
+	destShareSettings := map[string]string{
+		"path":   destPath,
+		"pool":   storagePoolName,
+		"source": volumeName,
+		"type":   "disk",
+	}
+
 	// 3. Add storage volume as a disk device to target unit
 	destDeviceName := getDiskDeviceHash(destUnit, destPath)
-	err = AddDevice(lxdServer, destUnit, destDeviceName, shareSettings)
+	err = AddDevice(lxdServer, destUnit, destDeviceName, destShareSettings)
 	if err != nil {
 		cleanupErr := bh.UmountShare(sourceUnit, sharedDirectory)
 		if cleanupErr != nil {
