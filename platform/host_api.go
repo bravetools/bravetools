@@ -2,7 +2,6 @@ package platform
 
 import (
 	"context"
-	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -394,7 +393,7 @@ func (bh *BraveHost) UmountShare(unit string, target string) error {
 	}
 
 	// Device name is derived from unit and target path
-	deviceName := "brave_" + fmt.Sprintf("%x", sha256.Sum224([]byte(unit+target)))
+	deviceName := getDiskDeviceHash(unit, target)
 
 	switch backend {
 	case "multipass":
@@ -479,7 +478,7 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 		return errors.New("Failed to parse source " + source + "Accepted form [UNIT:]<path>")
 	} else if len(sourceSlice) == 2 {
 		sourceUnit = sourceSlice[0]
-		sourcePath = sourceSlice[1]
+		sourcePath = filepath.ToSlash(sourceSlice[1])
 	} else if len(sourceSlice) == 1 {
 		sourceUnit = ""
 		sourcePath, err = filepath.Abs(source)
@@ -492,8 +491,6 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 
 	switch backend {
 	case "multipass":
-
-		sourcePath = filepath.FromSlash(sourcePath)
 		destPath = filepath.ToSlash(destPath)
 
 		if sourceUnit == "" {

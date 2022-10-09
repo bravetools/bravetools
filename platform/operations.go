@@ -3,7 +3,6 @@ package platform
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
 	"crypto/x509"
 	"errors"
 	"fmt"
@@ -300,7 +299,7 @@ func MountDirectory(lxdServer lxd.InstanceServer, sourcePath string, destUnit st
 		return err
 	}
 
-	hashStr := "brave_" + fmt.Sprintf("%x", sha256.Sum224([]byte(destUnit+destPath)))
+	hashStr := getDiskDeviceHash(destUnit, destPath)
 
 	devname := hashStr
 	_, ok := inst.Devices[devname]

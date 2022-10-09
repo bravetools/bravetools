@@ -55,7 +55,7 @@ func createSharedVolume(lxdServer lxd.InstanceServer,
 
 	backend := bh.Settings.BackendSettings.Type
 
-	volumeName := "brave_" + fmt.Sprintf("%x", sha256.Sum224([]byte(sourceUnit+destPath)))
+	volumeName := getDiskDeviceHash(sourceUnit, destPath)
 
 	switch backend {
 	case "multipass":
@@ -95,7 +95,7 @@ func createSharedVolume(lxdServer lxd.InstanceServer,
 	shareSettings["type"] = "disk"
 
 	// 2. Add storage volume as a disk device to source unit
-	sourceDeviceName := "brave_" + fmt.Sprintf("%x", sha256.Sum224([]byte(sourceUnit+destPath)))
+	sourceDeviceName := getDiskDeviceHash(sourceUnit, destPath)
 	err := AddDevice(lxdServer, sourceUnit, sourceDeviceName, shareSettings)
 	if err != nil {
 		switch backend {
@@ -125,7 +125,7 @@ func createSharedVolume(lxdServer lxd.InstanceServer,
 	}
 
 	// 3. Add storage volume as a disk device to target unit
-	destDeviceName := "brave_" + fmt.Sprintf("%x", sha256.Sum224([]byte(destUnit+destPath)))
+	destDeviceName := getDiskDeviceHash(destUnit, destPath)
 	err = AddDevice(lxdServer, destUnit, destDeviceName, shareSettings)
 	if err != nil {
 		cleanupErr := bh.UmountShare(sourceUnit, sharedDirectory)
@@ -561,4 +561,10 @@ func getBuildDependents(dependency string, composeFile *shared.ComposeFile) (ser
 		}
 	}
 	return serviceNames, nil
+}
+
+func getDiskDeviceHash(unitName string, path string) string {
+	// Clean path by removing leading and trailing slashes
+	path = strings.TrimSuffix(strings.TrimPrefix(path, "/"), "/")
+	return "brave_" + fmt.Sprintf("%x", sha256.Sum224([]byte(unitName+path)))
 }
