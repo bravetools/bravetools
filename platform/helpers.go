@@ -2,6 +2,7 @@ package platform
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"log"
@@ -54,6 +55,8 @@ func createSharedVolume(lxdServer lxd.InstanceServer,
 
 	backend := bh.Settings.BackendSettings.Type
 
+	volumeName := "brave_" + fmt.Sprintf("%x", sha256.Sum224([]byte(sourceUnit+destPath)))
+
 	switch backend {
 	case "multipass":
 		// 1. Create storage volume
@@ -67,7 +70,7 @@ func createSharedVolume(lxdServer lxd.InstanceServer,
 			"volume",
 			"create",
 			storagePoolName,
-			path.Base(sharedDirectory))
+			volumeName)
 		if err != nil {
 			return errors.New("Failed to create storage volume: " + sharedDirectory + ": " + err.Error())
 		}
@@ -79,7 +82,7 @@ func createSharedVolume(lxdServer lxd.InstanceServer,
 			"volume",
 			"create",
 			storagePoolName,
-			path.Base(sharedDirectory))
+			volumeName)
 		if err != nil {
 			return errors.New("Failed to create storage volume: " + sharedDirectory + ": " + err.Error())
 		}
@@ -88,11 +91,12 @@ func createSharedVolume(lxdServer lxd.InstanceServer,
 	shareSettings := map[string]string{}
 	shareSettings["path"] = destPath
 	shareSettings["pool"] = storagePoolName
-	shareSettings["source"] = path.Base(sharedDirectory)
+	shareSettings["source"] = volumeName
 	shareSettings["type"] = "disk"
 
 	// 2. Add storage volume as a disk device to source unit
-	err := AddDevice(lxdServer, sourceUnit, sharedDirectory, shareSettings)
+	sourceDeviceName := "brave_" + fmt.Sprintf("%x", sha256.Sum224([]byte(sourceUnit+destPath)))
+	err := AddDevice(lxdServer, sourceUnit, sourceDeviceName, shareSettings)
 	if err != nil {
 		switch backend {
 		case "multipass":
@@ -106,7 +110,7 @@ func createSharedVolume(lxdServer lxd.InstanceServer,
 				"volume",
 				"delete",
 				storagePoolName,
-				path.Base(sharedDirectory))
+				volumeName)
 			return errors.New("Failed to mount to source: " + err.Error())
 		case "lxd":
 			shared.ExecCommand(
@@ -115,13 +119,14 @@ func createSharedVolume(lxdServer lxd.InstanceServer,
 				"volume",
 				"delete",
 				storagePoolName,
-				path.Base(sharedDirectory))
+				volumeName)
 			return errors.New("failed to mount to source: " + err.Error())
 		}
 	}
 
 	// 3. Add storage volume as a disk device to target unit
-	err = AddDevice(lxdServer, destUnit, sharedDirectory, shareSettings)
+	destDeviceName := "brave_" + fmt.Sprintf("%x", sha256.Sum224([]byte(destUnit+destPath)))
+	err = AddDevice(lxdServer, destUnit, destDeviceName, shareSettings)
 	if err != nil {
 		cleanupErr := bh.UmountShare(sourceUnit, sharedDirectory)
 		if cleanupErr != nil {
