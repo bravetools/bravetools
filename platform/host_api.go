@@ -400,7 +400,7 @@ func (bh *BraveHost) UmountShare(unit string, target string) error {
 
 		path, err := DeleteDevice(lxdServer, unit, deviceName)
 		if err != nil {
-			return errors.New("Failed to umount " + target + ": " + err.Error())
+			return fmt.Errorf("failed to umount %q from unit %q: %s", target, unit, err.Error())
 		}
 
 		cmd := fmt.Sprintf(`if [ -d "%s" ]; then echo "exists"; else echo "none"; fi`, path)
@@ -455,7 +455,7 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 
 	names, err := GetUnits(lxdServer, bh.Remote.Profile)
 	if err != nil {
-		return errors.New("faild to access units")
+		return errors.New("failed to access units")
 	}
 
 	var found = false
@@ -466,7 +466,7 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 		}
 	}
 	if !found {
-		return errors.New("unit not found")
+		return fmt.Errorf("unit %q not found", destUnit)
 	}
 
 	backend := bh.Settings.BackendSettings.Type
@@ -475,7 +475,7 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 
 	sourceSlice := strings.SplitN(source, ":", -1)
 	if len(sourceSlice) > 2 {
-		return errors.New("Failed to parse source " + source + "Accepted form [UNIT:]<path>")
+		return fmt.Errorf("failed to parse source %q. Accepted form [UNIT:]<path>", source)
 	} else if len(sourceSlice) == 2 {
 		sourceUnit = sourceSlice[0]
 		sourcePath = filepath.ToSlash(sourceSlice[1])
@@ -499,13 +499,13 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 				sourcePath,
 				bh.Settings.Name+":"+sharedDirectory)
 			if err != nil {
-				return errors.New("Failed to initialize mount on host :" + err.Error())
+				return errors.New("Failed to initialize mount on host: " + err.Error())
 			}
 
 			err = MountDirectory(lxdServer, sharedDirectory, destUnit, destPath)
 			if err != nil {
 				if err := shared.ExecCommand("multipass", "umount", bh.Settings.Name+":"+sharedDirectory); err != nil {
-					log.Println("failed to cleanup multipass mount")
+					log.Printf("failed to cleanup multipass mount %q\n", sharedDirectory)
 				}
 				return errors.New("Failed to mount " + sourcePath + " to " + destUnit + ":" + destPath + " : " + err.Error())
 			}

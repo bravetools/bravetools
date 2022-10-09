@@ -248,7 +248,7 @@ func DeleteDevice(lxdServer lxd.InstanceServer, name string, target string) (str
 	devname := target
 	device, ok := inst.Devices[devname]
 	if !ok {
-		return "", errors.New("Device " + devname + " doesn't exist")
+		return "", fmt.Errorf("device %q doesn't exist", devname)
 	}
 
 	source := device["source"]
@@ -302,9 +302,9 @@ func MountDirectory(lxdServer lxd.InstanceServer, sourcePath string, destUnit st
 	hashStr := getDiskDeviceHash(destUnit, destPath)
 
 	devname := hashStr
-	_, ok := inst.Devices[devname]
-	if ok {
-		return errors.New("unable to mount directory as duplicate device found")
+	_, exists := inst.Devices[devname]
+	if exists {
+		return fmt.Errorf("something is already mounted on target path %q in unit %q", destPath, destUnit)
 	}
 
 	device := map[string]string{}
