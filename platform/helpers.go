@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"os/user"
 	"path"
@@ -47,7 +46,6 @@ func getCurrentUsername() (username string, err error) {
 // createSharedVolume creates a volume in storage pool and mounts it to both source unit and target unit
 func createSharedVolume(lxdServer lxd.InstanceServer,
 	storagePoolName string,
-	sharedDirectory string,
 	sourceUnit string,
 	sourcePath string,
 	destUnit string,
@@ -73,7 +71,7 @@ func createSharedVolume(lxdServer lxd.InstanceServer,
 			storagePoolName,
 			volumeName)
 		if err != nil {
-			return errors.New("Failed to create storage volume: " + sharedDirectory + ": " + err.Error())
+			return errors.New("Failed to create storage volume: " + volumeName + ": " + err.Error())
 		}
 	case "lxd":
 		// 1. Create storage volume
@@ -85,7 +83,7 @@ func createSharedVolume(lxdServer lxd.InstanceServer,
 			storagePoolName,
 			volumeName)
 		if err != nil {
-			return errors.New("Failed to create storage volume: " + sharedDirectory + ": " + err.Error())
+			return errors.New("Failed to create storage volume: " + volumeName + ": " + err.Error())
 		}
 	}
 
@@ -137,10 +135,6 @@ func createSharedVolume(lxdServer lxd.InstanceServer,
 	destDeviceName := getDiskDeviceHash(destUnit, destPath)
 	err = AddDevice(lxdServer, destUnit, destDeviceName, destShareSettings)
 	if err != nil {
-		cleanupErr := bh.UmountShare(sourceUnit, sharedDirectory)
-		if cleanupErr != nil {
-			log.Println(cleanupErr)
-		}
 		return errors.New("failed to mount to destination: " + err.Error())
 	}
 

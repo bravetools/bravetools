@@ -515,13 +515,15 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 		} else {
 			err := createSharedVolume(lxdServer,
 				bh.Settings.StoragePool.Name,
-				sharedDirectory,
 				sourceUnit,
 				sourcePath,
 				destUnit,
 				destPath,
 				bh)
 			if err != nil {
+				if err := bh.UmountShare(sourceUnit, sharedDirectory); err != nil {
+					log.Println(err)
+				}
 				return err
 			}
 		}
@@ -534,13 +536,15 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 		} else {
 			err := createSharedVolume(lxdServer,
 				bh.Settings.StoragePool.Name,
-				sharedDirectory,
 				sourceUnit,
 				sourcePath,
 				destUnit,
 				destPath,
 				bh)
 			if err != nil {
+				if err := bh.UmountShare(sourceUnit, sharedDirectory); err != nil {
+					log.Println(err)
+				}
 				return err
 			}
 		}
