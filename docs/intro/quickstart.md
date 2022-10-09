@@ -25,7 +25,7 @@ Begin by [installing the latest binary](../../installation) of Bravetools. When 
 brave init
 ```
 
-## Configure an Image
+## Define an Image
 
 Every image is configured through specifications described in a Bravefile. Let's create a simple configuration for an Alpine Edge image with a Python3 installation:
 
@@ -36,8 +36,9 @@ touch Bravefile
 Populate the empty Bravefile with this simple yaml config:
 
 ```yaml
+image: alpine-python3/1.0
 base:
-  image: alpine/edge/amd64
+  image: alpine/edge
   location: public
 packages:
   manager: apk
@@ -46,8 +47,7 @@ packages:
     - python3
 service:
   name: alpine-edge-python3
-  image: alpine-edge-python3-1.0
-  version: "1.0"
+  image: alpine-python3/1.0
   resources:
     ram: "4GB"
     cpu: 2
@@ -69,9 +69,11 @@ $ brave images
 The output should look something like this:
 
 ```bash
-IMAGE                       	CREATED   	SIZE 	HASH                             
-alpine-edge-python3-1.0     	just now  	46MB 	cea203959e616eba28926541f978372a
+IMAGE                  	VERSION	ARCH 	CREATED   	SIZE 	HASH
+alpine-python3         	1.0    	arm64	just now  	47MB 	6c3199081322e7006bc2b3b631e6cf9a
 ```
+
+Note that Bravetools will build an image for your host CPU architecture. In case of this example, this is ARM64. You can configure a [bravetools remote](../../docs/remotes) to take advantge of multi-arch build capabilities. 
 
 ## Deploy the Image
 
@@ -79,10 +81,6 @@ Since Bravetools uses a single configuration file for both building and deployin
 
 ```bash
 $ brave deploy
-
-Importing alpine-edge-python3-1.0.tar.gz
-Unit launched:  alpine-edge-python3
-Service started:  alpine-edge-python3
 ```
 
 Verify that the image is deployed:
@@ -90,8 +88,8 @@ Verify that the image is deployed:
 ```bash
 $ brave units
 
-NAME               	STATUS 	IPV4      	DEVICES           
-alpine-edge-python3	Running	10.0.0.156	eth0(nic):bridged
+NAME               	STATUS 	IPV4          	VOLUMES                                           	PORTS
+alpine-edge-python3 Running	10.137.211.85 	root:->/                                          	
 ```
 
 To delete the live image, run
