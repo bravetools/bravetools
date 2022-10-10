@@ -550,6 +550,28 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 	return nil
 }
 
+func (bh *BraveHost) ListMounts(unitName string) error {
+	lxdServer, err := GetLXDInstanceServer(bh.Remote)
+	if err != nil {
+		return err
+	}
+
+	unit, _, err := lxdServer.GetInstance(unitName)
+	if err != nil {
+		return fmt.Errorf("could not get unit %q", unitName)
+	}
+
+	for deviceName, device := range unit.Devices {
+		if strings.HasPrefix(deviceName, "brave_") {
+			if device["type"] == "disk" {
+				fmt.Printf("%s on: /%s\n", deviceName, device["path"])
+			}
+		}
+	}
+
+	return nil
+}
+
 // DeleteUnit ..
 func (bh *BraveHost) DeleteUnit(name string) error {
 	var unitNames []string
