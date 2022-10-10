@@ -16,8 +16,17 @@ var mountDir = &cobra.Command{
 
 func mount(cmd *cobra.Command, args []string) {
 	checkBackend()
-	if len(args) < 2 {
-		log.Fatal("missing <source> UNIT:<target>")
+
+	if len(args) == 0 {
+		log.Fatal("provide `<unit_name>` to list its mounts or specify `<mount_source> <unit_name>:<mount_target>` to mount a dir")
+	}
+
+	if len(args) == 1 {
+		err := host.ListMounts(args[0])
+		if err != nil {
+			log.Fatal(err)
+		}
+		return
 	}
 
 	remote := strings.SplitN(args[1], ":", -1)
