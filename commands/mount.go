@@ -14,19 +14,21 @@ var mountDir = &cobra.Command{
 	Run:   mount,
 }
 
+var mountListCmd = &cobra.Command{
+	Use:   "list <unit_name>",
+	Short: "List bravetools mounts active on a Unit",
+	Long:  "Shows active mounted disk devices managed by bravetools on a Unit",
+	Run:   mountList,
+}
+
+func init() {
+	mountDir.AddCommand(mountListCmd)
+}
+
 func mount(cmd *cobra.Command, args []string) {
 	checkBackend()
-
-	if len(args) == 0 {
-		log.Fatal("provide `<unit_name>` to list its mounts or specify `<mount_source> <unit_name>:<mount_target>` to mount a dir")
-	}
-
-	if len(args) == 1 {
-		err := host.ListMounts(args[0])
-		if err != nil {
-			log.Fatal(err)
-		}
-		return
+	if len(args) < 2 {
+		log.Fatal("missing <source> UNIT:<target>")
 	}
 
 	remote := strings.SplitN(args[1], ":", -1)
@@ -35,6 +37,17 @@ func mount(cmd *cobra.Command, args []string) {
 	}
 
 	err := host.MountShare(args[0], remote[0], remote[1])
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func mountList(cmd *cobra.Command, args []string) {
+	if len(args) == 0 || len(args) > 1 {
+		log.Fatal("provide a <unit_name> to list active mounts on that unit")
+	}
+
+	err := host.ListMounts(args[0])
 	if err != nil {
 		log.Fatal(err)
 	}
