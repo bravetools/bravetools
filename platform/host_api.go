@@ -426,6 +426,11 @@ func (bh *BraveHost) UmountShare(unit string, target string) error {
 			if err != nil {
 				return err
 			}
+
+			err = shared.ExecCommand("multipass", "exec", bh.Settings.Name, "rmdir", path)
+			if err != nil {
+				log.Printf("failed to cleanup empty leftover mountpoint dir %q\n", path)
+			}
 		}
 
 	case "lxd":
