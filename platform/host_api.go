@@ -487,7 +487,7 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 		}
 	}
 
-	sharedDirectory := path.Join("/home/ubuntu", "volumes", filepath.Base(sourcePath))
+	sharedDirectory := path.Join("/home/ubuntu", "volumes", getDiskDeviceHash(destUnit, destPath))
 
 	destPath = filepath.ToSlash(destPath)
 	destPath = strings.TrimSuffix(strings.TrimPrefix(destPath, "/"), "/")
