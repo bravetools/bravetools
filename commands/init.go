@@ -64,8 +64,6 @@ func serverInit(cmd *cobra.Command, args []string) {
 		network = ip
 	}
 
-	log.Println("Initialising a new Bravetools configuration")
-
 	// Create $HOME/.bravetools
 	err := createBraveHome(userHome)
 	if err != nil {
