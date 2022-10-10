@@ -65,11 +65,6 @@ func serverInit(cmd *cobra.Command, args []string) {
 	}
 
 	log.Println("Initialising a new Bravetools configuration")
-	fmt.Println("Host OS: ", hostOs)
-	fmt.Println("Backend: ", backendType)
-	fmt.Println("Storage (GB): ", storage)
-	fmt.Println("Memory: ", ram)
-	fmt.Println("Network: ", network)
 
 	// Create $HOME/.bravetools
 	err := createBraveHome(userHome)
