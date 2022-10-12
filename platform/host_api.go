@@ -349,7 +349,20 @@ func (bh *BraveHost) ListUnits(backend Backend, remoteName string) error {
 		disk := ""
 		for _, diskDevice := range u.Disk {
 			if diskDevice.Name != "" {
-				disk += diskDevice.Source + "->" + diskDevice.Path + "\n"
+				// Format presentation - trim excessively long paths. Ensure slashes are present
+				mountSourceStr := diskDevice.Source
+				if len(diskDevice.Source) > 32 {
+					mountSourceStr = mountSourceStr[:32] + "..."
+				}
+
+				mountTargetStr := diskDevice.Path
+				if len(diskDevice.Path) > 32 {
+					mountTargetStr = mountTargetStr[:32] + "..."
+				}
+				if !strings.HasPrefix(mountTargetStr, "/") {
+					mountTargetStr = "/" + mountTargetStr
+				}
+				disk += mountSourceStr + "->" + mountTargetStr + "\n"
 			}
 		}
 
