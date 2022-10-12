@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"os/user"
 	"path"
@@ -49,42 +50,18 @@ func createSharedVolume(lxdServer lxd.InstanceServer,
 	sourceUnit string,
 	sourcePath string,
 	destUnit string,
-	destPath string,
-	bh *BraveHost) error {
-
-	backend := bh.Settings.BackendSettings.Type
+	destPath string) error {
 
 	volumeName := getDiskDeviceHash(sourceUnit, sourcePath)
 
-	switch backend {
-	case "multipass":
-		// 1. Create storage volume
-		err := shared.ExecCommand(
-			"multipass",
-			"exec",
-			bh.Settings.BackendSettings.Resources.Name,
-			"--",
-			shared.SnapLXC,
-			"storage",
-			"volume",
-			"create",
-			storagePoolName,
-			volumeName)
-		if err != nil {
-			return errors.New("Failed to create storage volume: " + volumeName + ": " + err.Error())
-		}
-	case "lxd":
-		// 1. Create storage volume
-		err := shared.ExecCommand(
-			"lxc",
-			"storage",
-			"volume",
-			"create",
-			storagePoolName,
-			volumeName)
-		if err != nil {
-			return errors.New("Failed to create storage volume: " + volumeName + ": " + err.Error())
-		}
+	newVolume := api.StorageVolumesPost{
+		Name:        volumeName,
+		Type:        "custom",
+		ContentType: "filesystem",
+	}
+	err := lxdServer.CreateStoragePoolVolume(storagePoolName, newVolume)
+	if err != nil {
+		return err
 	}
 
 	sourceShareSettings := map[string]string{
@@ -96,32 +73,12 @@ func createSharedVolume(lxdServer lxd.InstanceServer,
 
 	// 2. Add storage volume as a disk device to source unit
 	sourceDeviceName := getDiskDeviceHash(sourceUnit, sourcePath)
-	err := AddDevice(lxdServer, sourceUnit, sourceDeviceName, sourceShareSettings)
+	err = AddDevice(lxdServer, sourceUnit, sourceDeviceName, sourceShareSettings)
 	if err != nil {
-		switch backend {
-		case "multipass":
-			shared.ExecCommand(
-				"multipass",
-				"exec",
-				bh.Settings.BackendSettings.Resources.Name,
-				"--",
-				shared.SnapLXC,
-				"storage",
-				"volume",
-				"delete",
-				storagePoolName,
-				volumeName)
-			return errors.New("Failed to mount to source: " + err.Error())
-		case "lxd":
-			shared.ExecCommand(
-				"lxc",
-				"storage",
-				"volume",
-				"delete",
-				storagePoolName,
-				volumeName)
-			return errors.New("failed to mount to source: " + err.Error())
+		if err := lxdServer.DeleteStoragePoolVolume(storagePoolName, "custom", volumeName); err != nil {
+			log.Printf("failed to cleanup storage volume %q from pool %q", volumeName, storagePoolName)
 		}
+		return err
 	}
 
 	destShareSettings := map[string]string{

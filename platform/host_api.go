@@ -505,65 +505,52 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 		}
 	}
 
-	sharedDirectory := path.Join("/home/ubuntu", "volumes", getDiskDeviceHash(destUnit, destPath))
-
 	destPath = filepath.ToSlash(destPath)
 	destPath = strings.TrimSuffix(strings.TrimPrefix(destPath, "/"), "/")
 
-	switch backend {
-	case "multipass":
-
-		if sourceUnit == "" {
-			err := shared.ExecCommand("multipass",
-				"mount",
-				sourcePath,
-				bh.Settings.Name+":"+sharedDirectory)
-			if err != nil {
-				return errors.New("Failed to initialize mount on host: " + err.Error())
+	// Unit-to-unit volume creation and mounting is same across backends
+	if sourceUnit != "" {
+		err := createSharedVolume(lxdServer,
+			bh.Settings.StoragePool.Name,
+			sourceUnit,
+			sourcePath,
+			destUnit,
+			destPath)
+		if err != nil {
+			// Or error, unmount and cleanup newly created volume
+			if err := bh.UmountShare(sourceUnit, sourcePath); err != nil {
+				log.Println(err)
 			}
-
-			err = MountDirectory(lxdServer, sharedDirectory, destUnit, destPath)
-			if err != nil {
-				if err := shared.ExecCommand("multipass", "umount", bh.Settings.Name+":"+sharedDirectory); err != nil {
-					log.Printf("failed to cleanup multipass mount %q\n", sharedDirectory)
-				}
-				return errors.New("Failed to mount " + sourcePath + " to " + destUnit + ":" + destPath + " : " + err.Error())
-			}
-		} else {
-			err := createSharedVolume(lxdServer,
-				bh.Settings.StoragePool.Name,
-				sourceUnit,
-				sourcePath,
-				destUnit,
-				destPath,
-				bh)
-			if err != nil {
-				if err := bh.UmountShare(sourceUnit, sharedDirectory); err != nil {
-					log.Println(err)
-				}
-				return err
+			if err := bh.UmountShare(destUnit, destPath); err != nil {
+				log.Println(err)
 			}
 		}
+		return err
+	}
+
+	switch backend {
+	case "multipass":
+		sharedDirectory := path.Join("/home/ubuntu", "volumes", getDiskDeviceHash(destUnit, destPath))
+
+		err := shared.ExecCommand("multipass",
+			"mount",
+			sourcePath,
+			bh.Settings.Name+":"+sharedDirectory)
+		if err != nil {
+			return errors.New("Failed to initialize mount on host: " + err.Error())
+		}
+
+		err = MountDirectory(lxdServer, sharedDirectory, destUnit, destPath)
+		if err != nil {
+			if err := shared.ExecCommand("multipass", "umount", bh.Settings.Name+":"+sharedDirectory); err != nil {
+				log.Printf("failed to cleanup multipass mount %q\n", sharedDirectory)
+			}
+			return errors.New("Failed to mount " + sourcePath + " to " + destUnit + ":" + destPath + " : " + err.Error())
+		}
 	case "lxd":
-		if sourceUnit == "" {
-			err := MountDirectory(lxdServer, sourcePath, destUnit, destPath)
-			if err != nil {
-				return errors.New("Failed to mount " + source + " to " + destUnit + ":" + destPath + " : " + err.Error())
-			}
-		} else {
-			err := createSharedVolume(lxdServer,
-				bh.Settings.StoragePool.Name,
-				sourceUnit,
-				sourcePath,
-				destUnit,
-				destPath,
-				bh)
-			if err != nil {
-				if err := bh.UmountShare(sourceUnit, sharedDirectory); err != nil {
-					log.Println(err)
-				}
-				return err
-			}
+		err := MountDirectory(lxdServer, sourcePath, destUnit, destPath)
+		if err != nil {
+			return errors.New("Failed to mount " + source + " to " + destUnit + ":" + destPath + " : " + err.Error())
 		}
 	}
 
