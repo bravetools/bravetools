@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"fmt"
 	"log"
 	"strings"
 
@@ -43,12 +44,18 @@ func mount(cmd *cobra.Command, args []string) {
 }
 
 func mountList(cmd *cobra.Command, args []string) {
-	if len(args) == 0 || len(args) > 1 {
-		log.Fatal("provide a <unit_name> to list active mounts on that unit")
+	if len(args) == 0 {
+		err := host.ListAllMounts()
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
-	err := host.ListMounts(args[0])
-	if err != nil {
-		log.Fatal(err)
+	for _, arg := range args {
+		fmt.Printf("Mounts for %s:\n", arg)
+		err := host.ListMounts(arg)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 }
