@@ -559,6 +559,28 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 	return nil
 }
 
+func (bh *BraveHost) ListAllMounts() error {
+	lxdServer, err := GetLXDInstanceServer(bh.Remote)
+	if err != nil {
+		return err
+	}
+
+	units, err := GetUnits(lxdServer, bh.Settings.Profile)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve units: %s", err)
+	}
+
+	for _, unit := range units {
+		fmt.Printf("Mounts for %s:\n", unit.Name)
+		err := bh.ListMounts(unit.Name)
+		if err != nil {
+			return fmt.Errorf("failed to retrieve mounts for unit %q: %s", unit.Name, err)
+		}
+	}
+
+	return nil
+}
+
 func (bh *BraveHost) ListMounts(unitName string) error {
 	lxdServer, err := GetLXDInstanceServer(bh.Remote)
 	if err != nil {

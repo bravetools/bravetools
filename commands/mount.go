@@ -18,7 +18,11 @@ func mount(cmd *cobra.Command, args []string) {
 	checkBackend()
 
 	if len(args) == 0 {
-		log.Fatal("provide `<unit_name>` to list its mounts or specify `<mount_source> <unit_name>:<mount_target>` to mount a dir")
+		err := host.ListAllMounts()
+		if err != nil {
+			log.Fatal(err)
+		}
+		return
 	}
 
 	if len(args) == 1 {
