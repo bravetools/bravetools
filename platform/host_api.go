@@ -340,7 +340,7 @@ func (bh *BraveHost) ListUnits(backend Backend, remoteName string) error {
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Name", "Status", "IPv4", "Volumes", "Ports"})
+	table.SetHeader([]string{"Name", "Status", "IPv4", "Mounts", "Ports"})
 	for _, u := range units {
 		name := u.Name
 		status := u.Status
@@ -349,7 +349,7 @@ func (bh *BraveHost) ListUnits(backend Backend, remoteName string) error {
 		disk := ""
 		for _, diskDevice := range u.Disk {
 			if diskDevice.Name != "" {
-				disk += diskDevice.Name + ":" + diskDevice.Source + "->" + diskDevice.Path + "\n"
+				disk += diskDevice.Source + "->" + diskDevice.Path + "\n"
 			}
 		}
 
