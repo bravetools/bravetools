@@ -571,7 +571,11 @@ func (bh *BraveHost) ListMounts(unitName string) error {
 	for deviceName, device := range unit.Devices {
 		if strings.HasPrefix(deviceName, "brave_") {
 			if device["type"] == "disk" {
-				fmt.Printf("%s on: /%s\n", deviceName, device["path"])
+				mountPath := device["path"]
+				if !strings.HasPrefix(mountPath, "/") {
+					mountPath = "/" + mountPath
+				}
+				fmt.Printf("%s on: %s\n", deviceName, mountPath)
 			}
 		}
 	}
