@@ -11,6 +11,7 @@ import (
 	"os/user"
 	"path"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"syscall"
@@ -340,7 +341,7 @@ func (bh *BraveHost) ListUnits(backend Backend, remoteName string) error {
 	}
 
 	table := tablewriter.NewWriter(os.Stdout)
-	table.SetHeader([]string{"Name", "Status", "IPv4", "Volumes", "Ports"})
+	table.SetHeader([]string{"Name", "Status", "IPv4", "Mounts", "Ports"})
 	for _, u := range units {
 		name := u.Name
 		status := u.Status
@@ -348,8 +349,22 @@ func (bh *BraveHost) ListUnits(backend Backend, remoteName string) error {
 
 		disk := ""
 		for _, diskDevice := range u.Disk {
-			if diskDevice.Name != "" {
-				disk += diskDevice.Name + ":" + diskDevice.Source + "->" + diskDevice.Path + "\n"
+			// Filter storage pools from output
+			if strings.HasPrefix(diskDevice.Name, "brave_") && diskDevice.Source != "" {
+				// Format presentation - trim excessively long paths. Ensure slashes are present
+				mountSourceStr := diskDevice.Source
+				if len(diskDevice.Source) > 32 {
+					mountSourceStr = mountSourceStr[:32] + "..."
+				}
+
+				mountTargetStr := diskDevice.Path
+				if len(diskDevice.Path) > 32 {
+					mountTargetStr = mountTargetStr[:32] + "..."
+				}
+				if !strings.HasPrefix(mountTargetStr, "/") {
+					mountTargetStr = "/" + mountTargetStr
+				}
+				disk += mountSourceStr + "->" + mountTargetStr + "\n"
 			}
 		}
 
@@ -384,6 +399,7 @@ func (bh *BraveHost) ListUnits(backend Backend, remoteName string) error {
 
 // UmountShare ..
 func (bh *BraveHost) UmountShare(unit string, target string) error {
+
 	backend := bh.Settings.BackendSettings.Type
 
 	lxdServer, err := GetLXDInstanceServer(bh.Remote)
@@ -391,11 +407,15 @@ func (bh *BraveHost) UmountShare(unit string, target string) error {
 		return err
 	}
 
+	// Device name is derived from unit and target path
+	deviceName := getDiskDeviceHash(unit, target)
+
 	switch backend {
 	case "multipass":
-		path, err := DeleteDevice(lxdServer, unit, target)
+
+		path, err := DeleteDevice(lxdServer, unit, deviceName)
 		if err != nil {
-			return errors.New("Failed to umount " + target + ": " + err.Error())
+			return fmt.Errorf("failed to umount %q from unit %q: %s", target, unit, err.Error())
 		}
 
 		cmd := fmt.Sprintf(`if [ -d "%s" ]; then echo "exists"; else echo "none"; fi`, path)
@@ -421,10 +441,15 @@ func (bh *BraveHost) UmountShare(unit string, target string) error {
 			if err != nil {
 				return err
 			}
+
+			err = shared.ExecCommand("multipass", "exec", bh.Settings.Name, "rmdir", path)
+			if err != nil {
+				log.Printf("failed to cleanup empty leftover mountpoint dir %q\n", path)
+			}
 		}
 
 	case "lxd":
-		_, err := DeleteDevice(lxdServer, unit, target)
+		_, err := DeleteDevice(lxdServer, unit, deviceName)
 		if err != nil {
 			return errors.New("failed to umount " + target + ": " + err.Error())
 		}
@@ -450,7 +475,7 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 
 	names, err := GetUnits(lxdServer, bh.Remote.Profile)
 	if err != nil {
-		return errors.New("faild to access units")
+		return errors.New("failed to access units")
 	}
 
 	var found = false
@@ -461,7 +486,7 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 		}
 	}
 	if !found {
-		return errors.New("unit not found")
+		return fmt.Errorf("unit %q not found", destUnit)
 	}
 
 	backend := bh.Settings.BackendSettings.Type
@@ -470,77 +495,134 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 
 	sourceSlice := strings.SplitN(source, ":", -1)
 	if len(sourceSlice) > 2 {
-		return errors.New("Failed to parse source " + source + "Accepted form [UNIT:]<path>")
+		return fmt.Errorf("failed to parse source %q. Accepted form [UNIT:]<path>", source)
 	} else if len(sourceSlice) == 2 {
 		sourceUnit = sourceSlice[0]
-		sourcePath = sourceSlice[1]
+		sourcePath = filepath.ToSlash(sourceSlice[1])
 	} else if len(sourceSlice) == 1 {
 		sourceUnit = ""
-		sourcePath = source
+		sourcePath, err = filepath.Abs(source)
+		if err != nil {
+			return err
+		}
 	}
 
-	sharedDirectory := filepath.Base(sourcePath)
-	sharedDirectory = filepath.Join("/home/ubuntu", "volumes", sharedDirectory)
+	destPath = filepath.ToSlash(destPath)
+	destPath = strings.TrimSuffix(strings.TrimPrefix(destPath, "/"), "/")
+
+	// Unit-to-unit volume creation and mounting is same across backends
+	if sourceUnit != "" {
+		err := createSharedVolume(lxdServer,
+			bh.Settings.StoragePool.Name,
+			sourceUnit,
+			sourcePath,
+			destUnit,
+			destPath)
+		if err != nil {
+			// Or error, unmount and cleanup newly created volume
+			if err := bh.UmountShare(sourceUnit, sourcePath); err != nil {
+				log.Println(err)
+			}
+			if err := bh.UmountShare(destUnit, destPath); err != nil {
+				log.Println(err)
+			}
+		}
+		return err
+	}
 
 	switch backend {
 	case "multipass":
+		sharedDirectory := path.Join("/home/ubuntu", "volumes", getDiskDeviceHash(destUnit, destPath))
 
-		hostOs := runtime.GOOS
-		if hostOs == "windows" {
-			sourcePath = filepath.FromSlash(sourcePath)
-			destPath = strings.Replace(destPath, string(filepath.Separator), "/", -1)
-			sharedDirectory = strings.Replace(sharedDirectory, string(filepath.Separator), "/", -1)
+		err := shared.ExecCommand("multipass",
+			"mount",
+			sourcePath,
+			bh.Settings.Name+":"+sharedDirectory)
+		if err != nil {
+			return errors.New("Failed to initialize mount on host: " + err.Error())
 		}
 
-		if sourceUnit == "" {
-			err := shared.ExecCommand("multipass",
-				"mount",
-				sourcePath,
-				bh.Settings.Name+":"+sharedDirectory)
-			if err != nil {
-				return errors.New("Failed to initialize mount on host :" + err.Error())
+		err = MountDirectory(lxdServer, sharedDirectory, destUnit, destPath)
+		if err != nil {
+			if err := shared.ExecCommand("multipass", "umount", bh.Settings.Name+":"+sharedDirectory); err != nil {
+				log.Printf("failed to cleanup multipass mount %q\n", sharedDirectory)
 			}
-
-			err = MountDirectory(lxdServer, sharedDirectory, destUnit, destPath)
-			if err != nil {
-				err = shared.ExecCommand("multipass",
-					"umount",
-					bh.Settings.Name+":"+sharedDirectory)
-				if err != nil {
-					return err
-				}
-				return errors.New("Failed to mount " + sourcePath + " to " + destUnit + ":" + destPath + " : " + err.Error())
-			}
-		} else {
-			err := createSharedVolume(lxdServer,
-				bh.Settings.StoragePool.Name,
-				sharedDirectory,
-				sourceUnit,
-				destUnit,
-				destPath,
-				bh)
-			if err != nil {
-				return err
-			}
+			return errors.New("Failed to mount " + sourcePath + " to " + destUnit + ":" + destPath + " : " + err.Error())
 		}
 	case "lxd":
-		if sourceUnit == "" {
-			err := MountDirectory(lxdServer, sourcePath, destUnit, destPath)
-			if err != nil {
-				return errors.New("Failed to mount " + source + " to " + destUnit + ":" + destPath + " : " + err.Error())
-			}
-		} else {
-			err := createSharedVolume(lxdServer,
-				bh.Settings.StoragePool.Name,
-				sharedDirectory,
-				sourceUnit,
-				destUnit,
-				destPath,
-				bh)
-			if err != nil {
-				return err
+		err := MountDirectory(lxdServer, sourcePath, destUnit, destPath)
+		if err != nil {
+			return errors.New("Failed to mount " + source + " to " + destUnit + ":" + destPath + " : " + err.Error())
+		}
+	}
+
+	return nil
+}
+
+func (bh *BraveHost) ListAllMounts() error {
+	lxdServer, err := GetLXDInstanceServer(bh.Remote)
+	if err != nil {
+		return err
+	}
+
+	units, err := GetUnits(lxdServer, bh.Settings.Profile)
+	if err != nil {
+		return fmt.Errorf("failed to retrieve units: %s", err)
+	}
+
+	for _, unit := range units {
+		fmt.Printf("Mounts for %s:\n", unit.Name)
+		err := bh.ListMounts(unit.Name)
+		if err != nil {
+			return fmt.Errorf("failed to retrieve mounts for unit %q: %s", unit.Name, err)
+		}
+	}
+
+	return nil
+}
+
+func (bh *BraveHost) ListMounts(unitName string) error {
+	lxdServer, err := GetLXDInstanceServer(bh.Remote)
+	if err != nil {
+		return err
+	}
+
+	unit, _, err := lxdServer.GetInstance(unitName)
+	if err != nil {
+		return fmt.Errorf("could not get unit %q", unitName)
+	}
+
+	var devices []map[string]string
+
+	// Pull bravetools-managed devices from map into slice
+	for deviceName, device := range unit.Devices {
+		if strings.HasPrefix(deviceName, "brave_") {
+			_, hasType := device["type"]
+			_, hasSource := device["source"]
+
+			if hasType && hasSource && device["type"] == "disk" {
+				devices = append(devices, device)
 			}
 		}
+	}
+
+	// Sort the slice of devices by: 1) source length and 2) by alphabetical order
+	// Sorting the devices like this makes output deterministic and predictable
+	sort.Slice(devices, func(i int, j int) bool {
+		l1, l2 := len(devices[i]["source"]), len(devices[j]["source"])
+		if l1 != l2 {
+			return l1 < l2
+		}
+		return devices[i]["source"] < devices[j]["source"]
+	})
+
+	for _, device := range devices {
+		mountPath := device["path"]
+		if !strings.HasPrefix(mountPath, "/") {
+			mountPath = "/" + mountPath
+		}
+		sourcePath := device["source"]
+		fmt.Printf("%s on: %s\n", sourcePath, mountPath)
 	}
 
 	return nil

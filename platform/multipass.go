@@ -422,7 +422,7 @@ func (vm Multipass) Start() error {
 	}()
 
 	// Race completion of above command against 1 second timer
-	// If three seconds pass before completion of command, start spinner and then await completion of command
+	// If 1 second passes before completion of command, start spinner and then await completion of command
 	select {
 	case <-done:
 	case <-time.After(1 * time.Second):

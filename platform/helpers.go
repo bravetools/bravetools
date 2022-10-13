@@ -2,8 +2,10 @@ package platform
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"os/user"
 	"path"
@@ -42,87 +44,54 @@ func getCurrentUsername() (username string, err error) {
 	return username, nil
 }
 
+// createSharedVolume creates a volume in storage pool and mounts it to both source unit and target unit
 func createSharedVolume(lxdServer lxd.InstanceServer,
 	storagePoolName string,
-	sharedDirectory string,
 	sourceUnit string,
+	sourcePath string,
 	destUnit string,
-	destPath string,
-	bh *BraveHost) error {
+	destPath string) error {
 
-	backend := bh.Settings.BackendSettings.Type
+	volumeName := getDiskDeviceHash(sourceUnit, sourcePath)
 
-	switch backend {
-	case "multipass":
-		// 1. Create storage volume
-		err := shared.ExecCommand(
-			"multipass",
-			"exec",
-			bh.Settings.BackendSettings.Resources.Name,
-			"--",
-			shared.SnapLXC,
-			"storage",
-			"volume",
-			"create",
-			storagePoolName,
-			sharedDirectory)
-		if err != nil {
-			return errors.New("Failed to create storage volume: " + sharedDirectory + ": " + err.Error())
-		}
-	case "lxd":
-		// 1. Create storage volume
-		err := shared.ExecCommand(
-			"lxc",
-			"storage",
-			"volume",
-			"create",
-			storagePoolName,
-			sharedDirectory)
-		if err != nil {
-			return errors.New("Failed to create storage volume: " + sharedDirectory + ": " + err.Error())
-		}
+	newVolume := api.StorageVolumesPost{
+		Name:        volumeName,
+		Type:        "custom",
+		ContentType: "filesystem",
+	}
+	err := lxdServer.CreateStoragePoolVolume(storagePoolName, newVolume)
+	if err != nil {
+		return err
 	}
 
-	shareSettings := map[string]string{}
-	shareSettings["path"] = destPath
-	shareSettings["pool"] = storagePoolName
-	shareSettings["source"] = sharedDirectory
-	shareSettings["type"] = "disk"
+	sourceShareSettings := map[string]string{
+		"path":   sourcePath,
+		"pool":   storagePoolName,
+		"source": volumeName,
+		"type":   "disk",
+	}
 
 	// 2. Add storage volume as a disk device to source unit
-	err := AddDevice(lxdServer, sourceUnit, sharedDirectory, shareSettings)
+	sourceDeviceName := getDiskDeviceHash(sourceUnit, sourcePath)
+	err = AddDevice(lxdServer, sourceUnit, sourceDeviceName, sourceShareSettings)
 	if err != nil {
-		switch backend {
-		case "multipass":
-			shared.ExecCommand(
-				"multipass",
-				"exec",
-				bh.Settings.BackendSettings.Resources.Name,
-				"--",
-				shared.SnapLXC,
-				"lxc",
-				"storage",
-				"volume",
-				"delete",
-				storagePoolName,
-				sharedDirectory)
-			return errors.New("Failed to mount to source: " + err.Error())
-		case "lxd":
-			shared.ExecCommand(
-				"lxc",
-				"storage",
-				"volume",
-				"delete",
-				storagePoolName,
-				sharedDirectory)
-			return errors.New("failed to mount to source: " + err.Error())
+		if err := lxdServer.DeleteStoragePoolVolume(storagePoolName, "custom", volumeName); err != nil {
+			log.Printf("failed to cleanup storage volume %q from pool %q", volumeName, storagePoolName)
 		}
+		return err
+	}
+
+	destShareSettings := map[string]string{
+		"path":   destPath,
+		"pool":   storagePoolName,
+		"source": volumeName,
+		"type":   "disk",
 	}
 
 	// 3. Add storage volume as a disk device to target unit
-	err = AddDevice(lxdServer, destUnit, sharedDirectory, shareSettings)
+	destDeviceName := getDiskDeviceHash(destUnit, destPath)
+	err = AddDevice(lxdServer, destUnit, destDeviceName, destShareSettings)
 	if err != nil {
-		bh.UmountShare(sourceUnit, sharedDirectory)
 		return errors.New("failed to mount to destination: " + err.Error())
 	}
 
@@ -552,4 +521,10 @@ func getBuildDependents(dependency string, composeFile *shared.ComposeFile) (ser
 		}
 	}
 	return serviceNames, nil
+}
+
+func getDiskDeviceHash(unitName string, path string) string {
+	// Clean path by removing leading and trailing slashes
+	path = strings.TrimSuffix(strings.TrimPrefix(path, "/"), "/")
+	return "brave_" + fmt.Sprintf("%x", sha256.Sum224([]byte(unitName+path)))
 }
