@@ -106,7 +106,7 @@ func validImageName(imageStruct BravetoolsImage) bool {
 }
 
 func validImageFieldChar(char rune) bool {
-	// Alpha-numeric is fine, along with '-' and '.
+	// Alpha-numeric is fine, along with '-' and '.'
 	if !unicode.IsLetter(char) && !unicode.IsNumber(char) && char != '-' && char != '.' {
 		return false
 	}
