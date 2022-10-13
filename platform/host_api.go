@@ -598,7 +598,8 @@ func (bh *BraveHost) ListMounts(unitName string) error {
 				if !strings.HasPrefix(mountPath, "/") {
 					mountPath = "/" + mountPath
 				}
-				fmt.Printf("%s on: %s\n", deviceName, mountPath)
+				sourcePath := device["source"]
+				fmt.Printf("%s on: %s\n", sourcePath, mountPath)
 			}
 		}
 	}
