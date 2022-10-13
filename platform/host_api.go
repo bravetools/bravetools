@@ -348,7 +348,8 @@ func (bh *BraveHost) ListUnits(backend Backend, remoteName string) error {
 
 		disk := ""
 		for _, diskDevice := range u.Disk {
-			if diskDevice.Name != "" {
+			// Filter storage pools from output
+			if diskDevice.Name != "" && diskDevice.Source != "" {
 				// Format presentation - trim excessively long paths. Ensure slashes are present
 				mountSourceStr := diskDevice.Source
 				if len(diskDevice.Source) > 32 {
