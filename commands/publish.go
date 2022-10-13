@@ -20,7 +20,7 @@ func publish(cmd *cobra.Command, args []string) {
 	}
 
 	for _, name := range args {
-		err := host.PublishUnit(name, backend)
+		err := host.PublishUnit(name)
 		if err != nil {
 			log.Fatal(err)
 		}

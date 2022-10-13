@@ -983,16 +983,18 @@ func (bh *BraveHost) BuildImage(bravefile shared.Bravefile) error {
 }
 
 // PublishUnit publishes unit to image
-func (bh *BraveHost) PublishUnit(name string, backend Backend) error {
-	_, err := backend.Info()
-	if err != nil {
-		return errors.New("failed to get host info: " + err.Error())
-	}
-
+func (bh *BraveHost) PublishUnit(name string) error {
 	remoteName, name := ParseRemoteName(name)
 	remote, err := LoadRemoteSettings(remoteName)
 	if err != nil {
 		return err
+	}
+
+	if remote.Name == shared.BravetoolsRemote {
+		err := bh.Backend.Start()
+		if err != nil {
+			return errors.New("failed to get host info: " + err.Error())
+		}
 	}
 
 	lxdServer, err := GetLXDInstanceServer(remote)
