@@ -11,6 +11,7 @@ import (
 	"os/user"
 	"path"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"syscall"
@@ -591,17 +592,37 @@ func (bh *BraveHost) ListMounts(unitName string) error {
 		return fmt.Errorf("could not get unit %q", unitName)
 	}
 
+	var devices []map[string]string
+
+	// Pull bravetools-managed devices from map into slice
 	for deviceName, device := range unit.Devices {
 		if strings.HasPrefix(deviceName, "brave_") {
-			if device["type"] == "disk" {
-				mountPath := device["path"]
-				if !strings.HasPrefix(mountPath, "/") {
-					mountPath = "/" + mountPath
-				}
-				sourcePath := device["source"]
-				fmt.Printf("%s on: %s\n", sourcePath, mountPath)
+			_, hasType := device["type"]
+			_, hasSource := device["source"]
+
+			if hasType && hasSource && device["type"] == "disk" {
+				devices = append(devices, device)
 			}
 		}
+	}
+
+	// Sort the slice of devices by: 1) source length and 2) by alphabetical order
+	// Sorting the devices like this makes output deterministic and predictable
+	sort.Slice(devices, func(i int, j int) bool {
+		l1, l2 := len(devices[i]["source"]), len(devices[j]["source"])
+		if l1 != l2 {
+			return l1 < l2
+		}
+		return devices[i]["source"] < devices[j]["source"]
+	})
+
+	for _, device := range devices {
+		mountPath := device["path"]
+		if !strings.HasPrefix(mountPath, "/") {
+			mountPath = "/" + mountPath
+		}
+		sourcePath := device["source"]
+		fmt.Printf("%s on: %s\n", sourcePath, mountPath)
 	}
 
 	return nil
