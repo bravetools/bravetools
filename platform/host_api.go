@@ -1004,11 +1004,17 @@ func (bh *BraveHost) PublishUnit(unitName string, imageName string) error {
 
 	if imageName == "" {
 		timestamp := time.Now()
-		imageName = unitName + "-" + timestamp.Format("20060102150405")
+		imageName = unitName + "/" + timestamp.Format("20060102150405")
 	}
 
+	imageStruct, err := ParseImageString(imageName)
+	if err != nil {
+		return fmt.Errorf("failed to parse image string %q: %s", imageName, err)
+	}
+	imageName = imageStruct.ToBasename()
+
 	// Create an image based on running container and export it. Image saved as tar.gz in project local directory.
-	fmt.Printf("Publishing unit %q as image %q\n", unitName, imageName)
+	fmt.Printf("Publishing unit %q as image %q\n", unitName, imageName+".tar.gz")
 
 	unitFingerprint, err := Publish(lxdServer, unitName, imageName)
 	defer DeleteImageByFingerprint(lxdServer, unitFingerprint)
