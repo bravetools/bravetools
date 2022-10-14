@@ -983,16 +983,18 @@ func (bh *BraveHost) BuildImage(bravefile shared.Bravefile) error {
 }
 
 // PublishUnit publishes unit to image
-func (bh *BraveHost) PublishUnit(name string, backend Backend) error {
-	_, err := backend.Info()
-	if err != nil {
-		return errors.New("failed to get host info: " + err.Error())
-	}
-
-	remoteName, name := ParseRemoteName(name)
+func (bh *BraveHost) PublishUnit(unitName string, imageName string) error {
+	remoteName, unitName := ParseRemoteName(unitName)
 	remote, err := LoadRemoteSettings(remoteName)
 	if err != nil {
 		return err
+	}
+
+	if remote.Name == shared.BravetoolsRemote {
+		err := bh.Backend.Start()
+		if err != nil {
+			return errors.New("failed to get host info: " + err.Error())
+		}
 	}
 
 	lxdServer, err := GetLXDInstanceServer(remote)
@@ -1000,19 +1002,28 @@ func (bh *BraveHost) PublishUnit(name string, backend Backend) error {
 		return err
 	}
 
-	timestamp := time.Now()
+	if imageName == "" {
+		timestamp := time.Now()
+		imageName = unitName + "/" + timestamp.Format("20060102150405")
+	}
+
+	imageStruct, err := ParseImageString(imageName)
+	if err != nil {
+		return fmt.Errorf("failed to parse image string %q: %s", imageName, err)
+	}
+	imageName = imageStruct.ToBasename()
 
 	// Create an image based on running container and export it. Image saved as tar.gz in project local directory.
-	fmt.Printf("Publishing unit %q\n", name)
+	fmt.Printf("Publishing unit %q as image %q\n", unitName, imageName+".tar.gz")
 
-	unitFingerprint, err := Publish(lxdServer, name, timestamp.Format("20060102150405"))
+	unitFingerprint, err := Publish(lxdServer, unitName, imageName)
 	defer DeleteImageByFingerprint(lxdServer, unitFingerprint)
 	if err != nil {
 		return errors.New("failed to publish image: " + err.Error())
 	}
 
 	fmt.Println("Exporting archive ...")
-	err = ExportImage(lxdServer, unitFingerprint, name+"-"+timestamp.Format("20060102150405"))
+	err = ExportImage(lxdServer, unitFingerprint, imageName)
 	if err != nil {
 		return errors.New("failed to export unit: " + err.Error())
 	}

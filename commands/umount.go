@@ -8,7 +8,7 @@ import (
 )
 
 var umountDir = &cobra.Command{
-	Use:   "umount UNIT:<path>",
+	Use:   "umount UNIT:<path> [UNIT:<path>...]",
 	Short: "Unmount device mounted on <path> from UNIT",
 	Long:  ``,
 	Run:   umount,
