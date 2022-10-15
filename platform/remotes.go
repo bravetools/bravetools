@@ -75,7 +75,7 @@ func loadRemoteConfig(name string) (remote Remote, err error) {
 	var fileBytes bytes.Buffer
 	f, err := os.Open(path)
 	if err != nil {
-		return remote, err
+		return remote, errors.New("unrecognised remote " + name)
 	}
 	defer f.Close()
 
