@@ -22,6 +22,7 @@ func init() {
 }
 
 func includePathFlags(cmd *cobra.Command) {
+	cmd.Flags().StringVarP(&remoteName, "remote", "r", "local", "Name of a Bravetools remote that will build the image.")
 	cmd.Flags().StringVarP(&bravefilePath, "path", "p", "", "Absolute path to Bravefile [OPTIONAL]")
 }
 
@@ -37,10 +38,18 @@ func build(cmd *cobra.Command, args []string) {
 	err := bravefile.Load(p)
 
 	if err != nil {
-		log.Fatal("Failed to load Bravefile: ", err)
+		log.Fatal("failed to load Bravefile: ", err)
 	}
 
+	remote, err := platform.LoadRemoteSettings(remoteName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	host.Remote = remote
+
 	err = host.BuildImage(*bravefile)
+
 	switch errType := err.(type) {
 	case nil:
 	case *platform.ImageExistsError:
