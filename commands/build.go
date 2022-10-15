@@ -48,6 +48,10 @@ func build(cmd *cobra.Command, args []string) {
 
 	host.Remote = remote
 
+	if remote.Name != "local" {
+		host.Settings.StoragePool.Name = remote.Storage
+	}
+
 	err = host.BuildImage(*bravefile)
 
 	switch errType := err.(type) {
