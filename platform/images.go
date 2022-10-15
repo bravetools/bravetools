@@ -278,6 +278,7 @@ func GetBravefileFromLXD(name string) (*shared.Bravefile, error) {
 		return nil, err
 	}
 
+	bravefile.Image = image.String()
 	bravefile.Base.Image = image.String()
 	bravefile.Base.Location = "public"
 
