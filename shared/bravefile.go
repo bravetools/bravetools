@@ -33,7 +33,7 @@ type RunCommand struct {
 	Detach  bool              `yaml:"detach,omitempty"`
 }
 
-//CopyCommand defines source and target for files to be copied into container
+// CopyCommand defines source and target for files to be copied into container
 type CopyCommand struct {
 	Source string `yaml:"source,omitempty"`
 	Target string `yaml:"target,omitempty"`
@@ -146,7 +146,7 @@ func (service *Service) ValidateDeploy() error {
 		return fmt.Errorf("invalid Service %q: empty Image name", service.Name)
 	}
 
-	if strings.ContainsAny(service.Name, "/_. !@£$%^&*(){}:;`~,?") {
+	if strings.ContainsAny(service.Name, "/_. !@£$%^&*(){};`~,?") {
 		return errors.New("unit names should not contain special characters")
 	}
 

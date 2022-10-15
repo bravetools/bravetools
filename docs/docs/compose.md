@@ -2,7 +2,7 @@
 layout: default
 title: Brave Compose
 parent: Docs
-nav_order: 4
+nav_order: 3
 description: "Bravetools builds images automatically by reading instructions from a Bravefile."
 ---
 

@@ -18,6 +18,16 @@ from Bravefiles stored in public GitHub repositories`,
 	Run: buildBase,
 }
 
+var remoteName string
+
+func init() {
+	includeBaseFlags(baseBuild)
+}
+
+func includeBaseFlags(cmd *cobra.Command) {
+	cmd.PersistentFlags().StringVarP(&remoteName, "remote", "r", "local", "Name of the remote which will be used to build the base image.")
+}
+
 func buildBase(cmd *cobra.Command, args []string) {
 	checkBackend()
 	var err error
@@ -39,6 +49,13 @@ func buildBase(cmd *cobra.Command, args []string) {
 			log.Fatal(err)
 		}
 	}
+
+	remote, err := platform.LoadRemoteSettings(remoteName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	host.Remote = remote
 
 	err = host.BuildImage(*bravefile)
 	if err != nil {

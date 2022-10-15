@@ -18,7 +18,7 @@ Deployment loads Unit specifications from a Bravefile, which is expected to be i
 Parameters specificed in the Bravefile can be overridden using command line options. If Bravefile does not
 exist in the current working directory, Bravetools expects an image name as the first agrument.
 
-Deployment can be both local or to a remote Bravetools host. To specificify a remote host using command line argument
+Deployment can be both local or to a remote Bravetools host. To specify a remote host using command line argument
 set --name flag to <remote>:<instance>`,
 	Run: deploy,
 }
