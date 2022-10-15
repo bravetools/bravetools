@@ -71,7 +71,7 @@ func includeRemoteAddFlags(cmd *cobra.Command) {
 	cmd.Flags().BoolVar(&remoteArgs.Public, "public", false, "Publicly available server with no authentication")
 	cmd.Flags().StringVar(&remoteArgs.Profile, "profile", "default", "Name of LXD profile to use with this remote.")
 	cmd.Flags().StringVar(&remoteArgs.Network, "network", "lxdbr0", "LXD-managed bridge to use for networking containers")
-	cmd.Flags().StringVar(&remoteArgs.Storage, "storage", "", "Name of LXD storage pool to use for container")
+	cmd.Flags().StringVar(&remoteArgs.Storage, "storage", "default", "Name of LXD storage pool to use for container")
 	cmd.Flags().StringVar(&remotePassword, "password", "", "Trusted password to use when communicating with remote")
 }
 
