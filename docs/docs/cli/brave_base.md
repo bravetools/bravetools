@@ -23,8 +23,10 @@ Bravetools can import base images either from LXD Image Server (https://images.l
 Clean OS images can be imported into Bravetools directly from LXD Image server:
 
 ```bash
-brave base alpine/edge/amd64
+brave base alpine/edge
 ```
+
+You can explicitly specify image architecture. For example `brave base alpine/edge/arm64` or `brave base alpine/edge/amd64`.
 
 ### Pulling from a GiHub repository
 
@@ -42,7 +44,7 @@ All local images can be utilised inside a Bravefile using the `local` location o
 
 ```yaml
 base:
-  image: brave-alpine-edge-base-1.0
+  image: alpine/edge/amd64
   location: local
 ```
 
