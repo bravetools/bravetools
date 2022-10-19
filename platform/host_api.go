@@ -1192,7 +1192,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 	}
 	err = CheckMemory(lxdServer, unitParams.Resources.RAM)
 	if err != nil {
-		log.Printf("unable to access RAM resource: %s. However, Bravetools will continue to deploy. To terminate press Cntrl+C.", err.Error())
+		log.Printf("unable to access RAM resources: %s. However, Bravetools will continue to deploy. To terminate press Cntrl+C.", err.Error())
 	}
 
 	if !strings.Contains(deployRemote.URL, "unix.socket") {
