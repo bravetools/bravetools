@@ -1190,11 +1190,9 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 			return err
 		}
 	}
-
-	fmt.Println(lxdServer)
 	err = CheckMemory(lxdServer, unitParams.Resources.RAM)
 	if err != nil {
-		return err
+		log.Printf("unable to access RAM resource: %s. Bravetools will continue to deploy. To terminal press Cntrl+C", err.Error())
 	}
 
 	if !strings.Contains(deployRemote.URL, "unix.socket") {
