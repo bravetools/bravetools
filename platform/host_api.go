@@ -1136,9 +1136,6 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 
 	deployRemote, err := LoadRemoteSettings(deployRemoteName)
 
-	fmt.Println(">>> remote settings: ", deployRemote)
-	fmt.Println(">>> unit params: ", unitParams)
-
 	if err != nil {
 		return fmt.Errorf("failed to load remote %q for requested unit %q: %s", deployRemoteName, unitName, err.Error())
 	}
