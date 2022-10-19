@@ -1136,9 +1136,6 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 
 	deployRemote, err := LoadRemoteSettings(deployRemoteName)
 
-	fmt.Println(">>> remote settings: ", deployRemote)
-	fmt.Println(">>> unit params: ", unitParams)
-
 	if err != nil {
 		return fmt.Errorf("failed to load remote %q for requested unit %q: %s", deployRemoteName, unitName, err.Error())
 	}
@@ -1195,8 +1192,9 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 	}
 	err = CheckMemory(lxdServer, unitParams.Resources.RAM)
 	if err != nil {
-		return err
+		log.Printf("unable to access RAM resources: %s. However, Bravetools will continue to deploy. To terminate press Cntrl+C.", err.Error())
 	}
+
 	if !strings.Contains(deployRemote.URL, "unix.socket") {
 		err = CheckHostPorts(deployRemote.URL, unitParams.Ports)
 		if err != nil {
