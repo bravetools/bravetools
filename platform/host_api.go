@@ -1190,10 +1190,13 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 			return err
 		}
 	}
+
+	fmt.Println(lxdServer)
 	err = CheckMemory(lxdServer, unitParams.Resources.RAM)
 	if err != nil {
 		return err
 	}
+
 	if !strings.Contains(deployRemote.URL, "unix.socket") {
 		err = CheckHostPorts(deployRemote.URL, unitParams.Ports)
 		if err != nil {
