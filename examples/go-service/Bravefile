@@ -36,7 +36,7 @@ service:
   image: go-service-1.0
   name: go-service
   version: 1.0
-  ip: 10.0.0.5
+  ip: 10.167.7.15
   ports:
     - 3000:3000
   resources:
