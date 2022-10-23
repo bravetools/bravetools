@@ -19,16 +19,17 @@ func CheckMemory(lxdServer lxd.InstanceServer, ramString string) error {
 	if err != nil {
 		//return errors.New(" " + err.Error())
 		log.Printf("failed to retrieve LXD server resources: %s. However, Bravetools will continue to deploy. You can interrupt this process by pressing Cntrl+C", err.Error())
-	}
+	} else {
 
-	requestedMemorySize, err := shared.SizeCountToInt(ramString)
-	if err != nil {
-		return err
-	}
-	freeMemorySize := resources.Memory.Total - resources.Memory.Used
+		requestedMemorySize, err := shared.SizeCountToInt(ramString)
+		if err != nil {
+			return err
+		}
+		freeMemorySize := resources.Memory.Total - resources.Memory.Used
 
-	if uint64(requestedMemorySize) > freeMemorySize {
-		return errors.New("Requested unit memory (" + ramString + ") exceeds available memory on bravetools host")
+		if uint64(requestedMemorySize) > freeMemorySize {
+			return errors.New("requested unit memory (" + ramString + ") exceeds available memory on bravetools host")
+		}
 	}
 
 	return nil
