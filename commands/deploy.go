@@ -43,8 +43,10 @@ func includeDeployFlags(cmd *cobra.Command) {
 }
 
 func checkFlags() {
-	if !strings.HasSuffix(deployArgs.Resources.RAM, "B") {
-		log.Fatal("memory specifications must be eexpressed as B, KB, MB, GB etc.")
+	if deployArgs.Resources.RAM != "" {
+		if !strings.HasSuffix(deployArgs.Resources.RAM, "B") {
+			log.Fatal("memory specifications must be expressed as B, KB, MB, GB etc.")
+		}
 	}
 }
 
