@@ -3,6 +3,7 @@ package platform
 import (
 	"errors"
 	"fmt"
+	"log"
 	"math"
 	"net"
 	"net/url"
@@ -16,7 +17,8 @@ import (
 func CheckMemory(lxdServer lxd.InstanceServer, ramString string) error {
 	resources, err := lxdServer.GetServerResources()
 	if err != nil {
-		return errors.New("failed to retrieve LXD server resources: " + err.Error())
+		//return errors.New(" " + err.Error())
+		log.Printf("failed to retrieve LXD server resources: %s. However, Bravetools will continue to deploy. You can interrupt this process by pressing Cntrl+C", err.Error())
 	}
 
 	requestedMemorySize, err := shared.SizeCountToInt(ramString)
