@@ -2,6 +2,7 @@ package commands
 
 import (
 	"log"
+	"strings"
 
 	"github.com/bravetools/bravetools/shared"
 	"github.com/spf13/cobra"
@@ -41,8 +42,16 @@ func includeDeployFlags(cmd *cobra.Command) {
 	cmd.Flags().StringVar(&deployArgs.Storage, "storage", "", "Name of LXD storage pool to use for container")
 }
 
+func checkFlags() {
+	if !strings.HasSuffix(deployArgs.Resources.RAM, "B") {
+		log.Fatal("memory specifications must be eexpressed as B, KB, MB, GB etc.")
+	}
+}
+
 func deploy(cmd *cobra.Command, args []string) {
 	checkBackend()
+
+	checkFlags()
 
 	var useBravefile = true
 	var bravefilePath = "Bravefile"
