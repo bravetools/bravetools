@@ -16,6 +16,7 @@ vagrant/*.log
 
 install/darwin/brave
 install/ubuntu/brave
+install/linux/brave
 
 db/bravetoolsdb/*.db
 db/bravetoolsdb/bravetoolsdb*
