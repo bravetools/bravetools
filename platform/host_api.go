@@ -408,6 +408,7 @@ func (bh *BraveHost) UmountShare(unit string, target string) error {
 	}
 
 	// Device name is derived from unit and target path
+	target = cleanMountTargetPath(target)
 	deviceName := getDiskDeviceHash(unit, target)
 
 	switch backend {
@@ -507,8 +508,7 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 		}
 	}
 
-	destPath = filepath.ToSlash(destPath)
-	destPath = strings.TrimSuffix(strings.TrimPrefix(destPath, "/"), "/")
+	destPath = cleanMountTargetPath(destPath)
 
 	// Unit-to-unit volume creation and mounting is same across backends
 	if sourceUnit != "" {

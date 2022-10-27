@@ -52,6 +52,9 @@ func createSharedVolume(lxdServer lxd.InstanceServer,
 	destUnit string,
 	destPath string) error {
 
+	sourcePath = cleanMountTargetPath(sourcePath)
+	destPath = cleanMountTargetPath(destPath)
+
 	volumeName := getDiskDeviceHash(sourceUnit, sourcePath)
 
 	newVolume := api.StorageVolumesPost{
@@ -523,8 +526,16 @@ func getBuildDependents(dependency string, composeFile *shared.ComposeFile) (ser
 	return serviceNames, nil
 }
 
-func getDiskDeviceHash(unitName string, path string) string {
-	// Clean path by removing leading and trailing slashes
-	path = strings.TrimSuffix(strings.TrimPrefix(path, "/"), "/")
-	return "brave_" + fmt.Sprintf("%x", sha256.Sum224([]byte(unitName+path)))
+func getDiskDeviceHash(unitName string, targetPath string) string {
+	targetPath = cleanMountTargetPath(targetPath)
+	return "brave_" + fmt.Sprintf("%x", sha256.Sum224([]byte(unitName+targetPath)))
+}
+
+func cleanMountTargetPath(targetPath string) string {
+	targetPath = filepath.ToSlash(targetPath)
+	targetPath = path.Clean(targetPath)
+	if !strings.HasPrefix(targetPath, "/") {
+		targetPath = "/" + targetPath
+	}
+	return targetPath
 }
