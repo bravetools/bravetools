@@ -299,6 +299,9 @@ func MountDirectory(lxdServer lxd.InstanceServer, sourcePath string, destUnit st
 		return err
 	}
 
+	sourcePath = path.Clean(sourcePath)
+
+	destPath = cleanMountTargetPath(destPath)
 	hashStr := getDiskDeviceHash(destUnit, destPath)
 
 	devname := hashStr
