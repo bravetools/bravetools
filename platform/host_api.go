@@ -749,6 +749,7 @@ func (bh *BraveHost) BuildImage(bravefile shared.Bravefile) error {
 
 	bravefile.PlatformService.Name = "brave-build-" + strings.ReplaceAll(strings.ReplaceAll(imageStruct.ToBasename(), "_", "-"), ".", "-")
 
+	// Use bravetools host LXD instance to build
 	lxdServer, err := GetLXDInstanceServer(bh.Remote)
 	if err != nil {
 		return err
@@ -854,6 +855,46 @@ func (bh *BraveHost) BuildImage(bravefile shared.Bravefile) error {
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
+	case "private":
+		var imageRemoteName string
+		imageRemoteName, bravefile.Base.Image = ParseRemoteName(bravefile.Base.Image)
+
+		imageRemote, err := LoadRemoteSettings(imageRemoteName)
+		if err != nil {
+			return err
+		}
+
+		// Connect to remote server - authenticate if not public
+		var imageRemoteServer lxd.ImageServer
+		if imageRemote.Public {
+			imageRemoteServer, err = GetLXDImageSever(imageRemote)
+		} else {
+			imageRemoteServer, err = GetLXDInstanceServer(imageRemote)
+		}
+
+		if err != nil {
+			return err
+		}
+
+		img, err := GetImageByAlias(imageRemoteServer, bravefile.Base.Image)
+		if err != nil {
+			return err
+		}
+		err = CheckStoragePoolSpace(lxdServer, bh.Settings.StoragePool.Name, img.Size)
+		if err != nil {
+			return err
+		}
+
+		imageFingerprint, err = importLXD(ctx, lxdServer, &bravefile, bh.Remote.Profile)
+		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
+			return err
+		}
+
+		err = Start(lxdServer, bravefile.PlatformService.Name)
+		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
+			return err
+		}
+
 	default:
 		return fmt.Errorf("base image location %q not supported", bravefile.Base.Location)
 	}
@@ -1096,36 +1137,17 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 	imageRemoteName, unitParams.Image = ParseRemoteName(unitParams.Image)
 
 	if imageRemoteName != shared.BravetoolsRemote {
-		imageRemote, err := LoadRemoteSettings(imageRemoteName)
+		bravefile := shared.NewBravefile()
+		bravefile.Image = imageStruct.String()
+		bravefile.Base.Image = imageRemoteName + ":" + imageStruct.String()
+		bravefile.Base.Location = "private"
+
+		bravefile.PlatformService.Name = ""
+		bravefile.PlatformService.Image = imageStruct.String()
+
+		err = bh.BuildImage(*bravefile)
 		if err != nil {
 			return err
-		}
-
-		// Connect to remote server - authenticate if not public
-		var imageRemoteServer lxd.ImageServer
-		if imageRemote.Public {
-			imageRemoteServer, err = GetLXDImageSever(imageRemote)
-		} else {
-			imageRemoteServer, err = GetLXDInstanceServer(imageRemote)
-		}
-
-		if err != nil {
-			return err
-		}
-
-		imageFingerprint, err := GetFingerprintByAlias(imageRemoteServer, unitParams.Image)
-		if err != nil {
-			return err
-		}
-
-		err = ExportImage(imageRemoteServer, imageFingerprint, imageStruct.ToBasename())
-		if err != nil {
-			return err
-		}
-
-		err = importImageFile(ctx, imageStruct)
-		if err != nil {
-			return errors.New("failed to copy image file to bravetools image store: " + err.Error())
 		}
 	}
 

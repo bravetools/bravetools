@@ -248,6 +248,16 @@ func resolveBaseImageLocation(imageString string) (location string, err error) {
 		return "local", nil
 	}
 
+	remoteList, err := ListRemotes()
+	if err != nil {
+		return "", err
+	}
+	for _, remoteName := range remoteList {
+		if remote == remoteName {
+			return "private", nil
+		}
+	}
+
 	// Check for legacy image field
 	imageStruct, err = ParseLegacyImageString(imageString)
 	if err != nil {
