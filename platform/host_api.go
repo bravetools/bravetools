@@ -1146,7 +1146,14 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 		bravefile.PlatformService.Image = imageStruct.String()
 
 		err = bh.BuildImage(*bravefile)
-		if err != nil {
+		switch errType := err.(type) {
+		case nil:
+		case *ImageExistsError:
+			// If image already exists continue and log the skip
+			err = nil
+			fmt.Printf("image %q already exists locally - skipping remote import\n", errType.Name)
+		default:
+			// Stop on unknown err
 			return err
 		}
 	}
