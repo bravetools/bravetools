@@ -279,18 +279,27 @@ func resolveBaseImageLocation(imageString string) (location string, err error) {
 	return "", fmt.Errorf("image %q location could not be resolved", imageString)
 }
 
-// GetBravefileFromLXD generates a Bravefile for import of images from LXD repository
+// GetBravefileFromLXD generates a Bravefile for import of images from an LXD server
 func GetBravefileFromLXD(name string) (*shared.Bravefile, error) {
-	bravefile := shared.NewBravefile()
+	imageRemoteName, name := ParseRemoteName(name)
 
 	image, err := ParseImageString(name)
 	if err != nil {
 		return nil, err
 	}
 
+	baseImageName := image.String()
+	baseLocation := "public"
+	if imageRemoteName != shared.BravetoolsRemote {
+		baseImageName = imageRemoteName + ":" + baseImageName
+		baseLocation = "private"
+	}
+
+	bravefile := shared.NewBravefile()
+
 	bravefile.Image = image.String()
-	bravefile.Base.Image = image.String()
-	bravefile.Base.Location = "public"
+	bravefile.Base.Image = baseImageName
+	bravefile.Base.Location = baseLocation
 
 	bravefile.PlatformService.Name = ""
 	bravefile.PlatformService.Image = image.String()
