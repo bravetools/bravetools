@@ -209,11 +209,12 @@ func (bh *BraveHost) DeleteLocalImage(name string) error {
 		return err
 	}
 	if !imageExists(image) {
-		image, err = ParseLegacyImageString(name)
-		if err != nil {
-			return err
-		}
-		if !imageExists(image) {
+		legacyImage, err := ParseLegacyImageString(name)
+		if err == nil {
+			if !imageExists(legacyImage) {
+				return fmt.Errorf("image %q does not exist", name)
+			}
+		} else {
 			return fmt.Errorf("image %q does not exist", name)
 		}
 	}
@@ -831,11 +832,12 @@ func (bh *BraveHost) BuildImage(bravefile shared.Bravefile) error {
 		}
 		if !imageExists(localBaseImage) {
 			// Check legacy bravefile
-			localBaseImage, err = ParseLegacyImageString(bravefile.Base.Image)
-			if err != nil {
-				return err
-			}
-			if !imageExists(localBaseImage) {
+			legacyLocalBaseImage, err := ParseLegacyImageString(bravefile.Base.Image)
+			if err == nil {
+				if !imageExists(legacyLocalBaseImage) {
+					return fmt.Errorf("base image %q required for building image %q does not exist", legacyLocalBaseImage.String(), imageStruct.String())
+				}
+			} else {
 				return fmt.Errorf("base image %q required for building image %q does not exist", localBaseImage.String(), imageStruct.String())
 			}
 		}
