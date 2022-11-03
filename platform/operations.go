@@ -1134,6 +1134,39 @@ func ExportImage(lxdServer lxd.ImageServer, fingerprint string, name string) err
 	return nil
 }
 
+func CopyImage(sourceServer lxd.InstanceServer, destServer lxd.InstanceServer, fingerprint string, name string) error {
+	operation := shared.Info(fmt.Sprintf("Copying image %q to remote", name))
+	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
+	s.Suffix = " " + operation
+	s.Start()
+	defer s.Stop()
+
+	img, _, err := sourceServer.GetImage(fingerprint)
+	if err != nil {
+		return err
+	}
+
+	args := &lxd.ImageCopyArgs{
+		Mode: "push",
+	}
+
+	op, err := destServer.CopyImage(sourceServer, *img, args)
+	if err != nil {
+		return err
+	}
+
+	err = op.Wait()
+	if err != nil {
+		return err
+	}
+
+	// Get the fingerprint
+	aliasPost := api.ImageAliasesPost{}
+	aliasPost.Name = name
+	aliasPost.Target = fingerprint
+	return destServer.CreateImageAlias(aliasPost)
+}
+
 // GetFingerprintByAlias retrieves image fingerprint corresponding to provided alias
 func GetFingerprintByAlias(lxdServer lxd.ImageServer, alias string) (fingerprint string, err error) {
 	remoteAlias, _, err := lxdServer.GetImageAlias(alias)

@@ -980,6 +980,25 @@ func (bh *BraveHost) BuildImage(bravefile shared.Bravefile) error {
 		return errors.New("failed to copy image file to bravetools image store: " + err.Error())
 	}
 
+	// If imagename to build includes a remote, as last step in build push image to remote LXD server
+	destRemoteName, _ := ParseRemoteName(imageString)
+	if destRemoteName != shared.BravetoolsRemote {
+		destRemote, err := LoadRemoteSettings(destRemoteName)
+		if err != nil {
+			return err
+		}
+
+		destServer, err := GetLXDInstanceServer(destRemote)
+		if err != nil {
+			return err
+		}
+
+		err = CopyImage(lxdServer, destServer, imageFingerprint, imageStruct.String())
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
