@@ -741,21 +741,8 @@ func (bh *BraveHost) BuildImage(bravefile shared.Bravefile) error {
 		return fmt.Errorf("target image architecture [%s] does not match base image [%s]", imageStruct.Architecture, baseImageStruct.Architecture)
 	}
 
-	if imageExists(imageStruct) {
-		return &ImageExistsError{Name: imageStruct.String()}
-	}
-
-	fmt.Println(shared.Info("Building Image: " + imageStruct.String()))
-
-	bravefile.PlatformService.Name = "brave-build-" + strings.ReplaceAll(strings.ReplaceAll(imageStruct.ToBasename(), "_", "-"), ".", "-")
-
 	// Use bravetools host LXD instance to build
 	lxdServer, err := GetLXDInstanceServer(bh.Remote)
-	if err != nil {
-		return err
-	}
-
-	err = checkUnits(lxdServer, bravefile.PlatformService.Name, bh.Remote.Profile)
 	if err != nil {
 		return err
 	}
@@ -774,6 +761,56 @@ func (bh *BraveHost) BuildImage(bravefile shared.Bravefile) error {
 			cancel()
 		}
 	}()
+
+	// If image already exists in local store, check for remote dest - if exists, push image there, else error
+	if imageExists(imageStruct) {
+		destRemoteName, _ := ParseRemoteName(imageString)
+		if destRemoteName != shared.BravetoolsRemote {
+			fmt.Println(shared.Info(fmt.Sprintf("Existing image %q found in local store", imageStruct.String())))
+			fmt.Println(shared.Info(fmt.Sprintf("Pushing image to remote %q", destRemoteName)))
+
+			destRemote, err := LoadRemoteSettings(destRemoteName)
+			if err != nil {
+				return err
+			}
+
+			destServer, err := GetLXDInstanceServer(destRemote)
+			if err != nil {
+				return err
+			}
+
+			// Import image to local LXD server to transfer to remote
+			imgPath, err := getImageFilepath(imageStruct)
+			if err != nil {
+				return err
+			}
+
+			imageFingerprint, err := ImportImage(lxdServer, imgPath, imageStruct.String())
+			if err != nil {
+				return err
+			}
+			defer func() {
+				DeleteImageByFingerprint(lxdServer, imageFingerprint)
+			}()
+
+			err = CopyImage(lxdServer, destServer, imageFingerprint, imageStruct.String())
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+
+		return &ImageExistsError{Name: imageStruct.String()}
+	}
+
+	fmt.Println(shared.Info("Building Image: " + imageStruct.String()))
+
+	bravefile.PlatformService.Name = "brave-build-" + strings.ReplaceAll(strings.ReplaceAll(imageStruct.ToBasename(), "_", "-"), ".", "-")
+
+	err = checkUnits(lxdServer, bravefile.PlatformService.Name, bh.Remote.Profile)
+	if err != nil {
+		return err
+	}
 
 	// Setup build cleanup code
 	defer func() {
