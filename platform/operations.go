@@ -1147,7 +1147,7 @@ func CopyImage(sourceServer lxd.InstanceServer, destServer lxd.InstanceServer, f
 	}
 
 	args := &lxd.ImageCopyArgs{
-		Mode: "push",
+		Mode: "relay",
 	}
 
 	op, err := destServer.CopyImage(sourceServer, *img, args)
