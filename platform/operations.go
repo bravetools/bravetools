@@ -1134,8 +1134,8 @@ func ExportImage(lxdServer lxd.ImageServer, fingerprint string, name string) err
 	return nil
 }
 
-func CopyImage(sourceServer lxd.InstanceServer, destServer lxd.InstanceServer, fingerprint string, name string) error {
-	operation := shared.Info(fmt.Sprintf("Copying image %q to remote", name))
+func CopyImage(sourceServer lxd.InstanceServer, destServer lxd.InstanceServer, fingerprint string, alias string) error {
+	operation := shared.Info(fmt.Sprintf("Copying image %q to remote", alias))
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
 	s.Suffix = " " + operation
 	s.Start()
@@ -1144,6 +1144,16 @@ func CopyImage(sourceServer lxd.InstanceServer, destServer lxd.InstanceServer, f
 	img, _, err := sourceServer.GetImage(fingerprint)
 	if err != nil {
 		return err
+	}
+
+	// Ensure no dest server conflicts
+	_, err = GetImageByAlias(destServer, alias)
+	if err == nil {
+		return fmt.Errorf("image alias %q already exists on dest server", alias)
+	}
+
+	if _, _, err := destServer.GetImage(fingerprint); err == nil {
+		return fmt.Errorf("image with fingerprint %q already exists on dest server", fingerprint)
 	}
 
 	args := &lxd.ImageCopyArgs{
@@ -1162,9 +1172,15 @@ func CopyImage(sourceServer lxd.InstanceServer, destServer lxd.InstanceServer, f
 
 	// Get the fingerprint
 	aliasPost := api.ImageAliasesPost{}
-	aliasPost.Name = name
+	aliasPost.Name = alias
 	aliasPost.Target = fingerprint
-	return destServer.CreateImageAlias(aliasPost)
+	err = destServer.CreateImageAlias(aliasPost)
+	if err != nil {
+		// Cleanup on err
+		destServer.DeleteImage(fingerprint)
+		return err
+	}
+	return nil
 }
 
 // GetFingerprintByAlias retrieves image fingerprint corresponding to provided alias
