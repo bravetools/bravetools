@@ -22,6 +22,7 @@ import (
 	"github.com/bravetools/bravetools/db"
 	"github.com/bravetools/bravetools/shared"
 	"github.com/google/uuid"
+	lxd "github.com/lxc/lxd/client"
 	"github.com/olekukonko/tablewriter"
 )
 
@@ -741,20 +742,8 @@ func (bh *BraveHost) BuildImage(bravefile shared.Bravefile) error {
 		return fmt.Errorf("target image architecture [%s] does not match base image [%s]", imageStruct.Architecture, baseImageStruct.Architecture)
 	}
 
-	if imageExists(imageStruct) {
-		return &ImageExistsError{Name: imageStruct.String()}
-	}
-
-	fmt.Println(shared.Info("Building Image: " + imageStruct.String()))
-
-	bravefile.PlatformService.Name = "brave-build-" + strings.ReplaceAll(strings.ReplaceAll(imageStruct.ToBasename(), "_", "-"), ".", "-")
-
+	// Use bravetools host LXD instance to build
 	lxdServer, err := GetLXDInstanceServer(bh.Remote)
-	if err != nil {
-		return err
-	}
-
-	err = checkUnits(lxdServer, bravefile.PlatformService.Name, bh.Remote.Profile)
 	if err != nil {
 		return err
 	}
@@ -773,6 +762,56 @@ func (bh *BraveHost) BuildImage(bravefile shared.Bravefile) error {
 			cancel()
 		}
 	}()
+
+	// If image already exists in local store, check for remote dest - if exists, push image there, else error
+	if imageExists(imageStruct) {
+		destRemoteName, _ := ParseRemoteName(imageString)
+		if destRemoteName != shared.BravetoolsRemote {
+			fmt.Println(shared.Info(fmt.Sprintf("Existing image %q found in local store", imageStruct.String())))
+			fmt.Println(shared.Info(fmt.Sprintf("Pushing image to remote %q", destRemoteName)))
+
+			destRemote, err := LoadRemoteSettings(destRemoteName)
+			if err != nil {
+				return err
+			}
+
+			destServer, err := GetLXDInstanceServer(destRemote)
+			if err != nil {
+				return err
+			}
+
+			// Import image to local LXD server to transfer to remote
+			imgPath, err := getImageFilepath(imageStruct)
+			if err != nil {
+				return err
+			}
+
+			imageFingerprint, err := ImportImage(lxdServer, imgPath, imageStruct.String())
+			if err != nil {
+				return err
+			}
+			defer func() {
+				DeleteImageByFingerprint(lxdServer, imageFingerprint)
+			}()
+
+			err = CopyImage(lxdServer, destServer, imageFingerprint, imageStruct.String())
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+
+		return &ImageExistsError{Name: imageStruct.String()}
+	}
+
+	fmt.Println(shared.Info("Building Image: " + imageStruct.String()))
+
+	bravefile.PlatformService.Name = "brave-build-" + strings.ReplaceAll(strings.ReplaceAll(imageStruct.ToBasename(), "_", "-"), ".", "-")
+
+	err = checkUnits(lxdServer, bravefile.PlatformService.Name, bh.Remote.Profile)
+	if err != nil {
+		return err
+	}
 
 	// Setup build cleanup code
 	defer func() {
@@ -855,6 +894,46 @@ func (bh *BraveHost) BuildImage(bravefile shared.Bravefile) error {
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
+	case "private":
+		var imageRemoteName string
+		imageRemoteName, bravefile.Base.Image = ParseRemoteName(bravefile.Base.Image)
+
+		imageRemote, err := LoadRemoteSettings(imageRemoteName)
+		if err != nil {
+			return err
+		}
+
+		// Connect to remote server - authenticate if not public
+		var imageRemoteServer lxd.ImageServer
+		if imageRemote.Public {
+			imageRemoteServer, err = GetLXDImageSever(imageRemote)
+		} else {
+			imageRemoteServer, err = GetLXDInstanceServer(imageRemote)
+		}
+
+		if err != nil {
+			return err
+		}
+
+		img, err := GetImageByAlias(imageRemoteServer, bravefile.Base.Image)
+		if err != nil {
+			return err
+		}
+		err = CheckStoragePoolSpace(lxdServer, bh.Settings.StoragePool.Name, img.Size)
+		if err != nil {
+			return err
+		}
+
+		imageFingerprint, err = importLXD(ctx, lxdServer, &bravefile, bh.Remote.Profile)
+		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
+			return err
+		}
+
+		err = Start(lxdServer, bravefile.PlatformService.Name)
+		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
+			return err
+		}
+
 	default:
 		return fmt.Errorf("base image location %q not supported", bravefile.Base.Location)
 	}
@@ -935,50 +1014,28 @@ func (bh *BraveHost) BuildImage(bravefile shared.Bravefile) error {
 		return errors.New("failed to export image: " + err.Error())
 	}
 
-	home, _ := os.UserHomeDir()
-	localImageFile := imageStruct.ToBasename() + ".tar.gz"
-	localHashFile := localImageFile + ".md5"
-
-	defer func() {
-		if err := os.Remove(localImageFile); err != nil {
-			fmt.Println("failed to clean up image archive: " + err.Error())
-		}
-	}()
-
-	imageHash, err := shared.FileHash(localImageFile)
-	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
-		return errors.New("failed to generate image hash: " + err.Error())
-	}
-
-	fmt.Println(imageHash)
-
-	// Write image hash to a file
-	f, err := os.Create(localHashFile)
+	err = importImageFile(ctx, imageStruct)
 	if err != nil {
-		return errors.New(err.Error())
+		return errors.New("failed to copy image file to bravetools image store: " + err.Error())
 	}
-	defer func() {
-		if err := f.Close(); err != nil {
-			fmt.Println("failed to close image hash file: " + err.Error())
+
+	// If imagename to build includes a remote, as last step in build push image to remote LXD server
+	destRemoteName, _ := ParseRemoteName(imageString)
+	if destRemoteName != shared.BravetoolsRemote {
+		destRemote, err := LoadRemoteSettings(destRemoteName)
+		if err != nil {
+			return err
 		}
-		if err := os.Remove(localHashFile); err != nil {
-			fmt.Println("failed to clean up image hash: " + err.Error())
+
+		destServer, err := GetLXDInstanceServer(destRemote)
+		if err != nil {
+			return err
 		}
-	}()
 
-	_, err = f.WriteString(imageHash)
-	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
-		return errors.New(err.Error())
-	}
-
-	err = shared.CopyFile(localImageFile, path.Join(home, shared.ImageStore, localImageFile))
-	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
-		return errors.New("failed to copy image archive to local storage: " + err.Error())
-	}
-
-	err = shared.CopyFile(localHashFile, path.Join(home, shared.ImageStore, localHashFile))
-	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
-		return errors.New("failed to copy images hash into local storage: " + err.Error())
+		err = CopyImage(lxdServer, destServer, imageFingerprint, imageStruct.String())
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -1108,6 +1165,19 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 
 	fmt.Println(shared.Info("Deploying Unit " + unitParams.Name))
 
+	// Intercept SIGINT and cancel context, triggering cleanup of resources
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		for range c {
+			fmt.Println("Interrupting deployment and cleaning artefacts")
+			cancel()
+		}
+	}()
+
 	var imageStruct BravetoolsImage
 
 	// If version explicitly provided separately this is a legacy Bravefile
@@ -1118,6 +1188,32 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 	}
 	if err != nil {
 		return err
+	}
+
+	// Parse image location and pull from remote server to local bravetools image store if needed
+	var imageRemoteName string
+	imageRemoteName, unitParams.Image = ParseRemoteName(unitParams.Image)
+
+	if imageRemoteName != shared.BravetoolsRemote {
+		bravefile := shared.NewBravefile()
+		bravefile.Image = imageStruct.String()
+		bravefile.Base.Image = imageRemoteName + ":" + imageStruct.String()
+		bravefile.Base.Location = "private"
+
+		bravefile.PlatformService.Name = ""
+		bravefile.PlatformService.Image = imageStruct.String()
+
+		err = bh.BuildImage(*bravefile)
+		switch errType := err.(type) {
+		case nil:
+		case *ImageExistsError:
+			// If image already exists continue and log the skip
+			err = nil
+			fmt.Printf("image %q already exists locally - skipping remote import\n", errType.Name)
+		default:
+			// Stop on unknown err
+			return err
+		}
 	}
 
 	if !imageExists(imageStruct) {
@@ -1203,19 +1299,6 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 			return err
 		}
 	}
-
-	// Intercept SIGINT and cancel context, triggering cleanup of resources
-	ctx := context.Background()
-	ctx, cancel := context.WithCancel(ctx)
-
-	c := make(chan os.Signal)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		for range c {
-			fmt.Println("Interrupting deployment and cleaning artefacts")
-			cancel()
-		}
-	}()
 
 	_, err = ImportImage(lxdServer, image, unitName)
 	if err = shared.CollectErrors(err, ctx.Err()); err != nil {

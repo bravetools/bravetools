@@ -539,3 +539,55 @@ func cleanMountTargetPath(targetPath string) string {
 	}
 	return targetPath
 }
+
+// importImageFile imports an LXD image file in the local directory into the bravetools image store
+// The image file is cleaned up afterwards.
+func importImageFile(ctx context.Context, imageStruct BravetoolsImage) error {
+	home, _ := os.UserHomeDir()
+	localImageFile := imageStruct.ToBasename() + ".tar.gz"
+	localHashFile := localImageFile + ".md5"
+
+	defer func() {
+		if err := os.Remove(localImageFile); err != nil {
+			fmt.Println("failed to clean up image archive: " + err.Error())
+		}
+	}()
+
+	imageHash, err := shared.FileHash(localImageFile)
+	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
+		return errors.New("failed to generate image hash: " + err.Error())
+	}
+
+	fmt.Println(imageHash)
+
+	// Write image hash to a file
+	f, err := os.Create(localHashFile)
+	if err != nil {
+		return errors.New(err.Error())
+	}
+	defer func() {
+		if err := f.Close(); err != nil {
+			fmt.Println("failed to close image hash file: " + err.Error())
+		}
+		if err := os.Remove(localHashFile); err != nil {
+			fmt.Println("failed to clean up image hash: " + err.Error())
+		}
+	}()
+
+	_, err = f.WriteString(imageHash)
+	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
+		return errors.New(err.Error())
+	}
+
+	err = shared.CopyFile(localImageFile, path.Join(home, shared.ImageStore, localImageFile))
+	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
+		return errors.New("failed to copy image archive to local storage: " + err.Error())
+	}
+
+	err = shared.CopyFile(localHashFile, path.Join(home, shared.ImageStore, localHashFile))
+	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
+		return errors.New("failed to copy images hash into local storage: " + err.Error())
+	}
+
+	return nil
+}
