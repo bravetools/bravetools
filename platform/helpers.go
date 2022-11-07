@@ -395,6 +395,77 @@ func buildImage(bh *BraveHost, bravefile shared.Bravefile) error {
 	return nil
 }
 
+func TransferImage(sourceRemote Remote, bravefile shared.Bravefile) error {
+	var imageStruct BravetoolsImage
+	var err error
+
+	// The image to build - if not in build section, use Image defined in Service section
+	imageString := bravefile.Image
+	if imageString == "" {
+		imageString = bravefile.PlatformService.Image
+	}
+
+	// If version explicitly provided separately this is a legacy Bravefile
+	if bravefile.PlatformService.Version == "" || bravefile.Image != "" {
+		imageStruct, err = ParseImageString(imageString)
+	} else {
+		imageStruct, err = ParseLegacyImageString(imageString)
+	}
+	if err != nil {
+		return err
+	}
+
+	imgPath, err := getImageFilepath(imageStruct)
+	if err != nil {
+		return err
+	}
+
+	destRemoteName, _ := ParseRemoteName(imageString)
+
+	// If no remote store specified for image nothing to do
+	if destRemoteName == shared.BravetoolsRemote {
+		return nil
+	}
+
+	// Use bravetools host LXD instance to build
+	lxdServer, err := GetLXDInstanceServer(sourceRemote)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(shared.Info(fmt.Sprintf("Pushing image to remote %q", destRemoteName)))
+
+	destRemote, err := LoadRemoteSettings(destRemoteName)
+	if err != nil {
+		return err
+	}
+
+	destServer, err := GetLXDInstanceServer(destRemote)
+	if err != nil {
+		return err
+	}
+
+	// Import image to local LXD server to transfer to remote
+	imageFingerprint, err := ImportImage(lxdServer, imgPath, imageStruct.String())
+	if err != nil {
+		return err
+	}
+
+	// If the remote to push image to is not the same as bravehost remote, cleanup and push
+	if sourceRemote.Name != destRemoteName {
+		defer func() {
+			DeleteImageByFingerprint(lxdServer, imageFingerprint)
+		}()
+
+		err = CopyImage(lxdServer, destServer, imageFingerprint, imageStruct.String())
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func importLXD(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *shared.Bravefile, profileName string) (fingerprint string, err error) {
 	if err = ctx.Err(); err != nil {
 		return "", err
