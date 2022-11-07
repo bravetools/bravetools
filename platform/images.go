@@ -61,6 +61,9 @@ func ParseImageString(imageString string) (imageStruct BravetoolsImage, err erro
 }
 
 func ParseLegacyImageString(imageString string) (imageStruct BravetoolsImage, err error) {
+	// Remove remote if present
+	_, imageString = ParseRemoteName(imageString)
+
 	// Legacy Bravefile - these have the version prepended to end of name and no arch
 	split := strings.Split(imageString, "-")
 	if split[0] == "" {
@@ -253,18 +256,17 @@ func resolveBaseImageLocation(imageString string) (location string, err error) {
 		return "", err
 	}
 	for _, remoteName := range remoteList {
-		if remote == remoteName {
+		if remote == remoteName && remote != shared.BravetoolsRemote {
 			return "private", nil
 		}
 	}
 
 	// Check for legacy image field
 	imageStruct, err = ParseLegacyImageString(imageString)
-	if err != nil {
-		return "", err
-	}
-	if imageExists(imageStruct) {
-		return "local", nil
+	if err == nil {
+		if imageExists(imageStruct) {
+			return "local", nil
+		}
 	}
 
 	// Query public remote for alias

@@ -10,10 +10,13 @@ import (
 )
 
 func TestCompose(t *testing.T) {
-	host, err := *platform.NewBraveHost()
-	backend, err := platform.NewHostBackend(host)
+	host, err := platform.NewBraveHost()
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
+	}
+	backend, err := platform.NewHostBackend(host.Settings)
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	os.Chdir("python-multi-service")
