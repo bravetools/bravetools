@@ -253,18 +253,17 @@ func resolveBaseImageLocation(imageString string) (location string, err error) {
 		return "", err
 	}
 	for _, remoteName := range remoteList {
-		if remote == remoteName {
+		if remote == remoteName && remote != shared.BravetoolsRemote {
 			return "private", nil
 		}
 	}
 
 	// Check for legacy image field
 	imageStruct, err = ParseLegacyImageString(imageString)
-	if err != nil {
-		return "", err
-	}
-	if imageExists(imageStruct) {
-		return "local", nil
+	if err == nil {
+		if imageExists(imageStruct) {
+			return "local", nil
+		}
 	}
 
 	// Query public remote for alias
