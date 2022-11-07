@@ -61,6 +61,9 @@ func ParseImageString(imageString string) (imageStruct BravetoolsImage, err erro
 }
 
 func ParseLegacyImageString(imageString string) (imageStruct BravetoolsImage, err error) {
+	// Remove remote if present
+	_, imageString = ParseRemoteName(imageString)
+
 	// Legacy Bravefile - these have the version prepended to end of name and no arch
 	split := strings.Split(imageString, "-")
 	if split[0] == "" {
