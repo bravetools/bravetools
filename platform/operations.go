@@ -1510,3 +1510,12 @@ func GetLXDServerVersion(lxdServer lxd.InstanceServer) (int, error) {
 
 	return strconv.Atoi(serverVersionString)
 }
+
+func GetLXDServerArch(lxdServer lxd.InstanceServer) (string, error) {
+	serverStatus, _, err := lxdServer.GetServer()
+	if err != nil {
+		return "", err
+	}
+
+	return serverStatus.Environment.KernelArchitecture, nil
+}
