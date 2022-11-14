@@ -13,7 +13,7 @@ import (
 	"github.com/bravetools/bravetools/shared"
 )
 
-const defaultImageVersion = ""
+const defaultImageVersion = "untagged"
 
 type BravetoolsImage struct {
 	Name         string
@@ -39,7 +39,7 @@ func ParseImageString(imageString string) (imageStruct BravetoolsImage, err erro
 	// Default struct
 	imageStruct = BravetoolsImage{
 		Name:         split[0],
-		Version:      defaultImageVersion,
+		Version:      "",
 		Architecture: "",
 	}
 
@@ -162,6 +162,12 @@ func ImageFromFilename(filename string) (BravetoolsImage, error) {
 // queryLocalImageFilepath attempts to find candidates for the provided image definition using regex matching.
 // If more than one candidate file exists a formatted error is returned.
 func queryLocalImageFilepath(image BravetoolsImage) (string, error) {
+
+	// Before querying candidates using regex, attempt to exactly match the provided image definition
+	if path, err := getLocalImageFilepath(image); err == nil {
+		return path, nil
+	}
+
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return "", fmt.Errorf("failed to access bravetools image store: %s", err)
@@ -199,12 +205,6 @@ func queryLocalImageFilepath(image BravetoolsImage) (string, error) {
 			}
 		}
 		return "", fmt.Errorf("multiple matches for image %q in image store - specify version and/or architecture.\nMatches:%s", image, strings.Join(imageStrings, "\n"))
-	}
-
-	// If no matches, attempt to find legacy file: legacy filenames will not have arch
-	imagePath = path.Join(homeDir, shared.ImageStore, image.Name+"-"+image.Version+".tar.gz")
-	if shared.FileExists(imagePath) {
-		return imagePath, nil
 	}
 
 	return "", fmt.Errorf("failed to retrieve path for image %s, version %s, arch %s ", image.Name, image.Version, image.Architecture)

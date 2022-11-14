@@ -148,13 +148,16 @@ func buildImage(bh *BraveHost, bravefile *shared.Bravefile) error {
 		return err
 	}
 
-	// Set output image architecture based on server arch if not provided
+	// Set output image architecture based on server arch if not provided and set default version if missing
 	buildServerArch, err := GetLXDServerArch(lxdServer)
 	if err != nil {
 		return err
 	}
 	if imageStruct.Architecture == "" {
 		imageStruct.Architecture = buildServerArch
+	}
+	if imageStruct.Version == "" {
+		imageStruct.Version = defaultImageVersion
 	}
 
 	// Since we spin up base container to build new one, must match build server arch
@@ -449,11 +452,6 @@ func TransferImage(sourceRemote Remote, bravefile shared.Bravefile) error {
 		return err
 	}
 
-	imgPath, err := getLocalImageFilepath(imageStruct)
-	if err != nil {
-		return err
-	}
-
 	destRemoteName, _ := ParseRemoteName(imageString)
 
 	// If no remote store specified for image nothing to do
@@ -463,6 +461,23 @@ func TransferImage(sourceRemote Remote, bravefile shared.Bravefile) error {
 
 	// Use bravetools host LXD instance to build
 	lxdServer, err := GetLXDInstanceServer(sourceRemote)
+	if err != nil {
+		return err
+	}
+
+	// Set output image architecture based on server arch if not provided and set default version if missing
+	buildServerArch, err := GetLXDServerArch(lxdServer)
+	if err != nil {
+		return err
+	}
+	if imageStruct.Architecture == "" {
+		imageStruct.Architecture = buildServerArch
+	}
+	if imageStruct.Version == "" {
+		imageStruct.Version = defaultImageVersion
+	}
+
+	imgPath, err := getLocalImageFilepath(imageStruct)
 	if err != nil {
 		return err
 	}
