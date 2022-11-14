@@ -152,8 +152,10 @@ func ImageFromFilename(filename string) (BravetoolsImage, error) {
 	// Final "-" is followed by version - no arch
 	if len(split) == 1 {
 		split = strings.Split(filename, "-")
-		image.Name = strings.Join(split[:len(split)-1], "-")
-		image.Version = split[len(split)-1]
+		if len(split) > 1 {
+			image.Name = strings.Join(split[:len(split)-1], "-")
+			image.Version = split[len(split)-1]
+		}
 	}
 
 	return image, nil

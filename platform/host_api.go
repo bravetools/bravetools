@@ -95,6 +95,9 @@ func (bh *BraveHost) ImportLocalImage(sourcePath string) error {
 	if err != nil {
 		return err
 	}
+	if image.Name == "" {
+		return fmt.Errorf("tar file at %q does not provide an image name", sourcePath)
+	}
 
 	if _, err = queryLocalImageFilepath(image); err == nil {
 		return errors.New("image " + imageName + " already exists in local image store")
