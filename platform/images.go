@@ -116,13 +116,7 @@ func validImageFieldChar(char rune) bool {
 }
 
 func (imageStruct BravetoolsImage) ToBasename() string {
-	fields := []string{}
-	for _, field := range []string{imageStruct.Name, imageStruct.Version, imageStruct.Architecture} {
-		if field == "" {
-			break
-		}
-		fields = append(fields, field)
-	}
+	fields := []string{imageStruct.Name, imageStruct.Version, imageStruct.Architecture}
 	return strings.Join(fields, "_")
 }
 
@@ -140,9 +134,6 @@ func (imageStruct BravetoolsImage) String() string {
 func ImageFromFilename(filename string) (BravetoolsImage, error) {
 	filename = strings.TrimSuffix(filename, ".tar.gz")
 	split := strings.SplitN(filename, "_", 3)
-	// if len(split) > 3 {
-	// 	return BravetoolsImage{}, fmt.Errorf("filename %q does not conform to image format '<image_name>_<version>_<arch>", filename)
-	// }
 
 	image := BravetoolsImage{
 		Name:         split[0],
@@ -174,9 +165,18 @@ func getLocalImageFilepath(image BravetoolsImage) (string, error) {
 		return "", fmt.Errorf("failed to access bravetools image store: %s", err)
 	}
 
-	imagePath := filepath.Join(homeDir, shared.ImageStore, image.ToBasename())
+	var fileRegexArr []string
+	for _, field := range []string{image.Name, image.Version, image.Architecture} {
+		if field == "" {
+			fileRegexArr = append(fileRegexArr, "*")
+		} else {
+			fileRegexArr = append(fileRegexArr, field)
+		}
+	}
 
-	matches, err := filepath.Glob(imagePath + "*" + ".tar.gz")
+	imagePath := filepath.Join(homeDir, shared.ImageStore, strings.Join(fileRegexArr, "_")) + ".tar.gz"
+
+	matches, err := filepath.Glob(imagePath)
 	if err != nil {
 		return "", fmt.Errorf("failed to search bravetools image store: %s", err)
 	}
