@@ -159,7 +159,9 @@ func ImageFromFilename(filename string) (BravetoolsImage, error) {
 	return image, nil
 }
 
-func getLocalImageFilepath(image BravetoolsImage) (string, error) {
+// queryLocalImageFilepath attempts to find candidates for the provided image definition using regex matching.
+// If more than one candidate file exists a formatted error is returned.
+func queryLocalImageFilepath(image BravetoolsImage) (string, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return "", fmt.Errorf("failed to access bravetools image store: %s", err)
@@ -204,12 +206,27 @@ func getLocalImageFilepath(image BravetoolsImage) (string, error) {
 	if shared.FileExists(imagePath) {
 		return imagePath, nil
 	}
-	return "", fmt.Errorf("failed to retrieve path for image %s, version %s, arch %s ", image.Name, image.Version, image.Architecture)
 
+	return "", fmt.Errorf("failed to retrieve path for image %s, version %s, arch %s ", image.Name, image.Version, image.Architecture)
+}
+
+// getLocalImageFilepath gets the exact image filepath matching the definition if it exists - no regex matching is performed
+func getLocalImageFilepath(image BravetoolsImage) (string, error) {
+	homeDir, _ := os.UserHomeDir()
+	imagePath := path.Join(homeDir, shared.ImageStore, image.ToBasename()+".tar.gz")
+	if shared.FileExists(imagePath) {
+		return imagePath, nil
+	}
+	// Legacy filenames will not have arch
+	imagePath = path.Join(homeDir, shared.ImageStore, image.Name+"-"+image.Version+".tar.gz")
+	if shared.FileExists(imagePath) {
+		return imagePath, nil
+	}
+	return "", fmt.Errorf("failed to retrieve path for image %s, version %s, arch %s ", image.Name, image.Version, image.Architecture)
 }
 
 func getImageHash(image BravetoolsImage) (string, error) {
-	localImageFile, err := getLocalImageFilepath(image)
+	localImageFile, err := queryLocalImageFilepath(image)
 	if err != nil {
 		return "", err
 	}
@@ -250,7 +267,7 @@ func getImageHash(image BravetoolsImage) (string, error) {
 }
 
 func localImageSize(image BravetoolsImage) (bytes int64, err error) {
-	imagePath, err := getLocalImageFilepath(image)
+	imagePath, err := queryLocalImageFilepath(image)
 	if err != nil {
 		return bytes, err
 	}
@@ -279,7 +296,7 @@ func resolveBaseImageLocation(imageString string) (location string, err error) {
 		return "", err
 	}
 
-	if _, err = getLocalImageFilepath(imageStruct); err == nil {
+	if _, err = queryLocalImageFilepath(imageStruct); err == nil {
 		return "local", nil
 	}
 
@@ -296,7 +313,7 @@ func resolveBaseImageLocation(imageString string) (location string, err error) {
 	// Check for legacy image field
 	imageStruct, err = ParseLegacyImageString(imageString)
 	if err == nil {
-		if _, err = getLocalImageFilepath(imageStruct); err == nil {
+		if _, err = queryLocalImageFilepath(imageStruct); err == nil {
 			return "local", nil
 		}
 	}

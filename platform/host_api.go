@@ -96,7 +96,7 @@ func (bh *BraveHost) ImportLocalImage(sourcePath string) error {
 		return err
 	}
 
-	if _, err = getLocalImageFilepath(image); err == nil {
+	if _, err = queryLocalImageFilepath(image); err == nil {
 		return errors.New("image " + imageName + " already exists in local image store")
 	}
 
@@ -205,16 +205,16 @@ func (bh *BraveHost) DeleteLocalImage(name string) error {
 	if err != nil {
 		return err
 	}
-	if _, err = getLocalImageFilepath(image); err != nil {
+	if _, err = queryLocalImageFilepath(image); err != nil {
 		if image, parseErr := ParseLegacyImageString(name); parseErr == nil {
-			if _, legacyErr := getLocalImageFilepath(image); legacyErr != nil {
+			if _, legacyErr := queryLocalImageFilepath(image); legacyErr != nil {
 				return err
 			}
 		} else {
 			return err
 		}
 	}
-	imagePath, err := getLocalImageFilepath(image)
+	imagePath, err := queryLocalImageFilepath(image)
 	if err != nil {
 		return err
 	}
@@ -901,7 +901,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 		}
 	}
 
-	if _, err = getLocalImageFilepath(imageStruct); err != nil {
+	if _, err = queryLocalImageFilepath(imageStruct); err != nil {
 		return err
 	}
 
@@ -952,7 +952,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 		return err
 	}
 
-	image, err := getLocalImageFilepath(imageStruct)
+	image, err := queryLocalImageFilepath(imageStruct)
 	if err != nil {
 		return err
 	}

@@ -262,11 +262,11 @@ func buildImage(bh *BraveHost, bravefile *shared.Bravefile) error {
 		if err != nil {
 			return err
 		}
-		if _, err = getLocalImageFilepath(localBaseImage); err != nil {
+		if _, err = queryLocalImageFilepath(localBaseImage); err != nil {
 			// Check legacy bravefile
 			localBaseImage, parseErr := ParseLegacyImageString(bravefile.Base.Image)
 			if parseErr == nil {
-				if _, legacyErr := getLocalImageFilepath(localBaseImage); legacyErr != nil {
+				if _, legacyErr := queryLocalImageFilepath(localBaseImage); legacyErr != nil {
 					return legacyErr
 				}
 			} else {
@@ -538,7 +538,7 @@ func importGitHub(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *
 		return fingerprint, err
 	}
 
-	if _, err = getLocalImageFilepath(imageStruct); err != nil {
+	if _, err = queryLocalImageFilepath(imageStruct); err != nil {
 		err = bh.BuildImage(*remoteBravefile)
 		if err != nil {
 			return fingerprint, err
@@ -567,7 +567,7 @@ func importLocal(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *s
 		return "", err
 	}
 
-	path, err := getLocalImageFilepath(imageStruct)
+	path, err := queryLocalImageFilepath(imageStruct)
 	if err != nil {
 		return "", err
 	}
@@ -913,7 +913,7 @@ func getBuildDependents(dependency string, composeFile *shared.ComposeFile) (ser
 			return serviceNames, err
 		}
 
-		if _, err = getLocalImageFilepath(imageStruct); err == nil {
+		if _, err = queryLocalImageFilepath(imageStruct); err == nil {
 			continue
 		}
 		for _, dependsOn := range composeFile.Services[service].Depends {
