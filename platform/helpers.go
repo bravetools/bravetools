@@ -149,11 +149,11 @@ func buildImage(bh *BraveHost, bravefile *shared.Bravefile) error {
 	}
 
 	// Set output image architecture based on server arch if not provided and set default version if missing
-	buildServerArch, err := GetLXDServerArch(lxdServer)
-	if err != nil {
-		return err
-	}
 	if imageStruct.Architecture == "" {
+		buildServerArch, err := GetLXDServerArch(lxdServer)
+		if err != nil {
+			return err
+		}
 		imageStruct.Architecture = buildServerArch
 	}
 	if imageStruct.Version == "" {
@@ -435,11 +435,11 @@ func TransferImage(sourceRemote Remote, bravefile shared.Bravefile) error {
 	}
 
 	// Set output image architecture based on server arch if not provided and set default version if missing
-	buildServerArch, err := GetLXDServerArch(lxdServer)
-	if err != nil {
-		return err
-	}
 	if imageStruct.Architecture == "" {
+		buildServerArch, err := GetLXDServerArch(lxdServer)
+		if err != nil {
+			return err
+		}
 		imageStruct.Architecture = buildServerArch
 	}
 	if imageStruct.Version == "" {
