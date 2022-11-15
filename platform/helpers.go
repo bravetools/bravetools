@@ -216,11 +216,6 @@ func buildImage(bh *BraveHost, bravefile *shared.Bravefile) error {
 			return err
 		}
 
-		// Image architecture (if specified) must match base image architecture
-		if buildServerArch != img.Architecture {
-			return fmt.Errorf("base image arch %q is different from build server arch %q", img.Architecture, buildServerArch)
-		}
-
 		err = CheckStoragePoolSpace(lxdServer, bh.Settings.StoragePool.Name, img.Size)
 		if err != nil {
 			return err
@@ -239,15 +234,6 @@ func buildImage(bh *BraveHost, bravefile *shared.Bravefile) error {
 		imageFingerprint, err = importGitHub(ctx, lxdServer, bravefile, bh, bh.Remote.Profile, bh.Remote.Storage)
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
-		}
-
-		img, _, err := lxdServer.GetImage(imageFingerprint)
-		if err != nil {
-			return err
-		}
-
-		if buildServerArch != img.Architecture {
-			return fmt.Errorf("base image arch %q if different from build server architecture %q", img.Architecture, buildServerArch)
 		}
 
 		err = Start(lxdServer, bravefile.PlatformService.Name)
@@ -310,11 +296,6 @@ func buildImage(bh *BraveHost, bravefile *shared.Bravefile) error {
 		img, err := GetImageByAlias(imageRemoteServer, bravefile.Base.Image)
 		if err != nil {
 			return err
-		}
-
-		// Since we spin up base container to build new one, must match build server arch
-		if buildServerArch != img.Architecture {
-			return fmt.Errorf("base image architecture %q does not match build server architecture %q", img.Architecture, buildServerArch)
 		}
 
 		err = CheckStoragePoolSpace(lxdServer, bh.Settings.StoragePool.Name, img.Size)
