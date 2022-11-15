@@ -56,18 +56,20 @@ func TestImageFromFilename(t *testing.T) {
 }
 
 func TestImageFromFilenameLong(t *testing.T) {
-	name := "alpine_3.16_amd64_test.tar.gz"
+	archWithUnderscore := "_amd64_TEST"
+	name := "alpine_3.16_amd64" + archWithUnderscore + ".tar.gz"
 	_, err := ImageFromFilename(name)
-	if err == nil {
-		t.Fatalf("expected err when parsing image from filename %q", name)
+	if err != nil {
+		t.Fatalf("error when parsing image from filename %q with an underscore in architecture field", name)
 	}
 }
 
 func TestImageFromFilenameShort(t *testing.T) {
-	name := "alpine_3.16_amd64_test.tar.gz"
+	archWithUnderscore := "_amd64_TEST"
+	name := "alpine_3.16" + archWithUnderscore + ".tar.gz"
 	_, err := ImageFromFilename(name)
-	if err == nil {
-		t.Fatalf("expected err when parsing image from filename %q", name)
+	if err != nil {
+		t.Fatalf("error when parsing image from filename %q with an underscore in architecture field", name)
 	}
 }
 
@@ -90,9 +92,10 @@ func TestImageFromFilenameLegacy(t *testing.T) {
 }
 
 func TestImageFromFilenameIncorrectLong(t *testing.T) {
-	name := "python-auth-1.0_1.0_amd64_TEST.tar.gz"
+	archWithUnderscore := "_amd64_TEST"
+	name := "python-auth-1.0_1.0" + archWithUnderscore + ".tar.gz"
 	_, err := ImageFromFilename(name)
-	if err == nil {
-		t.Fatalf("expected err when parsing image from filename %q", name)
+	if err != nil {
+		t.Fatalf("error when parsing image from filename %q with an underscore in architecture field", name)
 	}
 }
