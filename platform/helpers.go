@@ -247,6 +247,11 @@ func buildImage(bh *BraveHost, bravefile *shared.Bravefile) error {
 			return err
 		}
 		if _, err = matchLocalImagePath(localBaseImage); err != nil {
+			// In case of multiple possible matches ask user to specify rather than proceed to legacy image parsing
+			if errors.As(err, &multipleImageMatches{}) {
+				return err
+			}
+
 			// Check legacy bravefile
 			var parseErr error
 			localBaseImage, parseErr = ParseLegacyImageString(bravefile.Base.Image)
@@ -553,7 +558,21 @@ func importLocal(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *s
 
 	path, err := matchLocalImagePath(imageStruct)
 	if err != nil {
-		return "", err
+		if errors.As(err, &multipleImageMatches{}) {
+			return "", err
+		}
+
+		var legacyParseErr error
+		var legacyMatchErr error
+		imageStruct, legacyParseErr = ParseLegacyImageString(bravefile.Base.Image)
+		if legacyParseErr != nil {
+			return "", err
+		}
+
+		path, legacyMatchErr = matchLocalImagePath(imageStruct)
+		if legacyMatchErr != nil {
+			return "", err
+		}
 	}
 
 	fingerprint, err = shared.FileSha256Hash(path)
