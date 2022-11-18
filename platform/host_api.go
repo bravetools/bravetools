@@ -753,9 +753,7 @@ func (bh *BraveHost) PublishUnit(unitName string, imageName string) error {
 	if imageStruct.Architecture == "" {
 		imageStruct.Architecture = serverArch
 	}
-	if imageStruct.Architecture != serverArch {
-		return fmt.Errorf("provided image name %q specifies a different architecture than the LXD server (%q)", imageStruct.String(), serverArch)
-	}
+
 	imageName = imageStruct.ToBasename()
 
 	// Create an image based on running container and export it. Image saved as tar.gz in project local directory.
