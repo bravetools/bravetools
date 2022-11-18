@@ -746,6 +746,13 @@ func (bh *BraveHost) PublishUnit(unitName string, imageName string) error {
 	if err != nil {
 		return fmt.Errorf("failed to parse image string %q: %s", imageName, err)
 	}
+
+	if imageStruct.Version == "" {
+		imageStruct.Version = defaultImageVersion
+	}
+	if imageStruct.Architecture == "" {
+		imageStruct.Architecture = serverArch
+	}
 	if imageStruct.Architecture != serverArch {
 		return fmt.Errorf("provided image name %q specifies a different architecture than the LXD server (%q)", imageStruct.String(), serverArch)
 	}
