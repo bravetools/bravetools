@@ -247,6 +247,11 @@ func buildImage(bh *BraveHost, bravefile *shared.Bravefile) error {
 			return err
 		}
 		if _, err = matchLocalImagePath(localBaseImage); err != nil {
+			// In case of multiple possible matches ask user to specify rather than proceed to legacy image parsing
+			if errors.As(err, &multipleImageMatches{}) {
+				return err
+			}
+
 			// Check legacy bravefile
 			var parseErr error
 			localBaseImage, parseErr = ParseLegacyImageString(bravefile.Base.Image)

@@ -157,8 +157,28 @@ func ImageFromFilename(filename string) (BravetoolsImage, error) {
 	return image, nil
 }
 
+type multipleImageMatches struct {
+	image         BravetoolsImage
+	matchingPaths []string
+}
+
+func (e multipleImageMatches) Error() string {
+	// Multiple matches - ambiguous result. Return formatted error with the options.
+	imageStrings := make([]string, len(e.matchingPaths))
+	for _, path := range e.matchingPaths {
+		img, err := ImageFromFilename(filepath.Base(path))
+		if err != nil {
+			imageStrings = append(imageStrings, path)
+		} else {
+			imageStrings = append(imageStrings, img.String())
+		}
+	}
+
+	return fmt.Sprintf("multiple matches for image %q in image store - specify version and/or architecture.\nMatches:%s", e.image, strings.Join(imageStrings, "\n"))
+}
+
 // matchLocalImagePath attempts to find candidates for the provided image definition using regex matching.
-// If more than one candidate file exists a formatted error is returned.
+// If more than one candidate file exists a formatted error of type 'multipleImageMatches' is returned.
 func matchLocalImagePath(image BravetoolsImage) (string, error) {
 
 	// Before querying candidates using regex, attempt to exactly match the provided image definition
@@ -193,16 +213,8 @@ func matchLocalImagePath(image BravetoolsImage) (string, error) {
 		return matches[0], nil
 	case nmatches > 1:
 		// Multiple matches - ambiguous result. Return formatted error with the options.
-		imageStrings := make([]string, nmatches)
-		for _, path := range matches {
-			img, err := ImageFromFilename(filepath.Base(path))
-			if err != nil {
-				imageStrings = append(imageStrings, path)
-			} else {
-				imageStrings = append(imageStrings, img.String())
-			}
-		}
-		return "", fmt.Errorf("multiple matches for image %q in image store - specify version and/or architecture.\nMatches:%s", image, strings.Join(imageStrings, "\n"))
+		err = multipleImageMatches{image: image, matchingPaths: matches}
+		return "", err
 	}
 
 	return "", fmt.Errorf("failed to retrieve path for image %s, version %s, arch %s ", image.Name, image.Version, image.Architecture)
