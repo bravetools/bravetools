@@ -208,16 +208,6 @@ func (bh *BraveHost) DeleteLocalImage(name string) error {
 	if err != nil {
 		return err
 	}
-	if _, err = matchLocalImagePath(image); err != nil {
-		var parseErr error
-		if image, parseErr = ParseLegacyImageString(name); parseErr == nil {
-			if _, legacyErr := matchLocalImagePath(image); legacyErr != nil {
-				return err
-			}
-		} else {
-			return err
-		}
-	}
 	imagePath, err := matchLocalImagePath(image)
 	if err != nil {
 		return err
