@@ -28,10 +28,6 @@ func ParseImageString(imageString string) (imageStruct BravetoolsImage, err erro
 	// Image schema: image/version/arch
 	split := strings.SplitN(imageString, "/", 3)
 
-	// if len(split) > 4 {
-	// 	return imageStruct, fmt.Errorf("unrecongized format - bravetools image schema is remote:<image_name>[/version/arch]")
-	// }
-
 	if split[0] == "" {
 		return imageStruct, fmt.Errorf("image name not provided in %q - bravetools image schema is remote:<image_name>[/version/arch]", imageString)
 	}
@@ -161,12 +157,12 @@ func ImageFromFilename(filename string) (BravetoolsImage, error) {
 	return image, nil
 }
 
-// queryLocalImageFilepath attempts to find candidates for the provided image definition using regex matching.
+// matchLocalImagePath attempts to find candidates for the provided image definition using regex matching.
 // If more than one candidate file exists a formatted error is returned.
-func queryLocalImageFilepath(image BravetoolsImage) (string, error) {
+func matchLocalImagePath(image BravetoolsImage) (string, error) {
 
 	// Before querying candidates using regex, attempt to exactly match the provided image definition
-	if path, err := getLocalImageFilepath(image); err == nil {
+	if path, err := localImagePath(image); err == nil {
 		return path, nil
 	}
 
@@ -212,8 +208,8 @@ func queryLocalImageFilepath(image BravetoolsImage) (string, error) {
 	return "", fmt.Errorf("failed to retrieve path for image %s, version %s, arch %s ", image.Name, image.Version, image.Architecture)
 }
 
-// getLocalImageFilepath gets the exact image filepath matching the definition if it exists - no regex matching is performed
-func getLocalImageFilepath(image BravetoolsImage) (string, error) {
+// localImagePath gets the exact image filepath matching the definition if it exists - no regex matching is performed
+func localImagePath(image BravetoolsImage) (string, error) {
 	homeDir, _ := os.UserHomeDir()
 	imagePath := path.Join(homeDir, shared.ImageStore, image.ToBasename()+".tar.gz")
 	if shared.FileExists(imagePath) {
@@ -227,8 +223,10 @@ func getLocalImageFilepath(image BravetoolsImage) (string, error) {
 	return "", fmt.Errorf("failed to retrieve path for image %s, version %s, arch %s ", image.Name, image.Version, image.Architecture)
 }
 
-func getImageHash(image BravetoolsImage) (string, error) {
-	localImageFile, err := queryLocalImageFilepath(image)
+// hashImage calculates the md5 hash of the provided BravetoolsImage and stores it in a file.
+// If a file with a hash for this image already exists the hash will not be recalculated.
+func hashImage(image BravetoolsImage) (string, error) {
+	localImageFile, err := matchLocalImagePath(image)
 	if err != nil {
 		return "", err
 	}
@@ -269,7 +267,7 @@ func getImageHash(image BravetoolsImage) (string, error) {
 }
 
 func localImageSize(image BravetoolsImage) (bytes int64, err error) {
-	imagePath, err := queryLocalImageFilepath(image)
+	imagePath, err := matchLocalImagePath(image)
 	if err != nil {
 		return bytes, err
 	}
@@ -298,7 +296,7 @@ func resolveBaseImageLocation(imageString string) (location string, err error) {
 		return "", err
 	}
 
-	if _, err = queryLocalImageFilepath(imageStruct); err == nil {
+	if _, err = matchLocalImagePath(imageStruct); err == nil {
 		return "local", nil
 	}
 
@@ -315,7 +313,7 @@ func resolveBaseImageLocation(imageString string) (location string, err error) {
 	// Check for legacy image field
 	imageStruct, err = ParseLegacyImageString(imageString)
 	if err == nil {
-		if _, err = queryLocalImageFilepath(imageStruct); err == nil {
+		if _, err = matchLocalImagePath(imageStruct); err == nil {
 			return "local", nil
 		}
 	}

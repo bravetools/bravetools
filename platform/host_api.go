@@ -99,7 +99,7 @@ func (bh *BraveHost) ImportLocalImage(sourcePath string) error {
 		return fmt.Errorf("tar file at %q does not provide an image name", sourcePath)
 	}
 
-	if _, err = queryLocalImageFilepath(image); err == nil {
+	if _, err = matchLocalImagePath(image); err == nil {
 		return errors.New("image " + imageName + " already exists in local image store")
 	}
 
@@ -172,7 +172,7 @@ func (bh *BraveHost) ListLocalImages() error {
 					timeUnit = "just now"
 				}
 
-				hashString, err := getImageHash(image)
+				hashString, err := hashImage(image)
 				if err != nil {
 					return err
 				}
@@ -208,17 +208,17 @@ func (bh *BraveHost) DeleteLocalImage(name string) error {
 	if err != nil {
 		return err
 	}
-	if _, err = queryLocalImageFilepath(image); err != nil {
+	if _, err = matchLocalImagePath(image); err != nil {
 		var parseErr error
 		if image, parseErr = ParseLegacyImageString(name); parseErr == nil {
-			if _, legacyErr := queryLocalImageFilepath(image); legacyErr != nil {
+			if _, legacyErr := matchLocalImagePath(image); legacyErr != nil {
 				return err
 			}
 		} else {
 			return err
 		}
 	}
-	imagePath, err := queryLocalImageFilepath(image)
+	imagePath, err := matchLocalImagePath(image)
 	if err != nil {
 		return err
 	}
@@ -905,7 +905,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 		}
 	}
 
-	if _, err = queryLocalImageFilepath(imageStruct); err != nil {
+	if _, err = matchLocalImagePath(imageStruct); err != nil {
 		return err
 	}
 
@@ -956,7 +956,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 		return err
 	}
 
-	image, err := queryLocalImageFilepath(imageStruct)
+	image, err := matchLocalImagePath(imageStruct)
 	if err != nil {
 		return err
 	}

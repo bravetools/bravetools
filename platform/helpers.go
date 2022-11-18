@@ -176,7 +176,7 @@ func buildImage(bh *BraveHost, bravefile *shared.Bravefile) error {
 	}()
 
 	// If image already exists in local store, check for remote dest - if exists, push image there, else error
-	if _, err := getLocalImageFilepath(imageStruct); err == nil {
+	if _, err := localImagePath(imageStruct); err == nil {
 		return &ImageExistsError{Name: imageStruct.String()}
 	}
 
@@ -246,12 +246,12 @@ func buildImage(bh *BraveHost, bravefile *shared.Bravefile) error {
 		if err != nil {
 			return err
 		}
-		if _, err = queryLocalImageFilepath(localBaseImage); err != nil {
+		if _, err = matchLocalImagePath(localBaseImage); err != nil {
 			// Check legacy bravefile
 			var parseErr error
 			localBaseImage, parseErr = ParseLegacyImageString(bravefile.Base.Image)
 			if parseErr == nil {
-				if _, legacyErr := queryLocalImageFilepath(localBaseImage); legacyErr != nil {
+				if _, legacyErr := matchLocalImagePath(localBaseImage); legacyErr != nil {
 					return legacyErr
 				}
 			} else {
@@ -446,7 +446,7 @@ func TransferImage(sourceRemote Remote, bravefile shared.Bravefile) error {
 		imageStruct.Version = defaultImageVersion
 	}
 
-	imgPath, err := getLocalImageFilepath(imageStruct)
+	imgPath, err := localImagePath(imageStruct)
 	if err != nil {
 		return err
 	}
@@ -522,7 +522,7 @@ func importGitHub(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *
 		return fingerprint, err
 	}
 
-	if _, err = queryLocalImageFilepath(imageStruct); err != nil {
+	if _, err = matchLocalImagePath(imageStruct); err != nil {
 		err = bh.BuildImage(*remoteBravefile)
 		if err != nil {
 			return fingerprint, err
@@ -551,7 +551,7 @@ func importLocal(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *s
 		return "", err
 	}
 
-	path, err := queryLocalImageFilepath(imageStruct)
+	path, err := matchLocalImagePath(imageStruct)
 	if err != nil {
 		return "", err
 	}
@@ -897,7 +897,7 @@ func getBuildDependents(dependency string, composeFile *shared.ComposeFile) (ser
 			return serviceNames, err
 		}
 
-		if _, err = queryLocalImageFilepath(imageStruct); err == nil {
+		if _, err = matchLocalImagePath(imageStruct); err == nil {
 			continue
 		}
 		for _, dependsOn := range composeFile.Services[service].Depends {
