@@ -558,7 +558,21 @@ func importLocal(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *s
 
 	path, err := matchLocalImagePath(imageStruct)
 	if err != nil {
-		return "", err
+		if errors.As(err, &multipleImageMatches{}) {
+			return "", err
+		}
+
+		var legacyParseErr error
+		var legacyMatchErr error
+		imageStruct, legacyParseErr = ParseLegacyImageString(bravefile.Base.Image)
+		if legacyParseErr != nil {
+			return "", err
+		}
+
+		path, legacyMatchErr = matchLocalImagePath(imageStruct)
+		if legacyMatchErr != nil {
+			return "", err
+		}
 	}
 
 	fingerprint, err = shared.FileSha256Hash(path)
