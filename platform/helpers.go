@@ -116,7 +116,7 @@ func needTransferImage(bravefile shared.Bravefile) bool {
 	return destRemoteName != shared.BravetoolsRemote
 }
 
-func buildImage(bh *BraveHost, bravefile shared.Bravefile) error {
+func buildImage(bh *BraveHost, bravefile *shared.Bravefile) error {
 
 	var imageStruct BravetoolsImage
 	var err error
@@ -142,19 +142,22 @@ func buildImage(bh *BraveHost, bravefile shared.Bravefile) error {
 		return err
 	}
 
-	// Image architecture must match base image architecture
-	baseImageStruct, err := ParseImageString(bravefile.Base.Image)
-	if err != nil {
-		return err
-	}
-	if imageStruct.Architecture != baseImageStruct.Architecture {
-		return fmt.Errorf("target image architecture [%s] does not match base image [%s]", imageStruct.Architecture, baseImageStruct.Architecture)
-	}
-
 	// Use bravetools host LXD instance to build
 	lxdServer, err := GetLXDInstanceServer(bh.Remote)
 	if err != nil {
 		return err
+	}
+
+	// Set output image architecture based on server arch if not provided and set default version if missing
+	if imageStruct.Architecture == "" {
+		buildServerArch, err := GetLXDServerArch(lxdServer)
+		if err != nil {
+			return err
+		}
+		imageStruct.Architecture = buildServerArch
+	}
+	if imageStruct.Version == "" {
+		imageStruct.Version = defaultImageVersion
 	}
 
 	// Intercept SIGINT, propagate cancel and cleanup artefacts
@@ -173,7 +176,7 @@ func buildImage(bh *BraveHost, bravefile shared.Bravefile) error {
 	}()
 
 	// If image already exists in local store, check for remote dest - if exists, push image there, else error
-	if imageExists(imageStruct) {
+	if _, err := localImagePath(imageStruct); err == nil {
 		return &ImageExistsError{Name: imageStruct.String()}
 	}
 
@@ -212,12 +215,13 @@ func buildImage(bh *BraveHost, bravefile shared.Bravefile) error {
 		if err != nil {
 			return err
 		}
+
 		err = CheckStoragePoolSpace(lxdServer, bh.Settings.StoragePool.Name, img.Size)
 		if err != nil {
 			return err
 		}
 
-		imageFingerprint, err = importLXD(ctx, lxdServer, &bravefile, bh.Remote.Profile)
+		imageFingerprint, err = importLXD(ctx, lxdServer, bravefile, bh.Remote.Profile)
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
@@ -227,7 +231,7 @@ func buildImage(bh *BraveHost, bravefile shared.Bravefile) error {
 			return err
 		}
 	case "github":
-		imageFingerprint, err = importGitHub(ctx, lxdServer, &bravefile, bh, bh.Remote.Profile, bh.Remote.Storage)
+		imageFingerprint, err = importGitHub(ctx, lxdServer, bravefile, bh, bh.Remote.Profile, bh.Remote.Storage)
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
@@ -242,15 +246,16 @@ func buildImage(bh *BraveHost, bravefile shared.Bravefile) error {
 		if err != nil {
 			return err
 		}
-		if !imageExists(localBaseImage) {
+		if _, err = matchLocalImagePath(localBaseImage); err != nil {
 			// Check legacy bravefile
-			legacyLocalBaseImage, err := ParseLegacyImageString(bravefile.Base.Image)
-			if err == nil {
-				if !imageExists(legacyLocalBaseImage) {
-					return fmt.Errorf("base image %q required for building image %q does not exist", legacyLocalBaseImage.String(), imageStruct.String())
+			var parseErr error
+			localBaseImage, parseErr = ParseLegacyImageString(bravefile.Base.Image)
+			if parseErr == nil {
+				if _, legacyErr := matchLocalImagePath(localBaseImage); legacyErr != nil {
+					return legacyErr
 				}
 			} else {
-				return fmt.Errorf("base image %q required for building image %q does not exist", localBaseImage.String(), imageStruct.String())
+				return err
 			}
 		}
 
@@ -263,7 +268,7 @@ func buildImage(bh *BraveHost, bravefile shared.Bravefile) error {
 			return err
 		}
 
-		imageFingerprint, err = importLocal(ctx, lxdServer, &bravefile, bh.Remote.Profile, bh.Remote.Storage)
+		imageFingerprint, err = importLocal(ctx, lxdServer, bravefile, bh.Remote.Profile, bh.Remote.Storage)
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
@@ -292,12 +297,13 @@ func buildImage(bh *BraveHost, bravefile shared.Bravefile) error {
 		if err != nil {
 			return err
 		}
+
 		err = CheckStoragePoolSpace(lxdServer, bh.Settings.StoragePool.Name, img.Size)
 		if err != nil {
 			return err
 		}
 
-		imageFingerprint, err = importLXD(ctx, lxdServer, &bravefile, bh.Remote.Profile)
+		imageFingerprint, err = importLXD(ctx, lxdServer, bravefile, bh.Remote.Profile)
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
@@ -415,11 +421,6 @@ func TransferImage(sourceRemote Remote, bravefile shared.Bravefile) error {
 		return err
 	}
 
-	imgPath, err := getImageFilepath(imageStruct)
-	if err != nil {
-		return err
-	}
-
 	destRemoteName, _ := ParseRemoteName(imageString)
 
 	// If no remote store specified for image nothing to do
@@ -429,6 +430,23 @@ func TransferImage(sourceRemote Remote, bravefile shared.Bravefile) error {
 
 	// Use bravetools host LXD instance to build
 	lxdServer, err := GetLXDInstanceServer(sourceRemote)
+	if err != nil {
+		return err
+	}
+
+	// Set output image architecture based on server arch if not provided and set default version if missing
+	if imageStruct.Architecture == "" {
+		buildServerArch, err := GetLXDServerArch(lxdServer)
+		if err != nil {
+			return err
+		}
+		imageStruct.Architecture = buildServerArch
+	}
+	if imageStruct.Version == "" {
+		imageStruct.Version = defaultImageVersion
+	}
+
+	imgPath, err := localImagePath(imageStruct)
 	if err != nil {
 		return err
 	}
@@ -504,7 +522,7 @@ func importGitHub(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *
 		return fingerprint, err
 	}
 
-	if !imageExists(imageStruct) {
+	if _, err = matchLocalImagePath(imageStruct); err != nil {
 		err = bh.BuildImage(*remoteBravefile)
 		if err != nil {
 			return fingerprint, err
@@ -533,7 +551,7 @@ func importLocal(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *s
 		return "", err
 	}
 
-	path, err := getImageFilepath(imageStruct)
+	path, err := matchLocalImagePath(imageStruct)
 	if err != nil {
 		return "", err
 	}
@@ -879,7 +897,7 @@ func getBuildDependents(dependency string, composeFile *shared.ComposeFile) (ser
 			return serviceNames, err
 		}
 
-		if imageExists(imageStruct) {
+		if _, err = matchLocalImagePath(imageStruct); err == nil {
 			continue
 		}
 		for _, dependsOn := range composeFile.Services[service].Depends {

@@ -95,15 +95,15 @@ func (bh *BraveHost) ImportLocalImage(sourcePath string) error {
 	if err != nil {
 		return err
 	}
+	if image.Name == "" {
+		return fmt.Errorf("tar file at %q does not provide an image name", sourcePath)
+	}
 
-	if imageExists(image) {
+	if _, err = matchLocalImagePath(image); err == nil {
 		return errors.New("image " + imageName + " already exists in local image store")
 	}
 
 	imagePath := filepath.Join(imageStore, image.ToBasename()+".tar.gz")
-	if err != nil {
-		return err
-	}
 	hashFile := imagePath + ".md5"
 
 	err = shared.CopyFile(sourcePath, imagePath)
@@ -172,7 +172,7 @@ func (bh *BraveHost) ListLocalImages() error {
 					timeUnit = "just now"
 				}
 
-				hashString, err := getImageHash(image)
+				hashString, err := hashImage(image)
 				if err != nil {
 					return err
 				}
@@ -208,17 +208,17 @@ func (bh *BraveHost) DeleteLocalImage(name string) error {
 	if err != nil {
 		return err
 	}
-	if !imageExists(image) {
-		legacyImage, err := ParseLegacyImageString(name)
-		if err == nil {
-			if !imageExists(legacyImage) {
-				return fmt.Errorf("image %q does not exist", name)
+	if _, err = matchLocalImagePath(image); err != nil {
+		var parseErr error
+		if image, parseErr = ParseLegacyImageString(name); parseErr == nil {
+			if _, legacyErr := matchLocalImagePath(image); legacyErr != nil {
+				return err
 			}
 		} else {
-			return fmt.Errorf("image %q does not exist", name)
+			return err
 		}
 	}
-	imagePath, err := getImageFilepath(image)
+	imagePath, err := matchLocalImagePath(image)
 	if err != nil {
 		return err
 	}
@@ -707,7 +707,7 @@ func (e *ImageExistsError) Error() string {
 
 // BuildImage creates an image based on Bravefile
 func (bh *BraveHost) BuildImage(bravefile shared.Bravefile) error {
-	err := buildImage(bh, bravefile)
+	err := buildImage(bh, &bravefile)
 
 	switch err.(type) {
 	case nil:
@@ -742,14 +742,22 @@ func (bh *BraveHost) PublishUnit(unitName string, imageName string) error {
 		return err
 	}
 
+	serverArch, err := GetLXDServerArch(lxdServer)
+	if err != nil {
+		return errors.New("failed to determine LXD server CPU architecture")
+	}
+
 	if imageName == "" {
 		timestamp := time.Now()
-		imageName = unitName + "/" + timestamp.Format("20060102150405")
+		imageName = unitName + "/" + timestamp.Format("20060102150405") + "/" + serverArch
 	}
 
 	imageStruct, err := ParseImageString(imageName)
 	if err != nil {
 		return fmt.Errorf("failed to parse image string %q: %s", imageName, err)
+	}
+	if imageStruct.Architecture != serverArch {
+		return fmt.Errorf("provided image name %q specifies a different architecture than the LXD server (%q)", imageStruct.String(), serverArch)
 	}
 	imageName = imageStruct.ToBasename()
 
@@ -897,8 +905,8 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 		}
 	}
 
-	if !imageExists(imageStruct) {
-		return fmt.Errorf("image %q does not exist", imageStruct.String())
+	if _, err = matchLocalImagePath(imageStruct); err != nil {
+		return err
 	}
 
 	// Connect to deploy target remote
@@ -948,7 +956,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 		return err
 	}
 
-	image, err := getImageFilepath(imageStruct)
+	image, err := matchLocalImagePath(imageStruct)
 	if err != nil {
 		return err
 	}
