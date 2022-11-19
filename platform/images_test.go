@@ -99,3 +99,19 @@ func TestImageFromFilenameIncorrectLong(t *testing.T) {
 		t.Fatalf("error when parsing image from filename %q with an underscore in architecture field", name)
 	}
 }
+
+func TestImageFilenameHypen(t *testing.T) {
+	name := "_" + ".tar.gz"
+	_, err := ImageFromFilename(name)
+	if err == nil {
+		t.Fatalf("error expected when parsing image from filename %q", name)
+	}
+}
+
+func TestLegacyImageFilenameHypen(t *testing.T) {
+	name := "-" + ".tar.gz"
+	_, err := ImageFromLegacyFilename(name)
+	if err == nil {
+		t.Fatalf("error when parsing image from filename %q", name)
+	}
+}
