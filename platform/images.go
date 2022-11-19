@@ -82,6 +82,11 @@ func ParseLegacyImageString(imageString string) (imageStruct BravetoolsImage, er
 	return imageStruct, nil
 }
 func validImageName(imageStruct BravetoolsImage) bool {
+	// Cannot have empty name
+	if imageStruct.Name == "" {
+		return false
+	}
+
 	// Check Name, Version and Architecture fields for non-allowed characters
 	for _, char := range imageStruct.Name {
 		if !validImageFieldChar(char) {
@@ -144,8 +149,8 @@ func ImageFromFilename(filename string) (BravetoolsImage, error) {
 		image.Architecture = split[2]
 	}
 
-	if image.Name == "" {
-		return image, fmt.Errorf("filename %q is not parsable as a bravetools image", filename)
+	if !validImageName(image) {
+		return image, fmt.Errorf("image %q is not a valid image description", image)
 	}
 
 	return image, nil
@@ -168,8 +173,8 @@ func ImageFromLegacyFilename(filename string) (BravetoolsImage, error) {
 		image.Version = split[len(split)-1]
 	}
 
-	if image.Name == "" {
-		return image, fmt.Errorf("filename %q is not parsable as a legacy bravetools image", filename)
+	if !validImageName(image) {
+		return image, fmt.Errorf("image %q is not a valid image description", image)
 	}
 
 	return image, nil
