@@ -144,14 +144,32 @@ func ImageFromFilename(filename string) (BravetoolsImage, error) {
 		image.Architecture = split[2]
 	}
 
+	if image.Name == "" {
+		return image, fmt.Errorf("filename %q is not parsable as a bravetools image", filename)
+	}
+
+	return image, nil
+}
+
+func ImageFromLegacyFilename(filename string) (BravetoolsImage, error) {
 	// Legacy filenames are not delimited by underscores
 	// Final "-" is followed by version - no arch
-	if len(split) == 1 {
-		split = strings.Split(filename, "-")
-		if len(split) > 1 {
-			image.Name = strings.Join(split[:len(split)-1], "-")
-			image.Version = split[len(split)-1]
-		}
+	filename = strings.TrimSuffix(filename, ".tar.gz")
+	split := strings.Split(filename, "-")
+
+	image := BravetoolsImage{
+		Name:         split[0],
+		Version:      defaultImageVersion,
+		Architecture: "",
+	}
+
+	if len(split) > 1 {
+		image.Name = strings.Join(split[:len(split)-1], "-")
+		image.Version = split[len(split)-1]
+	}
+
+	if image.Name == "" {
+		return image, fmt.Errorf("filename %q is not parsable as a legacy bravetools image", filename)
 	}
 
 	return image, nil

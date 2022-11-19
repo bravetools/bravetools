@@ -95,9 +95,6 @@ func (bh *BraveHost) ImportLocalImage(sourcePath string) error {
 	if err != nil {
 		return err
 	}
-	if image.Name == "" {
-		return fmt.Errorf("tar file at %q does not provide an image name", sourcePath)
-	}
 
 	if _, err = matchLocalImagePath(image); err == nil {
 		return fmt.Errorf("image %q already exists in local image store", image)
@@ -151,7 +148,24 @@ func (bh *BraveHost) ListLocalImages() error {
 		for _, i := range images {
 			image, err := ImageFromFilename(filepath.Base(i))
 			if err != nil {
-				return fmt.Errorf("failed to parse image filename schema from %q", i)
+				image, err = ImageFromLegacyFilename(filepath.Base(i))
+				if err != nil {
+					return fmt.Errorf("failed to parse image filename schema from %q", i)
+				}
+
+				if _, err = localImagePath(image); err != nil {
+					return fmt.Errorf("failed to retrieve parse file %q as a bravetools image", i)
+				}
+			}
+
+			if _, err = localImagePath(image); err != nil {
+				image, err = ImageFromLegacyFilename(filepath.Base(i))
+				if err != nil {
+					return fmt.Errorf("failed to parse image filename schema from %q", i)
+				}
+				if _, err = localImagePath(image); err != nil {
+					return fmt.Errorf("failed to retrieve parse file %q as a bravetools image", i)
+				}
 			}
 
 			fi, err := os.Stat(i)
