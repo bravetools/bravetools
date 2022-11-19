@@ -529,7 +529,20 @@ func Launch(ctx context.Context, localLxd lxd.InstanceServer, name string, alias
 
 	a := strings.Split(alias, "/")
 	if len(a) < 3 {
-		alias = alias + "/" + runtime.GOARCH
+		arch, err := GetLXDServerArch(localLxd)
+		imageArch := arch
+
+		switch arch {
+		case "aarch64":
+			imageArch = "arm64"
+		case "x86_64":
+			imageArch = "amd64"
+		}
+
+		if err != nil {
+			return fingerprint, err
+		}
+		alias = alias + "/" + imageArch
 	}
 
 	operation := shared.Info("Importing " + alias)
@@ -565,12 +578,12 @@ func Launch(ctx context.Context, localLxd lxd.InstanceServer, name string, alias
 
 	op, err := localLxd.CreateContainer(req)
 	if err != nil {
-		return fingerprint, errors.New("Failed to create unit: " + err.Error())
+		return fingerprint, errors.New("failed to create unit: " + err.Error())
 	}
 
 	err = op.Wait()
 	if err != nil {
-		return fingerprint, errors.New("Error waiting: " + err.Error())
+		return fingerprint, errors.New("error waiting: " + err.Error())
 	}
 
 	// Wait for container to be properly set up while checking for interrupts

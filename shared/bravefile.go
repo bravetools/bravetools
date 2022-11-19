@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"runtime"
 	"strings"
 
 	"gopkg.in/yaml.v2"
@@ -80,10 +79,11 @@ type Bravefile struct {
 
 // NewBravefile ..
 func NewBravefile() *Bravefile {
+
 	return &Bravefile{
-		Base: ImageDescription{
-			Architecture: runtime.GOARCH,
-		},
+		// Base: ImageDescription{
+		// 	Architecture: runtime.GOARCH,
+		// },
 		PlatformService: Service{
 			Resources: Resources{
 				CPU: DefaultUnitCpuLimit,

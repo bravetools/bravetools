@@ -797,7 +797,7 @@ func (bh *BraveHost) StopUnit(name string) error {
 	fmt.Println("Stopping unit: ", name)
 	err = Stop(lxdServer, name)
 	if err != nil {
-		return errors.New("Failed to stop unit: " + err.Error())
+		return errors.New("failed to stop unit: " + err.Error())
 	}
 
 	return nil
@@ -811,7 +811,7 @@ func (bh *BraveHost) StartUnit(name string) error {
 	if remoteName == shared.BravetoolsRemote {
 		err := bh.Backend.Start()
 		if err != nil {
-			return errors.New("Failed to start backend: " + err.Error())
+			return errors.New("failed to start backend: " + err.Error())
 		}
 	}
 
@@ -828,7 +828,7 @@ func (bh *BraveHost) StartUnit(name string) error {
 	fmt.Println("Starting unit: ", name)
 	err = Start(lxdServer, name)
 	if err != nil {
-		return errors.New("Failed to start unit: " + err.Error())
+		return errors.New("failed to start unit: " + err.Error())
 	}
 
 	return nil
