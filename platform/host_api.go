@@ -100,7 +100,7 @@ func (bh *BraveHost) ImportLocalImage(sourcePath string) error {
 	}
 
 	if _, err = matchLocalImagePath(image); err == nil {
-		return errors.New("image " + imageName + " already exists in local image store")
+		return fmt.Errorf("image %q already exists in local image store", image)
 	}
 
 	imagePath := filepath.Join(imageStore, image.ToBasename()+".tar.gz")
@@ -116,8 +116,6 @@ func (bh *BraveHost) ImportLocalImage(sourcePath string) error {
 		return errors.New("failed to generate image hash: " + err.Error())
 	}
 
-	fmt.Println(imageHash)
-
 	// Write image hash to a file
 	f, err := os.Create(hashFile)
 	if err != nil {
@@ -129,6 +127,8 @@ func (bh *BraveHost) ImportLocalImage(sourcePath string) error {
 	if err != nil {
 		return errors.New(err.Error())
 	}
+
+	fmt.Printf("Imported file %q into bravetools as image %q\n", imageName, image)
 
 	return nil
 }
