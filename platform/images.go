@@ -48,8 +48,8 @@ func ParseImageString(imageString string) (imageStruct BravetoolsImage, err erro
 		imageStruct.Version = split[1]
 	}
 
-	if !validImageName(imageStruct) {
-		return imageStruct, fmt.Errorf("image %q is not a valid string - fields must not contain special characters", imageString)
+	if err := validateImage(imageStruct); err != nil {
+		return imageStruct, fmt.Errorf("image %q is not a valid string: %s", imageString, err)
 	}
 
 	return imageStruct, nil
@@ -75,37 +75,37 @@ func ParseLegacyImageString(imageString string) (imageStruct BravetoolsImage, er
 		Architecture: "",
 	}
 
-	if !validImageName(imageStruct) {
-		return imageStruct, fmt.Errorf("image %q is not a valid string - fields must not contain special characters", imageString)
+	if err := validateImage(imageStruct); err != nil {
+		return imageStruct, fmt.Errorf("image %q is not a valid string: %s", imageString, err)
 	}
 
 	return imageStruct, nil
 }
-func validImageName(imageStruct BravetoolsImage) bool {
+func validateImage(imageStruct BravetoolsImage) error {
 	// Cannot have empty name
 	if imageStruct.Name == "" {
-		return false
+		return errors.New("image cannot have an empty name")
 	}
 
 	// Check Name, Version and Architecture fields for non-allowed characters
 	for _, char := range imageStruct.Name {
 		if !validImageFieldChar(char) {
-			return false
+			return fmt.Errorf("character %q is not valid in image name field", char)
 		}
 	}
 	for _, char := range imageStruct.Version {
 		if !validImageFieldChar(char) {
-			return false
+			return fmt.Errorf("character %q is not valid in image version field", char)
 		}
 	}
 	for _, char := range imageStruct.Architecture {
 		// Underscore allowed for arch - special case
 		if !validImageFieldChar(char) && char != '_' {
-			return false
+			return fmt.Errorf("character %q is not valid in image architecture field", char)
 		}
 	}
 
-	return true
+	return nil
 }
 
 func validImageFieldChar(char rune) bool {
@@ -149,8 +149,8 @@ func ImageFromFilename(filename string) (BravetoolsImage, error) {
 		image.Architecture = split[2]
 	}
 
-	if !validImageName(image) {
-		return image, fmt.Errorf("image %q is not a valid image description", image)
+	if err := validateImage(image); err != nil {
+		return image, fmt.Errorf("image %q is not a valid string: %s", image, err)
 	}
 
 	return image, nil
@@ -173,8 +173,8 @@ func ImageFromLegacyFilename(filename string) (BravetoolsImage, error) {
 		image.Version = split[len(split)-1]
 	}
 
-	if !validImageName(image) {
-		return image, fmt.Errorf("image %q is not a valid image description", image)
+	if err := validateImage(image); err != nil {
+		return image, fmt.Errorf("image %q is not a valid string: %s", image, err)
 	}
 
 	return image, nil
