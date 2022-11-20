@@ -72,7 +72,7 @@ brave build -r $REMOTE
 
 Where `$REMOTE` is the name of a trusted Bravetools remote.
 
-## Using Local image store
+## Using a Local Image Store
 Every image built by Bravetools can be used as a base for any subsequent image configurations. For example, you might have pre-built images containing the full python3 development environment, which can be re-used as bases for python3-dependent applications.
 
 To use images in the local store, set the `location` field of the Bravefile to `local`.
@@ -94,7 +94,7 @@ base:
   location: public
 ```
 
-Upon build completion, the image will be pushed to a remote called `qemu` for later use and a local copy will be stored in on the host's file system
+Upon build completion, the image will be pushed to a remote called `qemu` for later use and a local copy will be stored on the host's file system
 
 To use an image stored on your remote, reference it in your `Bravefile` as:
 
