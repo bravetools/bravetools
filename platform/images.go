@@ -217,7 +217,7 @@ func matchLocalImagePath(image BravetoolsImage) (string, error) {
 		return "", err
 	}
 
-	return "", fmt.Errorf("failed to retrieve path for image %s, version %s, arch %s ", image.Name, image.Version, image.Architecture)
+	return "", fmt.Errorf("failed to retrieve path for image %s, version: %s, arch: %s ", image.Name, image.Version, image.Architecture)
 }
 
 // localImagePath gets the exact image filepath matching the definition if it exists - no regex matching is performed
@@ -232,7 +232,7 @@ func localImagePath(image BravetoolsImage) (string, error) {
 	if shared.FileExists(imagePath) {
 		return imagePath, nil
 	}
-	return "", fmt.Errorf("failed to retrieve path for image %s, version %s, arch %s ", image.Name, image.Version, image.Architecture)
+	return "", fmt.Errorf("failed to retrieve path for image %s, version: %s, arch: %s ", image.Name, image.Version, image.Architecture)
 }
 
 // hashImage calculates the md5 hash of the provided BravetoolsImage and stores it in a file.
