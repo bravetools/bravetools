@@ -942,25 +942,20 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 		return err
 	}
 
-	// Check if a unit with this name already exists - we don't want to delete it
-	err = checkUnits(lxdServer, unitName, unitParams.Profile)
-	if err != nil {
-		return err
-	}
-
 	image, err := matchLocalImagePath(imageStruct)
 	if err != nil {
 		return err
 	}
-	fingerprint, err := shared.FileSha256Hash(image)
-	if err != nil {
-		return fmt.Errorf("failed to obtain image hash %q", unitParams.Image)
-	}
+
 	imgSize, err := localImageSize(imageStruct)
 	if err != nil {
 		return fmt.Errorf("failed to get image size for image %q", imageStruct.String())
 	}
-	defer DeleteImageByFingerprint(lxdServer, fingerprint)
+
+	fingerprint, err := shared.FileSha256Hash(image)
+	if err != nil {
+		return fmt.Errorf("failed to obtain image hash %q", unitParams.Image)
+	}
 
 	// Resource checks
 	if unitParams.Storage != "" {
@@ -981,12 +976,14 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 		}
 	}
 
+	// Import local image if it doesn't exist in LXD image store
 	if !imageExistsOnRemote {
 		_, err = ImportImage(lxdServer, image, unitName)
 		unitParams.Image = unitName
 		if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 			return errors.New("failed to import image: " + err.Error())
 		}
+		defer DeleteImageByFingerprint(lxdServer, fingerprint)
 	}
 
 	// Launch unit and set up cleanup code to delete it if an error encountered during deployment
