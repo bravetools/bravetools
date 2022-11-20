@@ -2,7 +2,7 @@
 layout: default
 title: Working with Bravetools remotes
 parent: Docs
-nav_order: 5
+nav_order: 7
 description: "Bravetools enables local and remote builds and unit deployments"
 ---
 
