@@ -6,9 +6,20 @@ nav_order: 2
 description: "Bravetools builds images automatically by reading instructions from a Bravefile."
 ---
 
-# Anatomy of a Bravefile
+# Writing a Bravefile
+{: .no_toc }
 
 Bravetools creates reproducible environments by following instructions logged in a ``Bravefile``. A ``Bravefile`` adheres to a strict structure, which ensures reproducibility and makes it easy to manage complex system structures and operations.
+
+## Table of contents
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
+
+---
+
+## A Simple Bravefile
 
 A ``Bravefile`` follows YAML format and at a high-level looks like this:
 

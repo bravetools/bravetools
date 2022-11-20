@@ -2,7 +2,7 @@
 layout: default
 title: GPU processing inside Bravetools
 parent: Docs
-nav_order: 5
+nav_order: 6
 description: "Enable GPU-accelerated processing inside Bravetools Units"
 ---
 

@@ -2,7 +2,7 @@
 layout: default
 title: Working with Docker
 parent: Docs
-nav_order: 4
+nav_order: 5
 description: "Bravetools enables seamless Docker integration."
 ---
 
