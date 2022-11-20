@@ -6,15 +6,15 @@ nav_order: 6
 description: "Enable GPU-accelerated processing inside Bravetools Units"
 ---
 
-# Overview
+# GPU Processing Inside Bravetools
 Many machine learning applications require GPU-accelerated hardware. Although many personal computers and servers ship with GPU support, it can be desirable to scale training operations to multi-GPU systems in cloud deployments. Bravetools uses [LXD](https://linuxcontainers.org/) to configure and manage GPU hardware inside your Units. A key advantage of this approach is that you can scale your training scripts and environments from a local machine to massive distributed systems without changing your configuration code.
 
 In this section, we will describe how to enable NVIDIA hardware inside your Units.
 
-# Before you begin
+## Before you begin
 It's likely that some housekeeping work will need to be carried out, such as ensuring that old NVIDIA drivers and __nouveau__ drivers are removed. For details refer to [this excellent resource](https://ubuntu.com/tutorials/gpu-data-processing-inside-lxd#2-remove-nvidia-drivers).
 
-# System requirements
+## System requirements
 
 * NVIDIA Drivers
 * [CUDA toolkit](https://developer.nvidia.com/cuda-downloads)
@@ -31,13 +31,13 @@ Build cuda_11.0_bu.TC445_37.28540450_0
 
 Finally, if CUDA was installed with extras included, you may ensure all NVIDIA components are functioning correctly by running `$CUDA_HOME/extras/demo_suite/bandwidthTest`. Typically, CUDA is installed in `/usr/local/cuda` on Linux systems. The output should contain `Result = PASS`.
 
-# Enable GPU support in a Bravefile
+## Enable GPU support in a Bravefile
 
 GPU support can be easily enabled inside the **Service.Resources** section of a [Bravefile](../bravefile) by setting `gpu: "yes"`:
 
 ```yaml
 service:
-  image: ubuntu-bionic-gpu-1.0
+  image: ubuntu-bionic-gpu/1.0
   name: ubuntu-bionic-gpu
   docker: "no"
   version: "1.0"

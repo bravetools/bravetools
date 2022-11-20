@@ -7,6 +7,15 @@ description: "Bravetools enables local and remote builds and unit deployments"
 ---
 
 # Bravetools Remotes
+{: .no_toc }
+
+## Table of contents
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
+
+---
 
 ## Introduction
 

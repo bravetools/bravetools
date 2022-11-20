@@ -2,15 +2,24 @@
 layout: default
 title: Brave Compose
 parent: Docs
-nav_order: 3
+nav_order: 4
 description: "Bravetools builds images automatically by reading instructions from a Bravefile."
 ---
 
 # Brave Compose
+{: .no_toc }
 
 While a `Bravefile` defines configuration options for building and deploying a single service, often a complex application is backed by multiple services working together in concert. For example, you may have an API that contacts multiple backend services such as a database or authentication server.
 
 `brave compose` can help manage the building and deploying of many services, allowing you to treat a complex system made of many components as a single entity, defined in a single `brave-compose.yaml` file. Thanks to the close integration with `Bravefile`, it's easy to take existing standalone services you've defined and combine them into a single system. 
+
+## Table of contents
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
+
+---
 
 ## Compose command
 
