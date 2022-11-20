@@ -10,7 +10,7 @@ description: "Bravetools enables seamless Docker integration."
 
 Docker is the industry-standard way for building **Application Containers**. Bravetools provides an intuitive interface to deploy Docker inside our System Container [units](../cli/brave_deploy), making it very easy to ship Docker applications inside secure and reproducible environments.
 
-# Configuring a Bravetools Unit to run Docker
+## Configuring a Bravetools Unit to run Docker
 
 A unit can be configured to run Docker containers using a [Bravefile](../bravefile). This can be achieved simply by adding `docker: "yes"` to the **service** section:
 
