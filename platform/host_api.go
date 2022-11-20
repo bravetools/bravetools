@@ -871,6 +871,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 
 	// Parse image location and pull from remote server to local bravetools image store if needed
 	var imageRemoteName string
+	imageExistsOnRemote := false
 	imageRemoteName, unitParams.Image = ParseRemoteName(unitParams.Image)
 
 	if imageRemoteName != shared.BravetoolsRemote {
@@ -888,6 +889,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 		case *ImageExistsError:
 			// If image already exists continue and log the skip
 			err = nil
+			imageExistsOnRemote = true
 			fmt.Printf("image %q already exists locally - skipping remote import\n", errType.Name)
 		default:
 			// Stop on unknown err
@@ -979,18 +981,21 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 		}
 	}
 
-	_, err = ImportImage(lxdServer, image, unitName)
-	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
-		return errors.New("failed to import image: " + err.Error())
+	if !imageExistsOnRemote {
+		_, err = ImportImage(lxdServer, image, unitName)
+		unitParams.Image = unitName
+		if err = shared.CollectErrors(err, ctx.Err()); err != nil {
+			return errors.New("failed to import image: " + err.Error())
+		}
 	}
 
 	// Launch unit and set up cleanup code to delete it if an error encountered during deployment
-	err = LaunchFromImage(lxdServer, unitName, unitName, unitParams.Profile, unitParams.Storage)
+	err = LaunchFromImage(lxdServer, unitParams.Image, unitParams.Name, unitParams.Profile, unitParams.Storage)
 	defer func() {
 		if err != nil {
 			delErr := DeleteUnit(lxdServer, unitName)
 			if delErr != nil {
-				fmt.Println("failed to delete unit: " + delErr.Error())
+				log.Println("failed to delete unit: " + delErr.Error())
 			}
 		}
 	}()
