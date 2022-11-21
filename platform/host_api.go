@@ -871,7 +871,6 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 
 	// Parse image location and pull from remote server to local bravetools image store if needed
 	var imageRemoteName string
-	imageExistsOnRemote := false
 	imageRemoteName, unitParams.Image = ParseRemoteName(unitParams.Image)
 
 	if imageRemoteName != shared.BravetoolsRemote {
@@ -889,7 +888,6 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 		case *ImageExistsError:
 			// If image already exists continue and log the skip
 			err = nil
-			imageExistsOnRemote = true
 			fmt.Printf("image %q already exists locally - skipping remote import\n", errType.Name)
 		default:
 			// Stop on unknown err
@@ -977,7 +975,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 	}
 
 	// Import local image if it doesn't exist in LXD image store
-	if !imageExistsOnRemote {
+	if _, _, err = lxdServer.GetImage(fingerprint); err != nil {
 		_, err = ImportImage(lxdServer, image, unitName)
 		unitParams.Image = unitName
 		if err = shared.CollectErrors(err, ctx.Err()); err != nil {
