@@ -527,24 +527,6 @@ func Launch(ctx context.Context, localLxd lxd.InstanceServer, name string, alias
 		return fingerprint, err
 	}
 
-	a := strings.Split(alias, "/")
-	if len(a) < 3 {
-		arch, err := GetLXDServerArch(localLxd)
-		imageArch := arch
-
-		switch arch {
-		case "aarch64":
-			imageArch = "arm64"
-		case "x86_64":
-			imageArch = "amd64"
-		}
-
-		if err != nil {
-			return fingerprint, err
-		}
-		alias = alias + "/" + imageArch
-	}
-
 	operation := shared.Info("Importing " + alias)
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stdout))
 	s.Suffix = " " + operation
@@ -552,12 +534,18 @@ func Launch(ctx context.Context, localLxd lxd.InstanceServer, name string, alias
 	s.Start()
 	defer s.Stop()
 
+	// Remote images must match the LXD instance server arch
+	destServerArch, err := GetLXDServerArch(localLxd)
+	if err != nil {
+		return "", err
+	}
+
 	// Get remote image fingerprint
 	remoteLxd, err := GetSimplestreamsLXDSever("https://images.linuxcontainers.org", nil)
 	if err != nil {
 		return fingerprint, err
 	}
-	fingerprint, err = GetFingerprintByAlias(remoteLxd, alias)
+	fingerprint, err = GetFingerprintByAlias(remoteLxd, alias, destServerArch)
 
 	if err = ctx.Err(); err != nil {
 		return "", err
@@ -1162,8 +1150,14 @@ func CopyImage(sourceServer lxd.InstanceServer, destServer lxd.InstanceServer, f
 		return err
 	}
 
+	// Images matching the alias on the source image server must match the arch of the destination server
+	destServerArch, err := GetLXDServerArch(destServer)
+	if err != nil {
+		return err
+	}
+
 	// Ensure no dest server conflicts
-	_, err = GetImageByAlias(destServer, alias)
+	_, err = GetImageByAlias(destServer, alias, destServerArch)
 	if err == nil {
 		return fmt.Errorf("image alias %q already exists on dest server", alias)
 	}
@@ -1200,25 +1194,35 @@ func CopyImage(sourceServer lxd.InstanceServer, destServer lxd.InstanceServer, f
 }
 
 // GetFingerprintByAlias retrieves image fingerprint corresponding to provided alias
-func GetFingerprintByAlias(lxdServer lxd.ImageServer, alias string) (fingerprint string, err error) {
-	remoteAlias, _, err := lxdServer.GetImageAlias(alias)
+func GetFingerprintByAlias(lxdServer lxd.ImageServer, alias string, architecture string) (fingerprint string, err error) {
+	if architecture == "" {
+		remoteAlias, _, err := lxdServer.GetImageAlias(alias)
+		if err != nil {
+			return "", err
+		}
+		fingerprint = remoteAlias.Target
+		return fingerprint, nil
+	}
+
+	// Get any matching image aliases from server and then select the correct type
+	entries, err := lxdServer.GetImageAliasArchitectures("container", alias)
 	if err != nil {
 		return "", err
 	}
-	fingerprint = remoteAlias.Target
+
+	aliasEntry, ok := entries[architecture]
+	if !ok {
+		return "", fmt.Errorf("no image matching architecture %q found for image alias %q", architecture, alias)
+	}
+
+	fingerprint = aliasEntry.Target
 
 	return fingerprint, nil
 }
 
 // GetImageByAlias retrieves image by name
-func GetImageByAlias(lxdImageServer lxd.ImageServer, alias string) (image *api.Image, err error) {
-
-	a := strings.Split(alias, "/")
-	if len(a) < 3 {
-		alias = alias + "/" + runtime.GOARCH
-	}
-
-	imageFingerprint, err := GetFingerprintByAlias(lxdImageServer, alias)
+func GetImageByAlias(lxdImageServer lxd.ImageServer, alias string, architecture string) (image *api.Image, err error) {
+	imageFingerprint, err := GetFingerprintByAlias(lxdImageServer, alias, architecture)
 	if err != nil {
 		return nil, err
 	}

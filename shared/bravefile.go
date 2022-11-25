@@ -81,9 +81,6 @@ type Bravefile struct {
 func NewBravefile() *Bravefile {
 
 	return &Bravefile{
-		// Base: ImageDescription{
-		// 	Architecture: runtime.GOARCH,
-		// },
 		PlatformService: Service{
 			Resources: Resources{
 				CPU: DefaultUnitCpuLimit,
