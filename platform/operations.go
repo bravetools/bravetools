@@ -469,23 +469,21 @@ func GetUnits(lxdServer lxd.InstanceServer, profileName string) (units []shared.
 }
 
 // LaunchFromImage creates new unit based on image
-func LaunchFromImage(destServer lxd.InstanceServer, sourceServer lxd.ImageServer, image string, name string, profileName string, storagePool string) (fingerprint string, err error) {
-	operation := shared.Info("Launching " + name)
+func LaunchFromImage(destServer lxd.InstanceServer, sourceServer lxd.ImageServer, imageName string, containerName string, profileName string, storagePool string) (fingerprint string, err error) {
+	operation := shared.Info("Launching " + containerName)
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
 	s.Suffix = " " + operation
 	s.Start()
 	defer s.Stop()
 
-	req := api.ContainersPost{
-		Name: name,
+	destServerArch, err := GetLXDServerArch(destServer)
+	if err != nil {
+		return fingerprint, err
 	}
 
-	alias, _, err := sourceServer.GetImageAlias(image)
-	if err != nil {
-		return "", err
+	req := api.ContainersPost{
+		Name: containerName,
 	}
-	fingerprint = alias.Target
-	req.Source.Alias = name
 	req.Profiles = []string{profileName}
 
 	// Attach a specific disk when launching if requested
@@ -498,6 +496,11 @@ func LaunchFromImage(destServer lxd.InstanceServer, sourceServer lxd.ImageServer
 			"pool": storagePool,
 			"type": "disk",
 		}
+	}
+
+	fingerprint, err = GetFingerprintByAlias(sourceServer, imageName, destServerArch)
+	if err != nil {
+		return fingerprint, err
 	}
 
 	imgInfo, _, err := sourceServer.GetImage(fingerprint)
