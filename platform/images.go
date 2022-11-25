@@ -295,7 +295,7 @@ func localImageSize(image BravetoolsImage) (bytes int64, err error) {
 	return info.Size(), nil
 }
 
-func resolveBaseImageLocation(imageString string) (location string, err error) {
+func resolveBaseImageLocation(imageString string, architecture string) (location string, err error) {
 
 	remote, imageString := ParseRemoteName(imageString)
 
@@ -335,7 +335,7 @@ func resolveBaseImageLocation(imageString string) (location string, err error) {
 	if err != nil {
 		return "", err
 	}
-	if _, err := GetFingerprintByAlias(publicLxd, imageString); err == nil {
+	if _, err := GetFingerprintByAlias(publicLxd, imageString, architecture); err == nil {
 		return "public", nil
 	}
 

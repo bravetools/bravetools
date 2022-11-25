@@ -469,21 +469,21 @@ func GetUnits(lxdServer lxd.InstanceServer, profileName string) (units []shared.
 }
 
 // LaunchFromImage creates new unit based on image
-func LaunchFromImage(lxdServer lxd.InstanceServer, image string, name string, profileName string, storagePool string) error {
-	operation := shared.Info("Launching " + name)
+func LaunchFromImage(destServer lxd.InstanceServer, sourceServer lxd.ImageServer, imageName string, containerName string, profileName string, storagePool string) (fingerprint string, err error) {
+	operation := shared.Info("Launching " + containerName)
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
 	s.Suffix = " " + operation
 	s.Start()
+	defer s.Stop()
+
+	destServerArch, err := GetLXDServerArch(destServer)
+	if err != nil {
+		return fingerprint, err
+	}
 
 	req := api.ContainersPost{
-		Name: name,
+		Name: containerName,
 	}
-
-	alias, _, err := lxdServer.GetImageAlias(image)
-	if err != nil {
-		return err
-	}
-	req.Source.Alias = name
 	req.Profiles = []string{profileName}
 
 	// Attach a specific disk when launching if requested
@@ -498,105 +498,24 @@ func LaunchFromImage(lxdServer lxd.InstanceServer, image string, name string, pr
 		}
 	}
 
-	image = alias.Target
-	imgInfo, _, err := lxdServer.GetImage(image)
+	fingerprint, err = GetFingerprintByAlias(sourceServer, imageName, destServerArch)
 	if err != nil {
-		return err
+		return fingerprint, err
 	}
 
-	//TODO: method of InstanceServer requires itself
-	op, err := lxdServer.CreateContainerFromImage(lxdServer, *imgInfo, req)
+	imgInfo, _, err := sourceServer.GetImage(fingerprint)
 	if err != nil {
-		return err
+		return fingerprint, err
+	}
+
+	op, err := destServer.CreateContainerFromImage(sourceServer, *imgInfo, req)
+	if err != nil {
+		return fingerprint, err
 	}
 
 	err = op.Wait()
 	if err != nil {
-		return err
-	}
-
-	s.Stop()
-	return nil
-}
-
-// Launch starts a new unit based on standard image from linuxcontainers.org
-// Alias: "ubuntu/bionic/amd64"
-// Alias: "alpine/3.9/amd64"
-func Launch(ctx context.Context, localLxd lxd.InstanceServer, name string, alias string, profileName string) (fingerprint string, err error) {
-	if err = ctx.Err(); err != nil {
 		return fingerprint, err
-	}
-
-	a := strings.Split(alias, "/")
-	if len(a) < 3 {
-		arch, err := GetLXDServerArch(localLxd)
-		imageArch := arch
-
-		switch arch {
-		case "aarch64":
-			imageArch = "arm64"
-		case "x86_64":
-			imageArch = "amd64"
-		}
-
-		if err != nil {
-			return fingerprint, err
-		}
-		alias = alias + "/" + imageArch
-	}
-
-	operation := shared.Info("Importing " + alias)
-	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stdout))
-	s.Suffix = " " + operation
-
-	s.Start()
-	defer s.Stop()
-
-	// Get remote image fingerprint
-	remoteLxd, err := GetSimplestreamsLXDSever("https://images.linuxcontainers.org", nil)
-	if err != nil {
-		return fingerprint, err
-	}
-	fingerprint, err = GetFingerprintByAlias(remoteLxd, alias)
-
-	if err = ctx.Err(); err != nil {
-		return "", err
-	}
-
-	// Create a local container based on the remote image
-	req := api.ContainersPost{
-		Name: name,
-		Source: api.ContainerSource{
-			Type:        "image",
-			Protocol:    "simplestreams",
-			Server:      "https://images.linuxcontainers.org/",
-			Fingerprint: fingerprint,
-		},
-	}
-
-	req.Profiles = []string{profileName}
-
-	op, err := localLxd.CreateContainer(req)
-	if err != nil {
-		return fingerprint, errors.New("failed to create unit: " + err.Error())
-	}
-
-	err = op.Wait()
-	if err != nil {
-		return fingerprint, errors.New("error waiting: " + err.Error())
-	}
-
-	// Wait for container to be properly set up while checking for interrupts
-	waitInit := make(chan struct{})
-	go func() {
-		time.Sleep(10 * time.Second)
-		close(waitInit)
-	}()
-
-	select {
-	case <-ctx.Done():
-		return fingerprint, ctx.Err()
-	case <-waitInit:
 	}
 
 	return fingerprint, nil
@@ -1162,8 +1081,14 @@ func CopyImage(sourceServer lxd.InstanceServer, destServer lxd.InstanceServer, f
 		return err
 	}
 
+	// Images matching the alias on the source image server must match the arch of the destination server
+	destServerArch, err := GetLXDServerArch(destServer)
+	if err != nil {
+		return err
+	}
+
 	// Ensure no dest server conflicts
-	_, err = GetImageByAlias(destServer, alias)
+	_, err = GetImageByAlias(destServer, alias, destServerArch)
 	if err == nil {
 		return fmt.Errorf("image alias %q already exists on dest server", alias)
 	}
@@ -1200,51 +1125,41 @@ func CopyImage(sourceServer lxd.InstanceServer, destServer lxd.InstanceServer, f
 }
 
 // GetFingerprintByAlias retrieves image fingerprint corresponding to provided alias
-func GetFingerprintByAlias(lxdServer lxd.ImageServer, alias string) (fingerprint string, err error) {
-	remoteAlias, _, err := lxdServer.GetImageAlias(alias)
+func GetFingerprintByAlias(lxdServer lxd.ImageServer, alias string, architecture string) (fingerprint string, err error) {
+	if architecture == "" {
+		remoteAlias, _, err := lxdServer.GetImageAlias(alias)
+		if err != nil {
+			return "", err
+		}
+		fingerprint = remoteAlias.Target
+		return fingerprint, nil
+	}
+
+	// Get any matching image aliases from server and then select the correct type
+	entries, err := lxdServer.GetImageAliasArchitectures("container", alias)
 	if err != nil {
 		return "", err
 	}
-	fingerprint = remoteAlias.Target
+
+	aliasEntry, ok := entries[architecture]
+	if !ok {
+		return "", fmt.Errorf("no image matching architecture %q found for image alias %q", architecture, alias)
+	}
+
+	fingerprint = aliasEntry.Target
 
 	return fingerprint, nil
 }
 
 // GetImageByAlias retrieves image by name
-func GetImageByAlias(lxdImageServer lxd.ImageServer, alias string) (image *api.Image, err error) {
-
-	a := strings.Split(alias, "/")
-	if len(a) < 3 {
-		alias = alias + "/" + runtime.GOARCH
-	}
-
-	imageFingerprint, err := GetFingerprintByAlias(lxdImageServer, alias)
+func GetImageByAlias(lxdImageServer lxd.ImageServer, alias string, architecture string) (image *api.Image, err error) {
+	imageFingerprint, err := GetFingerprintByAlias(lxdImageServer, alias, architecture)
 	if err != nil {
 		return nil, err
 	}
 
 	image, _, err = lxdImageServer.GetImage(imageFingerprint)
 	return image, err
-}
-
-// DeleteImageName delete unit image by name
-func DeleteImageByName(lxdServer lxd.InstanceServer, name string) error {
-	alias, _, err := lxdServer.GetImageAlias(name)
-	if err != nil {
-		return err
-	}
-	imageFingerprint := alias.Target
-
-	op, err := lxdServer.DeleteImage(imageFingerprint)
-	if err != nil {
-		return err
-	}
-
-	err = op.Wait()
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // DeleteImageFingerprint delete unit image
