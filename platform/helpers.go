@@ -206,11 +206,11 @@ func buildImage(bh *BraveHost, bravefile *shared.Bravefile) error {
 
 	switch bravefile.Base.Location {
 	case "public", "private":
-		var sourceImageserver lxd.ImageServer
+		var sourceImageServer lxd.ImageServer
 
 		// Connect to image source LXD server
 		if bravefile.Base.Location == "public" {
-			sourceImageserver, err = GetSimplestreamsLXDSever("https://images.linuxcontainers.org", nil)
+			sourceImageServer, err = GetSimplestreamsLXDSever("https://images.linuxcontainers.org", nil)
 			if err != nil {
 				return err
 			}
@@ -226,9 +226,9 @@ func buildImage(bh *BraveHost, bravefile *shared.Bravefile) error {
 
 			// Connect to remote server - authenticate if not public
 			if imageRemote.Public {
-				sourceImageserver, err = GetLXDImageSever(imageRemote)
+				sourceImageServer, err = GetLXDImageSever(imageRemote)
 			} else {
-				sourceImageserver, err = GetLXDInstanceServer(imageRemote)
+				sourceImageServer, err = GetLXDInstanceServer(imageRemote)
 			}
 			if err != nil {
 				return err
@@ -236,7 +236,7 @@ func buildImage(bh *BraveHost, bravefile *shared.Bravefile) error {
 		}
 
 		// Check disk space
-		img, err := GetImageByAlias(sourceImageserver, bravefile.Base.Image, buildServerArch)
+		img, err := GetImageByAlias(sourceImageServer, bravefile.Base.Image, buildServerArch)
 		if err != nil {
 			return err
 		}
@@ -246,7 +246,8 @@ func buildImage(bh *BraveHost, bravefile *shared.Bravefile) error {
 			return err
 		}
 
-		imageFingerprint, err = importLXD(ctx, lxdServer, sourceImageserver, bravefile, bh.Remote.Profile, bh.Remote.Storage)
+		imageFingerprint, err = LaunchFromImage(lxdServer, sourceImageServer, bravefile.Base.Image, bravefile.PlatformService.Name, bh.Remote.Profile, bh.Remote.Storage)
+
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
@@ -471,19 +472,6 @@ func TransferImage(sourceRemote Remote, bravefile shared.Bravefile) error {
 	}
 
 	return nil
-}
-
-func importLXD(ctx context.Context, destServer lxd.InstanceServer, sourceServer lxd.ImageServer, bravefile *shared.Bravefile, profileName string, storagePool string) (fingerprint string, err error) {
-	if err = ctx.Err(); err != nil {
-		return "", err
-	}
-
-	fingerprint, err = LaunchFromImage(destServer, sourceServer, bravefile.Base.Image, bravefile.PlatformService.Name, profileName, storagePool)
-	if err != nil {
-		return "", err
-	}
-
-	return fingerprint, nil
 }
 
 func importGitHub(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *shared.Bravefile, bh *BraveHost, profileName string, storagePool string) (fingerprint string, err error) {
