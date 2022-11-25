@@ -469,20 +469,22 @@ func GetUnits(lxdServer lxd.InstanceServer, profileName string) (units []shared.
 }
 
 // LaunchFromImage creates new unit based on image
-func LaunchFromImage(lxdServer lxd.InstanceServer, image string, name string, profileName string, storagePool string) error {
+func LaunchFromImage(destServer lxd.InstanceServer, sourceServer lxd.ImageServer, image string, name string, profileName string, storagePool string) (fingerprint string, err error) {
 	operation := shared.Info("Launching " + name)
 	s := spinner.New(spinner.CharSets[14], 100*time.Millisecond, spinner.WithWriter(os.Stderr))
 	s.Suffix = " " + operation
 	s.Start()
+	defer s.Stop()
 
 	req := api.ContainersPost{
 		Name: name,
 	}
 
-	alias, _, err := lxdServer.GetImageAlias(image)
+	alias, _, err := sourceServer.GetImageAlias(image)
 	if err != nil {
-		return err
+		return "", err
 	}
+	fingerprint = alias.Target
 	req.Source.Alias = name
 	req.Profiles = []string{profileName}
 
@@ -498,25 +500,22 @@ func LaunchFromImage(lxdServer lxd.InstanceServer, image string, name string, pr
 		}
 	}
 
-	image = alias.Target
-	imgInfo, _, err := lxdServer.GetImage(image)
+	imgInfo, _, err := sourceServer.GetImage(fingerprint)
 	if err != nil {
-		return err
+		return fingerprint, err
 	}
 
-	//TODO: method of InstanceServer requires itself
-	op, err := lxdServer.CreateContainerFromImage(lxdServer, *imgInfo, req)
+	op, err := destServer.CreateContainerFromImage(sourceServer, *imgInfo, req)
 	if err != nil {
-		return err
+		return fingerprint, err
 	}
 
 	err = op.Wait()
 	if err != nil {
-		return err
+		return fingerprint, err
 	}
 
-	s.Stop()
-	return nil
+	return fingerprint, nil
 }
 
 func retry(attempts int, sleep time.Duration, f func() error) (err error) {

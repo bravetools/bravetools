@@ -987,7 +987,7 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 	}
 
 	// Launch unit and set up cleanup code to delete it if an error encountered during deployment
-	err = LaunchFromImage(lxdServer, unitParams.Image, unitParams.Name, unitParams.Profile, unitParams.Storage)
+	_, err = LaunchFromImage(lxdServer, lxdServer, unitParams.Image, unitParams.Name, unitParams.Profile, unitParams.Storage)
 	defer func() {
 		if err != nil {
 			delErr := DeleteUnit(lxdServer, unitName)

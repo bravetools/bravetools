@@ -478,44 +478,9 @@ func importLXD(ctx context.Context, destServer lxd.InstanceServer, sourceServer 
 		return "", err
 	}
 
-	// Images matching the alias on the source image server must match the arch of the destination server
-	destServerArch, err := GetLXDServerArch(destServer)
+	fingerprint, err = LaunchFromImage(destServer, sourceServer, bravefile.Base.Image, bravefile.PlatformService.Name, profileName, storagePool)
 	if err != nil {
 		return "", err
-	}
-
-	// Get any matching image aliases from server and then select the correct type
-	imgInfo, err := GetImageByAlias(sourceServer, bravefile.Base.Image, destServerArch)
-	if err != nil {
-		return "", err
-	}
-
-	// Create req
-	containerName := bravefile.PlatformService.Name
-	req := api.ContainersPost{
-		Name: containerName,
-	}
-	req.Profiles = []string{profileName}
-
-	// Attach a specific disk when launching if requested
-	if storagePool != "" {
-		if req.Devices == nil {
-			req.Devices = make(map[string]map[string]string)
-		}
-		req.Devices["root"] = map[string]string{
-			"path": "/",
-			"pool": storagePool,
-			"type": "disk",
-		}
-	}
-
-	op, err := destServer.CreateContainerFromImage(sourceServer, *imgInfo, req)
-	if err != nil {
-		return fingerprint, errors.New("failed to launch base unit: " + err.Error())
-	}
-	err = op.Wait()
-	if err != nil {
-		return fingerprint, err
 	}
 
 	return fingerprint, nil
@@ -609,7 +574,7 @@ func importLocal(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *s
 		return fingerprint, err
 	}
 
-	err = LaunchFromImage(lxdServer, bravefile.Base.Image, bravefile.PlatformService.Name, profileName, storagePool)
+	_, err = LaunchFromImage(lxdServer, lxdServer, bravefile.Base.Image, bravefile.PlatformService.Name, profileName, storagePool)
 	if err != nil {
 		return fingerprint, errors.New("failed to launch unit: " + err.Error())
 	}
