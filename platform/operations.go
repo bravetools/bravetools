@@ -1162,26 +1162,6 @@ func GetImageByAlias(lxdImageServer lxd.ImageServer, alias string, architecture 
 	return image, err
 }
 
-// DeleteImageName delete unit image by name
-func DeleteImageByName(lxdServer lxd.InstanceServer, name string) error {
-	alias, _, err := lxdServer.GetImageAlias(name)
-	if err != nil {
-		return err
-	}
-	imageFingerprint := alias.Target
-
-	op, err := lxdServer.DeleteImage(imageFingerprint)
-	if err != nil {
-		return err
-	}
-
-	err = op.Wait()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 // DeleteImageFingerprint delete unit image
 // lxc image delete [remote]:[name]
 func DeleteImageByFingerprint(lxdServer lxd.InstanceServer, fingerprint string) error {

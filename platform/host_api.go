@@ -27,53 +27,6 @@ import (
 
 // Functions exposed to commands.go
 
-// DeleteImageName deletes image by name
-func (bh *BraveHost) DeleteImageByName(name string) error {
-	lxdServer, err := GetLXDInstanceServer(bh.Remote)
-	if err != nil {
-		return err
-	}
-
-	images, _ := listHostImages(lxdServer)
-	if len(images) > 0 {
-		err := DeleteImageByName(lxdServer, name)
-		if err != nil {
-			return errors.New("image: " + err.Error())
-		}
-	}
-
-	return nil
-}
-
-// DeleteImage delete image by fingerprint
-func (bh *BraveHost) DeleteImageByFingerprint(fingerprint string) error {
-	lxdServer, err := GetLXDInstanceServer(bh.Remote)
-	if err != nil {
-		return err
-	}
-
-	err = DeleteImageByFingerprint(lxdServer, fingerprint)
-	if err != nil {
-		return errors.New("failed to delete image: " + err.Error())
-	}
-
-	return nil
-}
-
-// DeleteHostImages removes all LXC images from host
-func (bh *BraveHost) DeleteHostImages() error {
-	lxdServer, err := GetLXDInstanceServer(bh.Remote)
-	if err != nil {
-		return err
-	}
-
-	err = deleteHostImages(lxdServer)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 // AddRemote sets connection to Brave platform
 func (bh *BraveHost) AddRemote() error {
 	err := AddRemote(bh.Remote, bh.Settings.Trust)
