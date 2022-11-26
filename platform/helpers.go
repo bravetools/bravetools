@@ -186,7 +186,7 @@ func buildImage(bh *BraveHost, bravefile *shared.Bravefile) error {
 	bravefile.PlatformService.Name = "brave-build-" + strings.ReplaceAll(strings.ReplaceAll(imageStruct.ToBasename(), "_", "-"), ".", "-")
 
 	err = checkUnits(lxdServer, bravefile.PlatformService.Name, bh.Remote.Profile)
-	if err != nil {
+	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 		return err
 	}
 
@@ -237,17 +237,16 @@ func buildImage(bh *BraveHost, bravefile *shared.Bravefile) error {
 
 		// Check disk space
 		img, err := GetImageByAlias(sourceImageServer, bravefile.Base.Image, buildServerArch)
-		if err != nil {
+		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
 
 		err = CheckStoragePoolSpace(lxdServer, bh.Settings.StoragePool.Name, img.Size)
-		if err != nil {
+		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
 
 		imageFingerprint, err = LaunchFromImage(lxdServer, sourceImageServer, bravefile.Base.Image, bravefile.PlatformService.Name, bh.Remote.Profile, bh.Remote.Storage)
-
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
@@ -269,7 +268,7 @@ func buildImage(bh *BraveHost, bravefile *shared.Bravefile) error {
 	case "local":
 		// Check disk space
 		localBaseImage, err := ParseImageString(bravefile.Base.Image)
-		if err != nil {
+		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
 		if localBaseImage.Architecture == "" {
@@ -294,11 +293,11 @@ func buildImage(bh *BraveHost, bravefile *shared.Bravefile) error {
 		}
 
 		imgSize, err := localImageSize(localBaseImage)
-		if err != nil {
+		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
 		err = CheckStoragePoolSpace(lxdServer, bh.Settings.StoragePool.Name, imgSize)
-		if err != nil {
+		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
 
