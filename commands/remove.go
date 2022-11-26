@@ -31,7 +31,7 @@ func remove(cmd *cobra.Command, args []string) {
 
 	for _, arg := range args {
 		if imageToggle {
-			err := host.DeleteLocalImage(arg)
+			err := host.DeleteLocalImage(arg, false)
 			if err != nil {
 				log.Fatal(err)
 			}

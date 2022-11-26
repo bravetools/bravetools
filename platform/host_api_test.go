@@ -25,7 +25,7 @@ func Test_DeleteLocalImage(t *testing.T) {
 		t.Error("host.BuildImage: ", err)
 	}
 
-	err = host.DeleteLocalImage(imageName)
+	err = host.DeleteLocalImage(imageName, false)
 	if err != nil {
 		t.Error("host.DeleteImageByName: ", err)
 	}
@@ -72,7 +72,7 @@ func Test_BuildImage(t *testing.T) {
 		t.Error("host.BuildImage: ", err)
 	}
 
-	err = host.DeleteLocalImage(bravefile.PlatformService.Image)
+	err = host.DeleteLocalImage(bravefile.PlatformService.Image, true)
 	if err != nil {
 		t.Error("host.DeleteImageByName: ", err)
 	}
@@ -121,7 +121,7 @@ func Test_InitUnit(t *testing.T) {
 		t.Error("host.InitUnit: ", err)
 	}
 
-	err = host.DeleteLocalImage(bravefile.PlatformService.Image)
+	err = host.DeleteLocalImage(bravefile.PlatformService.Image, true)
 	if err != nil {
 		t.Error("host.DeleteImageByName: ", err)
 	}
@@ -207,7 +207,7 @@ func Test_Compose(t *testing.T) {
 			t.Errorf("failed to delete unit: %q", service.Name)
 			t.Log(err)
 		}
-		err = host.DeleteLocalImage(service.Image)
+		err = host.DeleteLocalImage(service.Image, true)
 		if err != nil {
 			t.Errorf("failed to delete unit: %q", service.Image)
 			t.Log(err)

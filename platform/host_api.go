@@ -170,11 +170,22 @@ func (bh *BraveHost) ListLocalImages() error {
 }
 
 // DeleteLocalImage deletes a local image
-func (bh *BraveHost) DeleteLocalImage(name string) error {
-	image, err := ParseImageString(name)
-	if err != nil {
-		return err
+func (bh *BraveHost) DeleteLocalImage(name string, legacy bool) error {
+	var image BravetoolsImage
+	var err error
+
+	if legacy {
+		image, err = ParseLegacyImageString(name)
+		if err != nil {
+			return err
+		}
+	} else {
+		image, err = ParseImageString(name)
+		if err != nil {
+			return err
+		}
 	}
+
 	imagePath, err := matchLocalImagePath(image)
 	if err != nil {
 		return err
@@ -1192,7 +1203,7 @@ func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (
 					// Cleanup image later if error in compose
 					defer func() {
 						if err != nil {
-							bh.DeleteLocalImage(service.Image)
+							bh.DeleteLocalImage(service.Image, service.BravefileBuild.IsLegacy())
 						}
 					}()
 				case *ImageExistsError:
@@ -1208,7 +1219,7 @@ func (bh *BraveHost) Compose(backend Backend, composeFile *shared.ComposeFile) (
 
 				if service.Base && !service.Build {
 					defer func() {
-						bh.DeleteLocalImage(service.Image)
+						bh.DeleteLocalImage(service.Image, service.BravefileBuild.IsLegacy())
 					}()
 				}
 			}

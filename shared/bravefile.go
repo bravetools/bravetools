@@ -134,6 +134,22 @@ func (bravefile *Bravefile) ValidateBuild() error {
 	return nil
 }
 
+func (bravefile *Bravefile) IsLegacy() bool {
+	if bravefile.PlatformService.Version == "" || bravefile.Image != "" {
+		return false
+	}
+
+	return true
+}
+
+func (service *Service) IsLegacy() bool {
+	if service.Version == "" {
+		return false
+	}
+
+	return true
+}
+
 func (service *Service) ValidateDeploy() error {
 	if service.Name == "" {
 		return errors.New("invalid Service: empty Service Name")
