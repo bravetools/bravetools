@@ -272,6 +272,9 @@ func buildImage(bh *BraveHost, bravefile *shared.Bravefile) error {
 		if err != nil {
 			return err
 		}
+		if localBaseImage.Architecture == "" {
+			localBaseImage.Architecture = buildServerArch
+		}
 		if _, err = matchLocalImagePath(localBaseImage); err != nil {
 			// In case of multiple possible matches ask user to specify rather than proceed to legacy image parsing
 			if errors.As(err, &multipleImageMatches{}) {
@@ -527,6 +530,12 @@ func importLocal(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *s
 	imageStruct, err = ParseImageString(bravefile.Base.Image)
 	if err != nil {
 		return "", err
+	}
+	if imageStruct.Architecture == "" {
+		imageStruct.Architecture, err = GetLXDServerArch(lxdServer)
+		if err != nil {
+			return "", fmt.Errorf("failed to get lxd build server arch: %s", err)
+		}
 	}
 
 	path, err := matchLocalImagePath(imageStruct)

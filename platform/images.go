@@ -330,6 +330,9 @@ func resolveBaseImageLocation(imageString string, architecture string) (location
 	if err != nil {
 		return "", err
 	}
+	if imageStruct.Architecture == "" {
+		imageStruct.Architecture = architecture
+	}
 
 	if _, err = matchLocalImagePath(imageStruct); err == nil {
 		return "local", nil
