@@ -194,7 +194,7 @@ func (vm Multipass) BraveBackendInit() error {
 	}
 
 	var lxdInit = `cat <<EOF | sudo lxd init --preseed
-pools:
+storage_pools:
 - name: ` + vm.Settings.StoragePool.Name + "\n" +
 		`  driver: zfs
 networks:
