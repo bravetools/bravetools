@@ -161,8 +161,8 @@ func (vm Multipass) BraveBackendInit() error {
 		"sudo",
 		"snap",
 		"install",
-		"--stable",
-		"lxd")
+		"lxd",
+		"--channel=5.0/stable")
 	if err != nil {
 		return errors.New("unable to install LXD: " + err.Error())
 	}
