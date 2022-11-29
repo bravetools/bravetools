@@ -493,7 +493,7 @@ func importGitHub(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *
 	var imageStruct BravetoolsImage
 
 	// If version explicitly provided separately this is a legacy Bravefile
-	if remoteBravefile.PlatformService.IsLegacy() {
+	if !remoteBravefile.PlatformService.IsLegacy() {
 		imageStruct, err = ParseImageString(remoteBravefile.PlatformService.Image)
 	} else {
 		imageStruct, err = ParseLegacyImageString(remoteBravefile.PlatformService.Image)
@@ -760,7 +760,7 @@ func getBuildDependents(dependency string, composeFile *shared.ComposeFile) (ser
 		var imageStruct BravetoolsImage
 
 		// If version explicitly provided separately this is a legacy Bravefile
-		if composeFile.Services[service].IsLegacy() {
+		if !composeFile.Services[service].IsLegacy() {
 			imageStruct, err = ParseImageString(composeFile.Services[service].Image)
 		} else {
 			imageStruct, err = ParseLegacyImageString(composeFile.Services[service].Image)
