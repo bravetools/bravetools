@@ -186,7 +186,7 @@ func buildImage(bh *BraveHost, bravefile *shared.Bravefile) error {
 	bravefile.PlatformService.Name = "brave-build-" + strings.ReplaceAll(strings.ReplaceAll(imageStruct.ToBasename(), "_", "-"), ".", "-")
 
 	err = checkUnits(lxdServer, bravefile.PlatformService.Name, bh.Remote.Profile)
-	if err != nil {
+	if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 		return err
 	}
 
@@ -237,17 +237,16 @@ func buildImage(bh *BraveHost, bravefile *shared.Bravefile) error {
 
 		// Check disk space
 		img, err := GetImageByAlias(sourceImageServer, bravefile.Base.Image, buildServerArch)
-		if err != nil {
+		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
 
 		err = CheckStoragePoolSpace(lxdServer, bh.Settings.StoragePool.Name, img.Size)
-		if err != nil {
+		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
 
 		imageFingerprint, err = LaunchFromImage(lxdServer, sourceImageServer, bravefile.Base.Image, bravefile.PlatformService.Name, bh.Remote.Profile, bh.Remote.Storage)
-
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
@@ -269,7 +268,7 @@ func buildImage(bh *BraveHost, bravefile *shared.Bravefile) error {
 	case "local":
 		// Check disk space
 		localBaseImage, err := ParseImageString(bravefile.Base.Image)
-		if err != nil {
+		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
 		if localBaseImage.Architecture == "" {
@@ -294,11 +293,11 @@ func buildImage(bh *BraveHost, bravefile *shared.Bravefile) error {
 		}
 
 		imgSize, err := localImageSize(localBaseImage)
-		if err != nil {
+		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
 		err = CheckStoragePoolSpace(lxdServer, bh.Settings.StoragePool.Name, imgSize)
-		if err != nil {
+		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
 
@@ -494,7 +493,7 @@ func importGitHub(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *
 	var imageStruct BravetoolsImage
 
 	// If version explicitly provided separately this is a legacy Bravefile
-	if remoteBravefile.PlatformService.IsLegacy() {
+	if !remoteBravefile.PlatformService.IsLegacy() {
 		imageStruct, err = ParseImageString(remoteBravefile.PlatformService.Image)
 	} else {
 		imageStruct, err = ParseLegacyImageString(remoteBravefile.PlatformService.Image)
@@ -591,134 +590,6 @@ func importLocal(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *s
 
 	return fingerprint, nil
 }
-
-// func copyTo(source string, settings HostSettings) error {
-
-// 	backend := settings.BackendSettings.Type
-// 	switch backend {
-// 	case "multipass":
-// 		err := shared.ExecCommand("multipass",
-// 			"transfer",
-// 			source,
-// 			settings.BackendSettings.Resources.Name+":")
-// 		if err != nil {
-// 			return err
-// 		}
-// 	case "lxd":
-// 		hd, _ := os.UserHomeDir()
-// 		shared.CopyFile(source, hd)
-// 	}
-
-// 	return nil
-// }
-
-// // run script on host
-// func run(scriptPath string, settings HostSettings) error {
-
-// 	backend := settings.BackendSettings.Type
-
-// 	switch backend {
-// 	case "multipass":
-// 		err := shared.ExecCommand("multipass",
-// 			"exec",
-// 			settings.BackendSettings.Resources.Name,
-// 			"--",
-// 			"/bin/bash",
-// 			scriptPath)
-// 		if err != nil {
-// 			return err
-// 		}
-// 	case "lxd":
-// 		err := shared.ExecCommand(
-// 			"sudo",
-// 			"/bin/bash",
-// 			scriptPath)
-// 		if err != nil {
-// 			return err
-// 		}
-// 	default:
-// 		return errors.New("cannot find backend")
-// 	}
-
-// 	return nil
-// }
-
-func deleteHostImages(lxdServer lxd.InstanceServer) error {
-	images, err := GetImages(lxdServer)
-	if err != nil {
-		return errors.New("Failed to access host images: " + err.Error())
-	}
-
-	for _, i := range images {
-		err := DeleteImageByFingerprint(lxdServer, i.Fingerprint)
-		if err != nil {
-			return errors.New("Failed to delete image: " + i.Fingerprint)
-		}
-	}
-
-	return nil
-}
-
-func listHostImages(lxdServer lxd.ImageServer) ([]api.Image, error) {
-	images, err := GetImages(lxdServer)
-	if err != nil {
-		return nil, errors.New("Failed to access host images: " + err.Error())
-	}
-
-	return images, nil
-}
-
-// func getInterfaceName() ([]string, error) {
-// 	interfaces, err := net.Interfaces()
-// 	if err != nil {
-// 		return nil, errors.New("failed to get network interfaces: " + err.Error())
-// 	}
-
-// 	var ifaceNames []string
-// 	for _, i := range interfaces {
-// 		addrs, _ := i.Addrs()
-// 		name := i.Name
-
-// 		for _, addr := range addrs {
-// 			var ip net.IP
-// 			switch v := addr.(type) {
-// 			case *net.IPNet:
-// 				ip = v.IP
-// 				if !ip.IsLoopback() && ip.To4() != nil {
-// 					addr := strings.Split(ip.String(), ".")
-// 					if addr[3] != "1" {
-// 						ifaceNames = append(ifaceNames, name)
-// 					}
-// 				}
-// 			}
-// 		}
-// 	}
-
-// 	return ifaceNames, err
-// }
-
-// func getMPInterfaceName(bh *BraveHost) ([]string, error) {
-
-// 	grep := `ip -4 route ls | grep default | grep -Po '(?<=dev )(\S+)'`
-
-// 	ifaceName, err := shared.ExecCommandWReturn(
-// 		"multipass",
-// 		"exec",
-// 		bh.Settings.BackendSettings.Resources.Name,
-// 		"--",
-// 		"bash",
-// 		"-c",
-// 		grep)
-// 	if err != nil {
-// 		return nil, errors.New("failed to get network interface name: " + err.Error())
-// 	}
-
-// 	ifaceName = strings.TrimRight(ifaceName, "\r\n")
-// 	var ifaces []string
-// 	ifaces = append(ifaces, ifaceName)
-
-// 	return ifaces, nil
-// }
 
 // postdeploy copy files and run commands on running service
 func postdeploy(ctx context.Context, lxdServer lxd.InstanceServer, unitConfig *shared.Service) (err error) {
@@ -889,7 +760,7 @@ func getBuildDependents(dependency string, composeFile *shared.ComposeFile) (ser
 		var imageStruct BravetoolsImage
 
 		// If version explicitly provided separately this is a legacy Bravefile
-		if composeFile.Services[service].IsLegacy() {
+		if !composeFile.Services[service].IsLegacy() {
 			imageStruct, err = ParseImageString(composeFile.Services[service].Image)
 		} else {
 			imageStruct, err = ParseLegacyImageString(composeFile.Services[service].Image)
