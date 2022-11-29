@@ -133,7 +133,7 @@ func buildImage(bh *BraveHost, bravefile *shared.Bravefile) error {
 	}
 
 	// If version explicitly provided separately this is a legacy Bravefile
-	if bravefile.PlatformService.Version == "" || bravefile.Image != "" {
+	if !bravefile.IsLegacy() {
 		imageStruct, err = ParseImageString(imageString)
 	} else {
 		imageStruct, err = ParseLegacyImageString(imageString)
@@ -405,7 +405,7 @@ func TransferImage(sourceRemote Remote, bravefile shared.Bravefile) error {
 	}
 
 	// If version explicitly provided separately this is a legacy Bravefile
-	if bravefile.PlatformService.Version == "" || bravefile.Image != "" {
+	if !bravefile.IsLegacy() {
 		imageStruct, err = ParseImageString(imageString)
 	} else {
 		imageStruct, err = ParseLegacyImageString(imageString)
@@ -494,7 +494,7 @@ func importGitHub(ctx context.Context, lxdServer lxd.InstanceServer, bravefile *
 	var imageStruct BravetoolsImage
 
 	// If version explicitly provided separately this is a legacy Bravefile
-	if remoteBravefile.PlatformService.Version == "" {
+	if remoteBravefile.PlatformService.IsLegacy() {
 		imageStruct, err = ParseImageString(remoteBravefile.PlatformService.Image)
 	} else {
 		imageStruct, err = ParseLegacyImageString(remoteBravefile.PlatformService.Image)
@@ -889,7 +889,7 @@ func getBuildDependents(dependency string, composeFile *shared.ComposeFile) (ser
 		var imageStruct BravetoolsImage
 
 		// If version explicitly provided separately this is a legacy Bravefile
-		if composeFile.Services[service].Version == "" {
+		if composeFile.Services[service].IsLegacy() {
 			imageStruct, err = ParseImageString(composeFile.Services[service].Image)
 		} else {
 			imageStruct, err = ParseLegacyImageString(composeFile.Services[service].Image)
