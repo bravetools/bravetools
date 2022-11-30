@@ -15,6 +15,11 @@ import (
 
 // CheckMemory checks if the LXD server host has sufficient RAM to deploy requested unit
 func CheckMemory(lxdServer lxd.InstanceServer, ramString string) error {
+	// If no ram limit requested, nothing to do
+	if ramString == "" {
+		return nil
+	}
+
 	resources, err := lxdServer.GetServerResources()
 	if err != nil {
 		//return errors.New(" " + err.Error())
