@@ -17,30 +17,40 @@ var braveCompose = &cobra.Command{
 }
 
 func compose(cmd *cobra.Command, args []string) {
-	var p string
-
+	var composefilePath string
 	baseDir := "."
+
+	// If user passes a path directly to composefile, set that
 	if len(args) > 0 {
-		baseDir = args[0]
-		_, err := os.Stat(baseDir)
+		stat, err := os.Stat(args[0])
 		if err != nil {
-			log.Fatal("unable to read brave-compose.yaml: ", err)
+			log.Fatalf("unable to find resolve path %q\n", args[0])
+		}
+		if stat.IsDir() {
+			baseDir = args[0]
+		} else {
+			composefilePath = args[0]
 		}
 	}
 
-	// Load composefile from directory. Favour ".yaml" over ".yml" but accept both.
-	if shared.FileExists(filepath.Join(baseDir, shared.ComposefileName)) {
-		p = filepath.Join(baseDir, shared.ComposefileName)
-	} else {
-		if shared.FileExists(filepath.Join(baseDir, shared.ComposefileAlias)) {
-			p = filepath.Join(baseDir, shared.ComposefileAlias)
+	// If composefile not set, then user-provided path is a dir. Attempt to find composefile in dir.
+	if composefilePath == "" {
+		// Load composefile from directory. Favour ".yaml" over ".yml" but accept both.
+		if shared.FileExists(filepath.Join(baseDir, shared.ComposefileName)) {
+			composefilePath = filepath.Join(baseDir, shared.ComposefileName)
+		} else {
+			if shared.FileExists(filepath.Join(baseDir, shared.ComposefileAlias)) {
+				composefilePath = filepath.Join(baseDir, shared.ComposefileAlias)
+			}
 		}
 	}
-	if p == "" {
+
+	// If composefile path still not set it was not found - fail with err
+	if composefilePath == "" {
 		log.Fatalf("composefile %q not found at %q", shared.ComposefileName, baseDir)
 	}
 
-	err := composefile.Load(p)
+	err := composefile.Load(composefilePath)
 
 	if err != nil {
 		log.Fatal("failed to load compose file: ", err)
