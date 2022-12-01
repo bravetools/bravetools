@@ -166,7 +166,7 @@ func (service *Service) ValidateDeploy() error {
 	if len(service.Ports) > 0 {
 		for _, p := range service.Ports {
 			ps := strings.Split(p, ":")
-			if len(ps) < 2 || len(ps) > 2 || ps[1] == "" {
+			if len(ps) < 2 || len(ps) > 2 || ps[0] == "" || ps[1] == "" {
 				return fmt.Errorf("invalid port forwarding definition %q. Appropriate format is UNIT_PORT:HOST_PORT", p)
 			}
 		}
