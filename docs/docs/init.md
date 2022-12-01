@@ -27,8 +27,8 @@ brave init
 
 This will create:
 
-* Network bridge - ${USER}br0, randomly-assigned private IP from a range of available IP values.
-* Storage device - ${USER}${TIMESTAMP}, ZFS file system
+* Network bridge - bravetoolsbr0, randomly-assigned private IP from a range of available IP values.
+* Storage device - ${USER}, ZFS file system
 * User profile - ${USER}
 * Remotes - local
 

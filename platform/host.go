@@ -9,7 +9,6 @@ import (
 	"os"
 	"path"
 	"strconv"
-	"time"
 
 	"github.com/bravetools/bravetools/shared"
 	"gopkg.in/yaml.v2"
@@ -100,20 +99,20 @@ func SetupHostConfiguration(params HostConfig, userHome string) (settings HostSe
 	poolSizeInt, _ := strconv.Atoi(params.Storage)
 	poolSizeInt = poolSizeInt - 2
 
-	hostName, err := getCurrentUsername()
-	if err != nil {
-		log.Fatalf(err.Error())
-	}
+	hostName := shared.BravetoolsVmName
 
-	timestamp := time.Now()
-	storagePoolName := hostName + "-" + timestamp.Format("20060102150405")
+	profileName, err := getCurrentUsername()
+	if err != nil {
+		log.Fatal(err)
+	}
+	storagePoolName := profileName
 
 	networkBridgeName := hostName + "br0"
 
 	settings = HostSettings{
 		Name:    hostName,
 		Trust:   hostName,
-		Profile: hostName,
+		Profile: profileName,
 		StoragePool: Storage{
 			Type: "zfs",
 			Name: storagePoolName,
@@ -201,8 +200,7 @@ func ConfigureHost(settings HostSettings, remote Remote) error {
 		return errors.New("one or more units rely on the existing storage pool. Delete all units and try again")
 	}
 
-	timestamp := time.Now()
-	storagePoolName := settings.Name + "-" + timestamp.Format("20060102150405")
+	storagePoolName := settings.StoragePool.Name
 	storagePoolSize := settings.StoragePool.Size
 
 	currentStoragePoolName := settings.StoragePool.Name
