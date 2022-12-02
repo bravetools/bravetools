@@ -18,6 +18,11 @@ func TestValidateDeployPorts(t *testing.T) {
 		t.Errorf("Expected port forwarding %q to fail", service.Ports)
 	}
 
+	service.Ports = []string{":3000"}
+	if err := service.ValidateDeploy(); err == nil {
+		t.Errorf("Expected port forwarding %q to fail", service.Ports)
+	}
+
 	service.Ports = []string{"3000:3000"}
 	if err := service.ValidateDeploy(); err != nil {
 		t.Errorf("Expected port forwarding %q to succeed", service.Ports)
