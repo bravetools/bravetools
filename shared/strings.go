@@ -1,5 +1,34 @@
 package shared
 
+// Bravefile template
+const BravefileTemplate = `image: example-image/v1.0
+
+base:
+  image: alpine/3.16
+
+packages:
+  manager: apk
+  system:
+    - curl
+
+run: 
+  - command: echo
+    args:
+      - hello world
+
+copy:
+  - source: ./Bravefile
+    target: /root/
+
+service:
+  name: example-container
+  ports:
+    - 8888:8888
+  resources:
+    ram: 2GB
+    cpu: 2
+`
+
 // REINIT ..
 const REINIT = `
 Bravetools home directory, settings, and images will be deleted.
