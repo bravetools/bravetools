@@ -1,8 +1,7 @@
 package shared
 
 // Bravefile template
-const BravefileTemplate = `
-image: example-image/v1.0
+const BravefileTemplate = `image: example-image/v1.0
 
 base:
   image: alpine/3.16
