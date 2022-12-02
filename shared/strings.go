@@ -17,7 +17,7 @@ run:
       - hello world
 
 copy:
-  - source: .
+  - source: ./Bravefile
     target: /root/
 
 service:
