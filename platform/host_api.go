@@ -987,9 +987,11 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 	}
 
 	// Assign static IP
-	err = ConfigDevice(lxdServer, unitName, "eth0", unitParams.IP)
-	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
-		return errors.New("failed to set IP: " + err.Error())
+	if unitParams.IP != "" {
+		err = ConfigDevice(lxdServer, unitName, "eth0", unitParams.IP)
+		if err = shared.CollectErrors(err, ctx.Err()); err != nil {
+			return errors.New("failed to set IP: " + err.Error())
+		}
 	}
 
 	err = Stop(lxdServer, unitName)
