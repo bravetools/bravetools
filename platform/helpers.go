@@ -11,7 +11,6 @@ import (
 	"os/user"
 	"path"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"syscall"
 
@@ -29,21 +28,7 @@ func getCurrentUsername() (username string, err error) {
 		return "", err
 	}
 
-	reg, err := regexp.Compile("[^a-zA-Z0-9]+")
-	if err != nil {
-		return "", err
-	}
-
-	username = reg.ReplaceAllString(user.Username, "")
-
-	// Truncate to max username length if necessary
-	usernameLength := 12
-	if len(username) < usernameLength {
-		usernameLength = len(username)
-	}
-	username = username[:usernameLength]
-
-	return username, nil
+	return "bravetools-" + user.Username, nil
 }
 
 // createSharedVolume creates a volume in storage pool and mounts it to both source unit and target unit

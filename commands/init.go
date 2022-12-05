@@ -78,7 +78,6 @@ func serverInit(cmd *cobra.Command, args []string) {
 	}
 
 	if hostConfigPath != "" {
-		// TODO: validate configuration. Now assume that path ends with config.yml
 		err = shared.CopyFile(hostConfigPath, path.Join(userHome, shared.PlatformConfig))
 		if err != nil {
 			if err := deleteBraveHome(userHome); err != nil {

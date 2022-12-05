@@ -1,5 +1,8 @@
 package shared
 
+// Name of Bravetools VM if not on Linux
+const BravetoolsVmName = "bravetools"
+
 const BraveHome = "/.bravetools"
 const BraveCertStore = BraveHome + "/certs"
 const BraveServerCertStore = BraveHome + "/servercerts"

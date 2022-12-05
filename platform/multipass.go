@@ -64,6 +64,17 @@ func (vm Multipass) BraveBackendInit() error {
 		return err
 	}
 
+	// If a VM with this name already exists skip init - we will reuse the existing VM
+	_, err = shared.ExecCommandWReturn("multipass", "info", vm.Settings.Name)
+	if err == nil {
+		vm.Settings.Status = "active"
+		err = UpdateBraveSettings(vm.Settings)
+		if err != nil {
+			return errors.New("failed update settings" + err.Error())
+		}
+		return nil
+	}
+
 	if runtime.GOOS == "windows" {
 		err = shared.ExecCommand("multipass",
 			"set",
@@ -183,10 +194,6 @@ func (vm Multipass) BraveBackendInit() error {
 
 	fmt.Println("Installing required software ...")
 	time.Sleep(10 * time.Second)
-
-	timestamp := time.Now()
-	storagePoolName := vm.Settings.Profile + "-" + timestamp.Format("20060102150405")
-	vm.Settings.StoragePool.Name = storagePoolName
 
 	err = UpdateBraveSettings(vm.Settings)
 	if err != nil {

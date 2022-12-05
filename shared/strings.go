@@ -41,9 +41,9 @@ const REMOVELIN = `
 Looks like you're initialising an already configured Bravetools environment.
 
 You can manually cleanup your Bravetools LXD configuration using LXD CLI:				
-1. lxc profile delete brave
-2. lxc storage delete brave-[timestamp]
-3. lxc network delete {$USER}br0
+1. lxc profile delete bravetools-$USER
+2. lxc storage delete bravetools-$USER
+3. lxc network delete bravetoolsbr0
 `
 
 // REMOVEMP ..
@@ -53,6 +53,6 @@ Bravetools already initialised.
 To delete Bravetools:
 
 1. rm -r $HOME/.bravetools
-2. multipass delete brave
+2. multipass delete bravetools
 3. multipass purge"
 `

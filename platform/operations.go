@@ -61,12 +61,9 @@ func DeleteStoragePool(lxdServer lxd.InstanceServer, name string) error {
 
 // SetActiveStoragePool pool assigns a profile with default storage
 func SetActiveStoragePool(lxdServer lxd.InstanceServer, name string) error {
-	username, err := getCurrentUsername()
-	if err != nil {
-		log.Fatalf(err.Error())
-	}
+	profileName := shared.BravetoolsVmName
 
-	profile, etag, err := lxdServer.GetProfile(username)
+	profile, etag, err := lxdServer.GetProfile(profileName)
 	if err != nil {
 		return errors.New("Unable to load profile: " + err.Error())
 	}
@@ -79,7 +76,7 @@ func SetActiveStoragePool(lxdServer lxd.InstanceServer, name string) error {
 
 	profile.Devices["root"] = device
 
-	err = lxdServer.UpdateProfile(username, profile.Writable(), etag)
+	err = lxdServer.UpdateProfile(profileName, profile.Writable(), etag)
 	if err != nil {
 		return errors.New("Failed to update profile with storage pool configuration: " + err.Error())
 	}
