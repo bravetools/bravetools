@@ -17,8 +17,8 @@ rm -r ~/.bravetools
 Artefacts created by Bravetools can be uninstalled using LXD:
 
 ```bash
-lxc profile delete $USER
-lxc storage delete $USER
+lxc profile delete bravetools-$USER
+lxc storage delete bravetools-$USER
 lxc network delete bravetoolsbr0
 ```
 

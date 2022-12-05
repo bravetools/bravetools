@@ -28,8 +28,8 @@ brave init
 This will create:
 
 * Network bridge - bravetoolsbr0, randomly-assigned private IP from a range of available IP values.
-* Storage device - ${USER}, ZFS file system
-* User profile - ${USER}
+* Storage device - bravetools-${USER}, ZFS file system
+* User profile - bravetools-${USER}
 * Remotes - local
 
 # Configuring Bravetools using a `yaml` file
