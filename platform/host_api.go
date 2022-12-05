@@ -878,10 +878,6 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 		}
 	}
 
-	if _, err = matchLocalImagePath(imageStruct); err != nil {
-		return err
-	}
-
 	// Connect to deploy target remote
 	deployRemoteName, unitName := ParseRemoteName(unitParams.Name)
 	unitParams.Name = unitName
@@ -921,6 +917,15 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 	lxdServer, err := GetLXDInstanceServer(deployRemote)
 	if err != nil {
 		return err
+	}
+
+	deployArch, err := GetLXDServerArch(lxdServer)
+	if err != nil {
+		return err
+	}
+
+	if imageStruct.Architecture == "" {
+		imageStruct.Architecture = deployArch
 	}
 
 	image, err := matchLocalImagePath(imageStruct)
