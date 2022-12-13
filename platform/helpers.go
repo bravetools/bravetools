@@ -11,6 +11,7 @@ import (
 	"os/user"
 	"path"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"syscall"
 
@@ -28,7 +29,14 @@ func getCurrentUsername() (username string, err error) {
 		return "", err
 	}
 
-	return "bravetools-" + user.Username, nil
+	reg, err := regexp.Compile("[^a-zA-Z0-9]+")
+	if err != nil {
+		return "", err
+	}
+
+	username = reg.ReplaceAllString(user.Username, "")
+
+	return "bravetools-" + username, nil
 }
 
 // createSharedVolume creates a volume in storage pool and mounts it to both source unit and target unit
