@@ -35,7 +35,7 @@ func mount(cmd *cobra.Command, args []string) {
 
 	remote := strings.SplitN(args[1], ":", -1)
 	if len(remote) == 1 {
-		log.Fatal("Target directory should be specified as UNIT:<target>")
+		log.Fatal("target directory should be specified as UNIT:<target>")
 	}
 
 	err := host.MountShare(args[0], remote[0], remote[1])

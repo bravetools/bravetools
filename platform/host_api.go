@@ -516,12 +516,12 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 			if err := shared.ExecCommand("multipass", "umount", bh.Settings.Name+":"+sharedDirectory); err != nil {
 				log.Printf("failed to cleanup multipass mount %q\n", sharedDirectory)
 			}
-			return errors.New("Failed to mount " + sourcePath + " to " + destUnit + ":" + destPath + " : " + err.Error())
+			return errors.New("failed to mount " + sourcePath + " to " + destUnit + ":" + destPath + " : " + err.Error())
 		}
 	case "lxd":
 		err := MountDirectory(lxdServer, sourcePath, destUnit, destPath)
 		if err != nil {
-			return errors.New("Failed to mount " + source + " to " + destUnit + ":" + destPath + " : " + err.Error())
+			return errors.New("failed to mount " + source + " to " + destUnit + ":" + destPath + " : " + err.Error())
 		}
 	}
 
@@ -619,6 +619,17 @@ func (bh *BraveHost) DeleteUnit(name string) error {
 	lxdServer, err := GetLXDInstanceServer(remote)
 	if err != nil {
 		return err
+	}
+
+	inst, _, err := lxdServer.GetInstance(name)
+	if err != nil {
+		return err
+	}
+
+	for _, d := range inst.Devices {
+		if (d["type"] == "disk") && (d["path"] != "/") {
+			log.Fatal("unable to remove a unit with a mounted directory")
+		}
 	}
 
 	// Remote profile to filter units by - try using deploy profile. If not, fallback to brave host profile.
