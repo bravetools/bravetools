@@ -11,7 +11,7 @@ import (
 	"github.com/bravetools/bravetools/shared"
 
 	// import sqlite driver
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 // OpenDB opens database
@@ -22,7 +22,7 @@ func OpenDB(filepath string) (db *sql.DB, err error) {
 		return nil, fmt.Errorf("Database file %s not present", filepath)
 	}
 
-	db, err = sql.Open("sqlite3", filepath)
+	db, err = sql.Open("sqlite", filepath)
 	return db, err
 }
 
@@ -53,7 +53,7 @@ func InitDB(filepath string) error {
 		"data" BLOB
 	);
 	
-	CREATE INDEX uid_IDX ON file_audit (uid);`
+	CREATE INDEX uid_IDX ON units (uid);`
 
 	statement, err := db.Prepare(sqlStatement)
 	if err != nil {
