@@ -47,7 +47,6 @@ packages:
     - python3
 service:
   name: alpine-edge-python3
-  image: alpine-python3/1.0
   resources:
     ram: "4GB"
     cpu: 2

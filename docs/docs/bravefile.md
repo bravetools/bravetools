@@ -60,8 +60,6 @@ The minimal structural unit of a Bravefile is an **Entry**. ``Bravefile`` suppor
 ### image
 `image` refers to the target image to be built using the instractions in your ``Bravefile``. General syntax is [NAME]/[VERSION]/[ARCH]. If [ARCH] is not specified, Bravetools will automatically determine your host's CPU architecture and build an appropriate image.
 
-Image name defined at the top of a ``Bravefile`` will also be used in the 
-
 ```yaml
 image: alpine-python3/1.0
 ```
@@ -129,15 +127,11 @@ Controls image properties, such as name, version, and run-time configuration. It
 
 ```yaml
 service:
-  #image is required in this section if it was not specified at the top of your Bravefile
-  image: alpine-python3/1.0
+  image: alpine-python3/1.0   # If not specified at top of file
   name: python3
-  # Profile name is optional and defaults to your local profile if deploying locally
-  profile: brave
-  # Networl name is optional and defaults to your local LXD network
-  network: lxdbr0
-  # Storage device is optional and defaults to your local LXD storage device
-  storage: brave-deploy-disk
+  profile: brave              # Optional, defaults to your local LXD profile
+  network: lxdbr0             # Optional, defaults to your local LXD network bridge
+  storage: brave-deploy-disk  # Optional, defaults to your local LXD storage device
   ip: ""
   ports: []
   postdeploy:
