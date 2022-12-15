@@ -689,6 +689,13 @@ func (e *ImageExistsError) Error() string {
 
 // BuildImage creates an image based on Bravefile
 func (bh *BraveHost) BuildImage(bravefile shared.Bravefile) error {
+	if bh.Remote.Name == shared.BravetoolsRemote {
+		err := bh.Backend.Start()
+		if err != nil {
+			return errors.New("failed to get host info: " + err.Error())
+		}
+	}
+
 	err := buildImage(bh, &bravefile)
 
 	switch err.(type) {
@@ -869,6 +876,13 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 	// Parse image location and pull from remote server to local bravetools image store if needed
 	var imageRemoteName string
 	imageRemoteName, unitParams.Image = ParseRemoteName(unitParams.Image)
+
+	if imageRemoteName == shared.BravetoolsRemote {
+		err := bh.Backend.Start()
+		if err != nil {
+			return errors.New("failed to get host info: " + err.Error())
+		}
+	}
 
 	if imageRemoteName != shared.BravetoolsRemote {
 		bravefile := shared.NewBravefile()

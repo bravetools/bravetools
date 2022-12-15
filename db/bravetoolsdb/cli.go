@@ -9,7 +9,7 @@ import (
 	"os"
 	"path"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 var unitsTable = `
@@ -90,7 +90,7 @@ func main() {
 
 // InitDB creates a new SQLite database in current directory
 func InitDB(filePath string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", filePath)
+	db, err := sql.Open("sqlite", filePath)
 	if err != nil {
 		return nil, err
 	}
