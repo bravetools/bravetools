@@ -625,10 +625,14 @@ func (bh *BraveHost) DeleteUnit(name string) error {
 	if err != nil {
 		return err
 	}
-
-	for _, d := range inst.Devices {
-		if (d["type"] == "disk") && (d["path"] != "/") {
-			log.Fatal("unable to remove a unit with a mounted directory")
+	if remoteName == shared.BravetoolsRemote && bh.Settings.BackendSettings.Type == "multipass" {
+		for deviceName, d := range inst.Devices {
+			if (d["type"] == "disk") && strings.HasPrefix(deviceName, "brave_") {
+				err = bh.UmountShare(name, d["path"])
+				if err != nil {
+					log.Printf("failed to unmount %q from multipass host: %s\n", path.Join("/home/ubuntu/volumes/", deviceName), err)
+				}
+			}
 		}
 	}
 
