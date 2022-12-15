@@ -1,3 +1,5 @@
+image: python-auth/1.0
+
 base:
   image: python-base-1.0
   location: local
@@ -7,17 +9,14 @@ copy:
     target: /root/
 
 service:
+  name: python-auth
+  ip: 10.0.0.15
+  resources:
+    ram: 500MB
+    cpu: 1
   postdeploy:
     run:
       - command: sh
         args:
           - -c
           - gunicorn app:app --bind 0.0.0.0:80 --daemon
-
-  image: python-auth-1.0
-  name: python-auth
-  version: 1.0
-  ip: 10.0.0.15
-  resources:
-    ram: 500MB
-    cpu: 1

@@ -1,3 +1,5 @@
+image: python-base/1.0
+
 base:
   image: alpine/3.16
   location: public
@@ -22,6 +24,4 @@ run:
       - requirements.txt
 
 service:
-  image: python-base-1.0
   name: python-base
-  version: 1.0

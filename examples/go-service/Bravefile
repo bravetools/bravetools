@@ -1,3 +1,5 @@
+image: go-service/1.0
+
 base:
   image: ubuntu/xenial
   location: public
@@ -21,6 +23,13 @@ run:
       - --classic
 
 service:
+  name: go-service
+  ip: 10.167.7.15
+  ports:
+    - 3000:3000
+  resources:
+    ram: 1GB
+    cpu: 1
   postdeploy:
     run:
       - command: go
@@ -32,13 +41,3 @@ service:
           - -c
         content: |-
           ./main >std.txt 2>err.txt &
-    
-  image: go-service-1.0
-  name: go-service
-  version: 1.0
-  ip: 10.167.7.15
-  ports:
-    - 3000:3000
-  resources:
-    ram: 1GB
-    cpu: 1
