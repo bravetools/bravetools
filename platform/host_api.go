@@ -409,7 +409,7 @@ func (bh *BraveHost) UmountShare(unit string, target string) error {
 				"umount",
 				bh.Settings.Name+":"+path)
 			if err != nil {
-				return err
+				return fmt.Errorf("failed to unmount %q from multipass host: %s", path, err)
 			}
 
 			err = shared.ExecCommand("multipass", "exec", bh.Settings.Name, "rmdir", path)
@@ -630,7 +630,7 @@ func (bh *BraveHost) DeleteUnit(name string) error {
 		if (d["type"] == "disk") && strings.HasPrefix(deviceName, "brave_") {
 			err = bh.UmountShare(name, d["path"])
 			if err != nil {
-				log.Printf("failed to unmount %q from multipass host: %s\n", path.Join("/home/ubuntu/volumes/", deviceName), err)
+				log.Println(err)
 			}
 		}
 	}
