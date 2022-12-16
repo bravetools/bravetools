@@ -72,6 +72,7 @@ Available Commands:
   remove      Remove Units or Images
   start       Start Units
   stop        Stop Units
+  template    Generate a template Bravefile
   umount      Unmount <disk> from UNIT
   units       List Units
   version     Show current bravetools version
