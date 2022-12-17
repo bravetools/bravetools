@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -68,6 +69,18 @@ func (vm Multipass) BraveBackendInit() error {
 	_, err = shared.ExecCommandWReturn("multipass", "info", vm.Settings.Name)
 	if err == nil {
 		vm.Settings.Status = "active"
+
+		match := regexp.MustCompile("ipv4.address: (.+)/24")
+		out, err := shared.ExecCommandWReturn("multipass", "exec", vm.Settings.Name, shared.SnapLXC, "network", "show", vm.Settings.Network.Name)
+		if err != nil {
+			log.Println("failed to get bravetools bridge IP address")
+		}
+		matches := match.FindStringSubmatch(out)
+
+		if len(matches) > 1 {
+			vm.Settings.Network.IP = matches[1]
+		}
+
 		err = UpdateBraveSettings(vm.Settings)
 		if err != nil {
 			return errors.New("failed update settings" + err.Error())
