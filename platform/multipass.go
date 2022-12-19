@@ -64,9 +64,71 @@ func (vm Multipass) BraveBackendInit() error {
 		return err
 	}
 
-	// If a VM with this name already exists skip init - we will reuse the existing VM
+	// If a VM with this name already exists skip init - we will reuse the existing VM and LXD bridge
 	_, err = shared.ExecCommandWReturn("multipass", "info", vm.Settings.Name)
 	if err == nil {
+		// Set up new user's profile and storage space
+		err = shared.ExecCommand("multipass",
+			"exec",
+			vm.Settings.Name,
+			"--",
+			shared.SnapLXC,
+			"profile",
+			"create",
+			vm.Settings.Profile)
+		if err != nil {
+			return errors.New("failed to create LXD profile: " + err.Error())
+		}
+
+		err = shared.ExecCommand("multipass",
+			"exec",
+			vm.Settings.Name,
+			"--",
+			shared.SnapLXC,
+			"storage",
+			"create",
+			vm.Settings.StoragePool.Name,
+			vm.Settings.StoragePool.Type,
+			"size="+vm.Settings.StoragePool.Size)
+		if err != nil {
+			return errors.New("failed to create storage pool: " + err.Error())
+		}
+
+		err = shared.ExecCommand("multipass",
+			"exec",
+			vm.Settings.Name,
+			"--",
+			shared.SnapLXC,
+			"profile",
+			"device",
+			"add",
+			vm.Settings.Profile,
+			"root",
+			"disk",
+			"path=/",
+			"pool="+vm.Settings.StoragePool.Name)
+		if err != nil {
+			return errors.New("failed to add storage disk to profile: " + err.Error())
+		}
+
+		err = shared.ExecCommand("multipass",
+			"exec",
+			vm.Settings.Name,
+			"--",
+			shared.SnapLXC,
+			"profile",
+			"device",
+			"add",
+			vm.Settings.Profile,
+			"eth0",
+			"nic",
+			"nictype=bridged",
+			"parent="+vm.Settings.Network.Name,
+			"name=eth0")
+		if err != nil {
+			return errors.New("failed to add network device to profile: " + err.Error())
+		}
+
 		vm.Settings.Status = "active"
 		err = UpdateBraveSettings(vm.Settings)
 		if err != nil {
