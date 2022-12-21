@@ -1,0 +1,7 @@
+conventional-commits: false
+deb:
+    distribution: ["unstable"]
+    urgency: "low"
+debug: false
+owner: "Ben Szubert"
+package-name: "bravetools"
