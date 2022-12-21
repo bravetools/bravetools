@@ -947,6 +947,11 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 		return err
 	}
 
+	// Check for existing container with this unit name
+	if _, _, err := lxdServer.GetInstance(unitName); err == nil {
+		return fmt.Errorf("container with name %q is already running on %q remote", unitName, deployRemoteName)
+	}
+
 	deployArch, err := GetLXDServerArch(lxdServer)
 	if err != nil {
 		return err
