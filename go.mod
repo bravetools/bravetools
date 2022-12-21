@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/briandowns/spinner v1.12.0
+	github.com/fatih/color v1.13.0 // indirect
 	github.com/flosch/pongo2 v0.0.0-20200913210552-0d938eb266f3 // indirect
 	github.com/google/uuid v1.3.0
 	github.com/lxc/lxd v0.0.0-20210314123029-b5599c5c4956

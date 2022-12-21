@@ -1,0 +1,36 @@
+name: "bravetools"
+arch: "amd64"
+platform: "linux"
+version: "2.0.0"
+section: "contrib/utils"
+priority: "optional"
+maintainer: "Ben Szubert <benszubert@gmail.com>"
+description: |
+  Declaratively defined LXD container build and deployment
+  LXD container build and deployements are defined in Bravefiles. 
+  Multi-container systems can be built and deployed using brave-compose.yaml.
+vendor: "Bering Limited"
+homepage: "https://github.com/bravetools/bravetools"
+license: "Apache 2.0"
+changelog: "changelog.yaml"
+contents:
+- src: ./bin/brave_linux_amd64
+  dst: /usr/bin/brave
+  file_info:
+    mode: 0755
+- src: ./brave.1.gz
+  dst: /usr/share/man/man1/brave.1.gz
+  file_info:
+    mode: 0644
+- src: copyright
+  dst: /usr/share/doc/bravetools/copyright
+  packager: deb
+  file_info:
+    mode: 0644
+- src: .lintian-overrides
+  dst: ./usr/share/lintian/overrides/bravetools
+  packager: deb
+  file_info:
+    mode: 0644
+scripts:
+  postremove: ./build/scripts/postremove.sh
