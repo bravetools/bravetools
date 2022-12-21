@@ -1028,7 +1028,12 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 	if unitParams.IP != "" {
 		err = ConfigDevice(lxdServer, unitName, "eth0", unitParams.IP)
 		if err = shared.CollectErrors(err, ctx.Err()); err != nil {
-			return errors.New("failed to set IP: " + err.Error())
+			errMsg := fmt.Sprintf("failed to set IP: %s.\n", err.Error())
+			bridgeIP, _ := GetBravetoolsBridgeIP(lxdServer, bh.Settings.Network.Name)
+			if bridgeIP != "" {
+				errMsg = fmt.Sprintf("%s\nBravetools bridge is available at %s\n", errMsg, bridgeIP)
+			}
+			return errors.New(errMsg)
 		}
 	}
 

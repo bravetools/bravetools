@@ -1444,3 +1444,12 @@ func GetLXDServerArch(lxdServer lxd.InstanceServer) (string, error) {
 
 	return serverStatus.Environment.KernelArchitecture, nil
 }
+
+func GetBravetoolsBridgeIP(lxdServer lxd.InstanceServer, bridgeName string) (string, error) {
+	network, _, err := lxdServer.GetNetwork(bridgeName)
+	if err != nil {
+		return "", err
+	}
+
+	return network.Config["ipv4.address"], nil
+}
