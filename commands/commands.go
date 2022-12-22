@@ -48,6 +48,7 @@ func init() {
 	BravetoolsCmd.AddCommand(braveCompose)
 	BravetoolsCmd.AddCommand(remoteCmd)
 	BravetoolsCmd.AddCommand(braveTemplateCmd)
+	BravetoolsCmd.AddCommand(braveExportImage)
 
 	BravetoolsCmd.CompletionOptions.HiddenDefaultCmd = true
 
