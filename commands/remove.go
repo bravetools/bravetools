@@ -3,6 +3,7 @@ package commands
 import (
 	"log"
 
+	"github.com/bravetools/bravetools/platform"
 	"github.com/spf13/cobra"
 )
 
@@ -11,6 +12,22 @@ var braveRemove = &cobra.Command{
 	Short: "Remove Units or Images",
 	Long:  ``,
 	Run:   remove,
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if len(args) != 0 {
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+		if imageToggle {
+			return func() []string {
+				var imageNames []string
+				images, _ := platform.GetLocalImages()
+				for _, image := range images {
+					imageNames = append(imageNames, image.String())
+				}
+				return imageNames
+			}(), cobra.ShellCompDirectiveNoFileComp
+		}
+		return host.GetUnitNames(), cobra.ShellCompDirectiveNoFileComp
+	},
 }
 var imageToggle bool
 

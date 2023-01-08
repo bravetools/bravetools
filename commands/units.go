@@ -24,7 +24,7 @@ func units(cmd *cobra.Command, args []string) {
 		remoteName = args[0]
 	}
 
-	err := host.ListUnits(backend, remoteName)
+	err := host.PrintUnits(backend, remoteName)
 	if err != nil {
 		log.Fatal(err)
 	}

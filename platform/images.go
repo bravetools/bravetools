@@ -8,6 +8,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/bravetools/bravetools/shared"
@@ -19,6 +20,9 @@ type BravetoolsImage struct {
 	Name         string
 	Version      string
 	Architecture string
+	size         int64
+	modTime      time.Time
+	hashString   string
 }
 
 func ParseImageString(imageString string) (imageStruct BravetoolsImage, err error) {
@@ -198,6 +202,64 @@ func (e multipleImageMatches) Error() string {
 	}
 
 	return fmt.Sprintf("multiple matches for image %q in image store - specify version and/or architecture.\nMatches:%s", e.image, strings.Join(imageStrings, "\n"))
+}
+
+func GetLocalImages() (images []BravetoolsImage, err error) {
+	home, _ := os.UserHomeDir()
+	imageStore := path.Join(home, shared.ImageStore)
+
+	// We're only interested in imageFiles and not MD5 checksums
+	imageFiles, err := shared.WalkMatch(imageStore, "*.tar.gz")
+	if err != nil {
+		return images, errors.New("failed to access images folder: " + err.Error())
+	}
+
+	for _, imageFile := range imageFiles {
+		// Ignore "hidden" files starting with a full-stop - skip to next
+		if strings.Index(imageFile, ".") == 0 {
+			continue
+		}
+
+		// Parse image struct from file
+		image, err := ImageFromFilename(filepath.Base(imageFile))
+		if err != nil {
+			image, err = ImageFromLegacyFilename(filepath.Base(imageFile))
+			if err != nil {
+				return images, fmt.Errorf("failed to parse image filename schema from %q", imageFile)
+			}
+
+			if _, err = localImagePath(image); err != nil {
+				return images, fmt.Errorf("failed to retrieve parse file %q as a bravetools image", imageFile)
+			}
+		}
+
+		if _, err = localImagePath(image); err != nil {
+			image, err = ImageFromLegacyFilename(filepath.Base(imageFile))
+			if err != nil {
+				return images, fmt.Errorf("failed to parse image filename schema from %q", imageFile)
+			}
+			if _, err = localImagePath(image); err != nil {
+				return images, fmt.Errorf("failed to retrieve parse file %q as a bravetools image", imageFile)
+			}
+		}
+
+		// Extract file metadata to populate image fields
+		info, err := os.Stat(imageFile)
+		if err != nil {
+			return images, fmt.Errorf("failed to get image %q size: %s", image, err)
+		}
+		image.size = info.Size()
+		image.modTime = info.ModTime()
+		hashString, err := hashImage(image)
+		if err != nil {
+			return images, fmt.Errorf("failed to get image %q hash: %s", image, err)
+		}
+		image.hashString = hashString
+
+		images = append(images, image)
+	}
+
+	return images, nil
 }
 
 // matchLocalImagePath attempts to find candidates for the provided image definition using regex matching.
