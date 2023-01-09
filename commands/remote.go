@@ -138,11 +138,6 @@ func remoteAdd(cmd *cobra.Command, args []string) {
 
 func remoteRemove(cmd *cobra.Command, args []string) {
 	for _, arg := range args {
-		if arg == shared.BravetoolsRemote {
-			log.Printf("remote %q cannot be removed, skipping", arg)
-			continue
-		}
-
 		err := platform.RemoveRemote(arg)
 		if err != nil {
 			log.Fatal(err)
