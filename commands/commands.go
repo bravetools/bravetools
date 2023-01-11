@@ -49,6 +49,8 @@ func init() {
 	BravetoolsCmd.AddCommand(remoteCmd)
 	BravetoolsCmd.AddCommand(braveTemplateCmd)
 
+	BravetoolsCmd.CompletionOptions.HiddenDefaultCmd = true
+
 	userHome, _ := os.UserHomeDir()
 	exists, err := shared.CheckPath(path.Join(userHome, shared.PlatformConfig))
 	if err != nil {

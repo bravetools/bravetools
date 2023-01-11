@@ -83,88 +83,48 @@ func (bh *BraveHost) ImportLocalImage(sourcePath string) error {
 	return nil
 }
 
-// ListLocalImages reads list of files in images folder
-func (bh *BraveHost) ListLocalImages() error {
-	home, _ := os.UserHomeDir()
-	imageStore := path.Join(home, shared.ImageStore)
-
-	// We're only interested in images and not MD5 checksums
-	images, err := shared.WalkMatch(imageStore, "*.tar.gz")
+// PrintLocalImages prints the images in image store
+func (bh *BraveHost) PrintLocalImages() error {
+	images, err := GetLocalImages()
 	if err != nil {
-		return errors.New("failed to access images folder: " + err.Error())
+		return err
 	}
 
-	if len(images) > 0 {
-		table := tablewriter.NewWriter(os.Stdout)
-		table.SetHeader([]string{"Image", "Version", "Arch", "Created", "Size", "Hash"})
+	if len(images) == 0 {
+		fmt.Println("No local images")
+		return nil
+	}
 
-		for _, i := range images {
-			image, err := ImageFromFilename(filepath.Base(i))
-			if err != nil {
-				image, err = ImageFromLegacyFilename(filepath.Base(i))
-				if err != nil {
-					return fmt.Errorf("failed to parse image filename schema from %q", i)
-				}
+	table := tablewriter.NewWriter(os.Stdout)
+	table.SetHeader([]string{"Image", "Version", "Arch", "Created", "Size", "Hash"})
 
-				if _, err = localImagePath(image); err != nil {
-					return fmt.Errorf("failed to retrieve parse file %q as a bravetools image", i)
-				}
-			}
-
-			if _, err = localImagePath(image); err != nil {
-				image, err = ImageFromLegacyFilename(filepath.Base(i))
-				if err != nil {
-					return fmt.Errorf("failed to parse image filename schema from %q", i)
-				}
-				if _, err = localImagePath(image); err != nil {
-					return fmt.Errorf("failed to retrieve parse file %q as a bravetools image", i)
-				}
-			}
-
-			fi, err := os.Stat(i)
-			if strings.Index(fi.Name(), ".") != 0 {
-				if err != nil {
-					return errors.New("failed to get image size: " + err.Error())
-				}
-
-				size := fi.Size()
-
-				created := int(time.Since(fi.ModTime()).Hours() / 24)
-				var timeUnit string
-				if created > 1 {
-					timeUnit = strconv.Itoa(created) + " days ago"
-				} else if created == 1 {
-					timeUnit = strconv.Itoa(created) + " day ago"
-				} else {
-					timeUnit = "just now"
-				}
-
-				hashString, err := hashImage(image)
-				if err != nil {
-					return err
-				}
-
-				r := []string{image.Name, image.Version, image.Architecture, timeUnit, shared.FormatByteCountSI(size), hashString}
-				table.Append(r)
-			}
+	for _, image := range images {
+		created := int(time.Since(image.modTime).Hours() / 24)
+		var timeUnit string
+		if created > 1 {
+			timeUnit = strconv.Itoa(created) + " days ago"
+		} else if created == 1 {
+			timeUnit = strconv.Itoa(created) + " day ago"
+		} else {
+			timeUnit = "just now"
 		}
 
-		table.SetAutoWrapText(false)
-		table.SetAutoFormatHeaders(true)
-		table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
-		table.SetAlignment(tablewriter.ALIGN_LEFT)
-		table.SetCenterSeparator("")
-		table.SetColumnSeparator("")
-		table.SetRowSeparator("")
-		table.SetHeaderLine(false)
-		table.SetBorder(false)
-		table.SetTablePadding("\t")
-		table.SetNoWhiteSpace(true)
-		table.Render()
-
-	} else {
-		fmt.Println("No local images")
+		r := []string{image.Name, image.Version, image.Architecture, timeUnit, shared.FormatByteCountSI(image.size), image.hashString}
+		table.Append(r)
 	}
+
+	table.SetAutoWrapText(false)
+	table.SetAutoFormatHeaders(true)
+	table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
+	table.SetAlignment(tablewriter.ALIGN_LEFT)
+	table.SetCenterSeparator("")
+	table.SetColumnSeparator("")
+	table.SetRowSeparator("")
+	table.SetHeaderLine(false)
+	table.SetBorder(false)
+	table.SetTablePadding("\t")
+	table.SetNoWhiteSpace(true)
+	table.Render()
 
 	return nil
 }
@@ -245,8 +205,56 @@ func (bh *BraveHost) HostInfo(short bool) error {
 	return nil
 }
 
-// ListUnits prints all LXD containers on remote host
-func (bh *BraveHost) ListUnits(backend Backend, remoteName string) error {
+// GetUnitNames returns a list of all unit names, including remote units. Errors encountered will result in skipping the faulty remote's units.
+func (bh *BraveHost) GetUnitNames() []string {
+	var unitNames []string
+
+	// Load all units on all remotes
+
+	remoteNames, err := ListRemotes()
+	if err != nil {
+		return unitNames
+	}
+
+	for i := range remoteNames {
+		deployRemote, err := LoadRemoteSettings(remoteNames[i])
+		if err != nil {
+			continue
+		}
+
+		// If no auth, this isn't a deploy remote unless unix protocol
+		if (deployRemote.key == "" || deployRemote.cert == "") && deployRemote.Protocol != "unix" {
+			continue
+		}
+
+		lxdServer, err := GetLXDInstanceServer(deployRemote)
+		if err != nil {
+			log.Printf("failed to connect to %q remote, skipping", deployRemote.Name)
+			continue
+		}
+
+		remoteUnits, err := GetUnits(lxdServer, deployRemote.Profile)
+		if err != nil {
+			continue
+		}
+
+		// Prefix unit name with remote name
+		if deployRemote.Name != shared.BravetoolsRemote {
+			for j := range remoteUnits {
+				unitNames = append(unitNames, deployRemote.Name+":"+remoteUnits[j].Name)
+			}
+		} else {
+			for j := range remoteUnits {
+				unitNames = append(unitNames, remoteUnits[j].Name)
+			}
+		}
+	}
+
+	return unitNames
+}
+
+// PrintUnits prints all LXD containers on remote host
+func (bh *BraveHost) PrintUnits(backend Backend, remoteName string) error {
 	var units []shared.BraveUnit
 
 	if remoteName != "" {

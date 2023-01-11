@@ -153,7 +153,7 @@ func Test_ListLocalImages(t *testing.T) {
 		t.Error("host.HostInfo: ", err)
 	}
 
-	err = host.ListLocalImages()
+	err = host.PrintLocalImages()
 	if err != nil {
 		t.Error("host.ListLocalImages: ", err)
 	}
@@ -170,7 +170,7 @@ func Test_ListUnits(t *testing.T) {
 		t.Error("host.HostInfo: ", err)
 	}
 
-	err = host.ListUnits(host.Backend, "")
+	err = host.PrintUnits(host.Backend, "")
 	if err != nil {
 		t.Error("host.ListLocalImages: ", err)
 	}

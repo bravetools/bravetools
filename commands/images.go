@@ -15,7 +15,7 @@ var braveListImages = &cobra.Command{
 
 func listImages(cmd *cobra.Command, args []string) {
 	checkBackend()
-	err := host.ListLocalImages()
+	err := host.PrintLocalImages()
 	if err != nil {
 		log.Fatal(err)
 	}

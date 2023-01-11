@@ -205,6 +205,10 @@ func AddRemote(remote Remote, password string) error {
 // RemoveRemote removes remote LXC host
 func RemoveRemote(name string) error {
 
+	if name == shared.BravetoolsRemote {
+		return fmt.Errorf("default bravetools remote %q cannot be removed", name)
+	}
+
 	remoteNames, err := ListRemotes()
 	if err != nil {
 		return err

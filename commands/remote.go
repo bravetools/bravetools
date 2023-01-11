@@ -37,6 +37,21 @@ var remoteRemoveCmd = &cobra.Command{
 	Long:  ``,
 	Args:  cobra.MinimumNArgs(1),
 	Run:   remoteRemove,
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if len(args) != 0 {
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+		return func() []string {
+			remoteNames, _ := platform.ListRemotes()
+			// Disallow suggestion for removing default remote
+			for i, name := range remoteNames {
+				if name == shared.BravetoolsRemote {
+					remoteNames = append(remoteNames[:i], remoteNames[i+1:]...)
+				}
+			}
+			return remoteNames
+		}(), cobra.ShellCompDirectiveNoFileComp
+	},
 }
 
 var remoteGetCmd = &cobra.Command{
@@ -45,6 +60,15 @@ var remoteGetCmd = &cobra.Command{
 	Long:  "Returns a JSON string listing configuration of selected remote",
 	Args:  cobra.ExactArgs(1),
 	Run:   remoteGet,
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if len(args) != 0 {
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+		return func() []string {
+			remoteNames, _ := platform.ListRemotes()
+			return remoteNames
+		}(), cobra.ShellCompDirectiveNoFileComp
+	},
 }
 
 var remoteListCmd = &cobra.Command{
@@ -114,11 +138,6 @@ func remoteAdd(cmd *cobra.Command, args []string) {
 
 func remoteRemove(cmd *cobra.Command, args []string) {
 	for _, arg := range args {
-		if arg == shared.BravetoolsRemote {
-			log.Printf("remote %q cannot be removed, skipping", arg)
-			continue
-		}
-
 		err := platform.RemoveRemote(arg)
 		if err != nil {
 			log.Fatal(err)

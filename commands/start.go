@@ -11,6 +11,12 @@ var braveStart = &cobra.Command{
 	Short: "Start Units",
 	Long:  ``,
 	Run:   start,
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if len(args) != 0 {
+			return nil, cobra.ShellCompDirectiveNoFileComp
+		}
+		return host.GetUnitNames(), cobra.ShellCompDirectiveNoFileComp
+	},
 }
 
 func start(cmd *cobra.Command, args []string) {
