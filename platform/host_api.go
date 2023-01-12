@@ -802,14 +802,11 @@ func ExportBravetoolsImage(image string, outputDir string) error {
 		}
 	}
 
-	if outputDir == "" {
-		outputDir, err = os.Getwd()
-		if err != nil {
-			return errors.New("cannot find working directory to export image to - provide a valid path instead")
-		}
+	destPath := filepath.Base(path)
+	if outputDir != "" {
+		destPath = filepath.Join(outputDir, destPath)
 	}
 
-	destPath := filepath.Join(outputDir, filepath.Base(path))
 	if _, err := os.Stat(destPath); err == nil {
 		return fmt.Errorf("existing file at %s would be overwritten by export of %q", destPath, resolvedImg)
 	}
@@ -819,7 +816,7 @@ func ExportBravetoolsImage(image string, outputDir string) error {
 		return err
 	}
 
-	fmt.Printf("Exported image %q to %s\n", resolvedImg, destPath)
+	fmt.Printf("Exported image %q to: %s\n", resolvedImg, destPath)
 
 	return nil
 }
