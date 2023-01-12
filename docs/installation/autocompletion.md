@@ -1,6 +1,6 @@
 ---
 layout: default
-description: Instructions for installing Bravetools on macOS
+description: Instructions for enabling autocompletion
 keywords: autocomplete, cli, installation, install, shell
 title: Enabling autocompletion
 parent: Install Bravetools

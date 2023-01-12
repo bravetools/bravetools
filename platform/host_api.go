@@ -783,6 +783,44 @@ func (bh *BraveHost) PublishUnit(unitName string, imageName string) error {
 	return nil
 }
 
+func ExportBravetoolsImage(image string, outputDir string) error {
+	img, err := ParseImageString(image)
+	if err != nil {
+		return err
+	}
+
+	path, err := matchLocalImagePath(img)
+	if err != nil {
+		return err
+	}
+
+	resolvedImg, err := ImageFromFilename(filepath.Base(path))
+	if err != nil {
+		resolvedImg, err = ImageFromLegacyFilename(path)
+		if err != nil {
+			resolvedImg = img
+		}
+	}
+
+	destPath := filepath.Base(path)
+	if outputDir != "" {
+		destPath = filepath.Join(outputDir, destPath)
+	}
+
+	if _, err := os.Stat(destPath); err == nil {
+		return fmt.Errorf("existing file at %s would be overwritten by export of %q", destPath, resolvedImg)
+	}
+
+	err = shared.CopyFile(path, destPath)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Exported image %q to: %s\n", resolvedImg, destPath)
+
+	return nil
+}
+
 // StopUnit stops unit using name
 func (bh *BraveHost) StopUnit(name string) error {
 
