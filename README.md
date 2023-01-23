@@ -30,16 +30,16 @@ Prerequisites:
 
 2. Run `brave init` to get started.
 
-# Installing from source
+## Installing from source
 
-## Linux/MacOS
+### Linux/MacOS
 ```bash
 git clone https://github.com/bravetools/bravetools
 cd bravetools
 make [ubuntu]/[darwin]
 ```
 
-## Windows
+### Windows
 ```bash
 git clone https://github.com/bravetools/bravetools
 cd bravetools
