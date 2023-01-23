@@ -46,6 +46,89 @@ cd bravetools
 go build -ldflags=“-s -X github.com/bravetools/bravetools/shared.braveVersion=VERSION” -o brave.exe
 ```
 
+# Getting Started
+Create an example Bravefile
+```bash
+brave template
+```
+This creates a file named "Bravefile" in the current working directory. The contents should look like this:
+```yaml
+image: example-image/v1.0
+
+base:
+  image: alpine/3.16
+
+packages:
+  manager: apk
+  system:
+    - curl
+
+run: 
+  - command: echo
+    args:
+      - hello world
+
+copy:
+  - source: ./Bravefile
+    target: /root/
+
+service:
+  name: example-container
+  ports:
+    - 8888:8888
+  resources:
+    ram: 2GB
+    cpu: 2
+
+```
+
+Create an image using the Bravefile
+```bash
+brave build
+...
+```
+
+Check images
+```bash
+brave images
+
+IMAGE           VERSION ARCH    CREATED         SIZE    HASH
+example-image   v1.0    x86_64  just now        4MB     ef28b49bf36f0b4b9cbad89ff67ef0ee
+```
+
+Deploy image as container
+```bash
+brave deploy
+```
+
+Check running units
+```bash
+brave units
+
+NAME                    STATUS  IPV4            MOUNTS  PORTS     
+example-container       Running 10.148.59.45            8888:8888
+```
+
+Add a remote
+```bash
+brave remote add example-remote https://20.0.0.20:8443 --password [PASSWORD]
+
+Certificate fingerprint:  ...
+```
+
+Deploy to remote
+```bash
+brave deploy --name example-remote:example-container
+```
+
+```bash
+brave units
+
+NAME                                    STATUS  IPV4            MOUNTS  PORTS
+example-remote:example-container        Running 20.0.0.7                8888:8888
+
+example-container                       Running 10.148.59.45            8888:8888
+```
 
 # Command Reference
 
