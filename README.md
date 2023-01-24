@@ -70,6 +70,12 @@ go build -ldflags="-s -w" -o brave.exe -trimpath main.go
 ```
 
 # Getting Started
+Run `brave init` to start if you haven't yet.
+```bash
+brave init
+...
+```
+
 Create an example Bravefile
 ```bash
 brave template
