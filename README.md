@@ -1,11 +1,8 @@
 [![Gitter](https://badges.gitter.im/bravetools/community.svg)](https://gitter.im/bravetools/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge) [![Go Report Card](https://goreportcard.com/badge/github.com/bravetools/bravetools)](https://goreportcard.com/report/github.com/bravetools/bravetools)
 
-![](https://github.com/bravetools/bravetools/blob/master/docs/assets/cli-bravetools-demo.gif)
 
-# Bravetools
-Bravetools is an end-to-end tool for creating and managing applications and environments using [System Containers](https://ubuntu.com/server/docs/containers-lxc). It uses a single source configuration to make it easy to build, deploy, and scale machine images.
-
-Bravetools runs on Linux, MacOS, and Windows.
+  # Bravetools
+Bravetools provides a simple and consistent interface to declare, build, and deploy [system containers](https://linuxcontainers.org/lxd/introduction/).
 
 # Features
 
@@ -13,8 +10,34 @@ Bravetools runs on Linux, MacOS, and Windows.
 * [Compose multi-container systems](https://bravetools.github.io/bravetools/docs/compose/) in a simple and declarative way.
 * [Deploy your systems](https://bravetools.github.io/bravetools/docs/cli/brave_deploy/) locally or remotely.
 
-And [many more](https://bravetools.github.io/bravetools/intro/use_cases/).
+# How it works
+## Configuring image environments
+The steps to build and deploy an image are configured using a [Bravefile](https://bravetools.github.io/bravetools/docs/bravefile/).  
+View [sample Bravefiles](https://github.com/beringresearch/bravefiles/) on GitHub to explore common use cases.
 
+<img src="docs/assets/bravefile-template.png" alt="template" width="200">
+
+## Build images
+Build new images or layer existing ones using `brave build`  
+Resulting image can be stored locally or remotely
+
+![](docs/assets/cli-bravetools-demo.gif)
+
+## Deploy images
+System containers can be deployed to a variety of environments with `brave deploy`, including local development machines, test environments, and remote production systems.
+
+![](docs/assets/bravetools-overview.png)
+
+## Image management
+Manage images with multiple versions and architectures
+
+![](docs/assets/brave-images.png)
+
+## Deploy multi-unit systems
+Systems with multiple units can be declared in a [brave compose file](https://bravetools.github.io/bravetools/docs/compose/#compose-file).  
+Build and deploy the system defined in a compose file with the `brave compose` command.
+
+<img src="docs/assets/composefile-example.png" alt="template" width="350">
 
 # Installation
 
@@ -30,22 +53,111 @@ Prerequisites:
 
 2. Run `brave init` to get started.
 
-# Installing from source
+## Installing from source
 
-## Linux/MacOS
+### Linux/MacOS
 ```bash
 git clone https://github.com/bravetools/bravetools
 cd bravetools
 make [ubuntu]/[darwin]
 ```
 
-## Windows
+### Windows
 ```bash
 git clone https://github.com/bravetools/bravetools
 cd bravetools
-go build -ldflags=“-s -X github.com/bravetools/bravetools/shared.braveVersion=VERSION” -o brave.exe
+go build -ldflags="-s -w" -o brave.exe -trimpath main.go
 ```
 
+# Getting Started
+Run `brave init` to start if you haven't yet.
+```bash
+brave init
+...
+```
+
+Create an example Bravefile
+```bash
+brave template
+```
+This creates a file named "Bravefile" in the current working directory. The contents should look like this:
+```yaml
+image: example-image/v1.0
+
+base:
+  image: alpine/3.16
+
+packages:
+  manager: apk
+  system:
+    - curl
+
+run: 
+  - command: echo
+    args:
+      - hello world
+
+copy:
+  - source: ./Bravefile
+    target: /root/
+
+service:
+  name: example-container
+  ports:
+    - 8888:8888
+  resources:
+    ram: 2GB
+    cpu: 2
+
+```
+
+Create an image using the Bravefile
+```bash
+brave build
+...
+```
+
+Check images
+```bash
+brave images
+
+IMAGE           VERSION ARCH    CREATED         SIZE    HASH
+example-image   v1.0    x86_64  just now        4MB     ef28b49bf36f0b4b9cbad89ff67ef0ee
+```
+
+Deploy image as container
+```bash
+brave deploy
+```
+
+Check running units
+```bash
+brave units
+
+NAME                    STATUS  IPV4            MOUNTS  PORTS     
+example-container       Running 10.148.59.45            8888:8888
+```
+
+Add a remote
+```bash
+brave remote add example-remote https://20.0.0.20:8443 --password [PASSWORD]
+
+Certificate fingerprint:  ...
+```
+
+Deploy to remote
+```bash
+brave deploy --name example-remote:example-container
+```
+
+```bash
+brave units
+
+NAME                                    STATUS  IPV4            MOUNTS  PORTS
+example-remote:example-container        Running 20.0.0.7                8888:8888
+
+example-container                       Running 10.148.59.45            8888:8888
+```
 
 # Command Reference
 
