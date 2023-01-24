@@ -66,7 +66,7 @@ make [ubuntu]/[darwin]
 ```bash
 git clone https://github.com/bravetools/bravetools
 cd bravetools
-go build -ldflags=“-s -X github.com/bravetools/bravetools/shared.braveVersion=VERSION” -o brave.exe
+go build -ldflags="-s -w" -o brave.exe -trimpath main.go
 ```
 
 # Getting Started
