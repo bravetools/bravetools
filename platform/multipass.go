@@ -165,7 +165,7 @@ func (vm Multipass) BraveBackendInit() error {
 		vm.Settings.BackendSettings.Resources.CPU,
 		"--disk",
 		vm.Settings.BackendSettings.Resources.HD,
-		"--mem",
+		"--memory",
 		vm.Settings.BackendSettings.Resources.RAM,
 		"--name",
 		vm.Settings.BackendSettings.Resources.Name,
@@ -619,7 +619,7 @@ func (vm Multipass) getRamUsage() (storage StorageUsage, err error) {
 		return storage, err
 	}
 
-	totalMem = strings.Split(strings.TrimSpace(strings.Split(totalMem, ":")[1]), " ")[0]
+	totalMem = strings.Split(strings.TrimSpace(totalMem), " ")[0]
 
 	availableMem, err := shared.ExecCommandWReturn("multipass",
 		"exec",
@@ -631,7 +631,7 @@ func (vm Multipass) getRamUsage() (storage StorageUsage, err error) {
 		return storage, err
 	}
 
-	availableMem = strings.Split(strings.TrimSpace(strings.Split(availableMem, ":")[1]), " ")[0]
+	availableMem = strings.Split(strings.TrimSpace(availableMem), " ")[0]
 
 	totalMemInt, err := strconv.Atoi(totalMem)
 	if err != nil {
