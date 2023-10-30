@@ -165,7 +165,7 @@ func (vm Multipass) BraveBackendInit() error {
 		vm.Settings.BackendSettings.Resources.CPU,
 		"--disk",
 		vm.Settings.BackendSettings.Resources.HD,
-		"--mem",
+		"-m",
 		vm.Settings.BackendSettings.Resources.RAM,
 		"--name",
 		vm.Settings.BackendSettings.Resources.Name,
@@ -607,8 +607,8 @@ func (vm Multipass) getDiskUsage() (storage StorageUsage, err error) {
 }
 
 func (vm Multipass) getRamUsage() (storage StorageUsage, err error) {
-	totalMemCmd := "cat /proc/meminfo | grep MemTotal | awk '{print $2}'"
-	availableMemCmd := "cat /proc/meminfo | grep MemAvailable | awk '{print $2}'"
+	totalMemCmd := "cat /proc/meminfo | grep MemTotal | tr -s ' ' | cut -d ' ' -f 2"
+	availableMemCmd := "cat /proc/meminfo | grep MemAvailable | tr -s ' ' | cut -d ' ' -f 2"
 
 	totalMem, err := shared.ExecCommandWReturn("multipass",
 		"exec",
@@ -619,7 +619,7 @@ func (vm Multipass) getRamUsage() (storage StorageUsage, err error) {
 		return storage, err
 	}
 
-	totalMem = strings.Split(strings.TrimSpace(strings.Split(totalMem, ":")[1]), " ")[0]
+	totalMem = strings.Split(strings.TrimSpace(totalMem), " ")[0]
 
 	availableMem, err := shared.ExecCommandWReturn("multipass",
 		"exec",
@@ -631,7 +631,7 @@ func (vm Multipass) getRamUsage() (storage StorageUsage, err error) {
 		return storage, err
 	}
 
-	availableMem = strings.Split(strings.TrimSpace(strings.Split(availableMem, ":")[1]), " ")[0]
+	availableMem = strings.Split(strings.TrimSpace(availableMem), " ")[0]
 
 	totalMemInt, err := strconv.Atoi(totalMem)
 	if err != nil {
@@ -645,8 +645,8 @@ func (vm Multipass) getRamUsage() (storage StorageUsage, err error) {
 
 	usedMemInt := totalMemInt - availableMemInt
 
-	totalMem = shared.FormatByteCountSI(int64(totalMemInt * 1000))
-	usedMem := shared.FormatByteCountSI(int64(usedMemInt * 1000))
+	totalMem = shared.FormatByteCountSI(int64(totalMemInt) * 1000)
+	usedMem := shared.FormatByteCountSI(int64(usedMemInt) * 1000)
 
 	storage = StorageUsage{usedMem, totalMem}
 	return storage, nil
