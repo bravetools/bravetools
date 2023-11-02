@@ -20,7 +20,7 @@ Your Mac must meet the following requirements to successfully install Bravetools
 
 ### Software requirements
 
-Default installation of Bravetools runs on top of the [LXD](https://linuxcontainers.org/lxd/introduction/) daemon. Although LXD client is supported on macOS, LXC (the underlying container technology), is a feature of the Linux kernel and is not available natively on macOS.
+Default installation of Bravetools runs on top of the [LXD](https://documentation.ubuntu.com/lxd/en/latest/) daemon. Although LXD client is supported on macOS, LXC (the underlying container technology), is a feature of the Linux kernel and is not available natively on macOS.
 
 On macOS, Bravetool requires [multipass](multipass.run). Multipass uses Mac's native hyperkit technology to provision fast and lightweight Ubuntu virtual machines, which are seamlessly used by Bravetools behind the scenes.
 

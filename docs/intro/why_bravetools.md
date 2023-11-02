@@ -15,7 +15,7 @@ Bravetools addresses these limitations. It has a simple and lightweight command 
 
 **Improved Stability**. All software and configurations are installed into your images at build-time. Once your image is launched and tested, you can be confident that any environment launched from that image will function properly.
 
-**No overheads of a VM**. Bravetools runs on [LXD](https://linuxcontainers.org/lxd/introduction/). LXD uses Linux containers to offer a user experience similar to virtual machines, but without the expensive overhead. You can run either single images on a local machines or scale to thousands of compute nodes.
+**No overheads of a VM**. Bravetools runs on [LXD](https://documentation.ubuntu.com/lxd/en/latest/). LXD uses Linux containers to offer a user experience similar to virtual machines, but without the expensive overhead. You can run either single images on a local machines or scale to thousands of compute nodes.
 
 **Focus on code not infrastructure**. Maintaining and configuring infrastructure is difficult! With any application built and deployed using Bravetools infrastructure and environment have to be configured just once. Developers can spend more time on creating and improving software and less time on managing production environments.
 

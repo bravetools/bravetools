@@ -7,7 +7,7 @@ description: "Enable GPU-accelerated processing inside Bravetools Units"
 ---
 
 # GPU Processing Inside Bravetools
-Many machine learning applications require GPU-accelerated hardware. Although many personal computers and servers ship with GPU support, it can be desirable to scale training operations to multi-GPU systems in cloud deployments. Bravetools uses [LXD](https://linuxcontainers.org/) to configure and manage GPU hardware inside your Units. A key advantage of this approach is that you can scale your training scripts and environments from a local machine to massive distributed systems without changing your configuration code.
+Many machine learning applications require GPU-accelerated hardware. Although many personal computers and servers ship with GPU support, it can be desirable to scale training operations to multi-GPU systems in cloud deployments. Bravetools uses [LXD](https://documentation.ubuntu.com/lxd/en/latest/) to configure and manage GPU hardware inside your Units. A key advantage of this approach is that you can scale your training scripts and environments from a local machine to massive distributed systems without changing your configuration code.
 
 In this section, we will describe how to enable NVIDIA hardware inside your Units.
 

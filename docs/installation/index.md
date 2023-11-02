@@ -13,7 +13,7 @@ The following table lists minimal requirements on each supported platform:
 
 | Platform      			 | Hardware          | Software 	  |
 |:---------------------------|:------------------|:---------------|
-| [Ubuntu 64-bit](ubuntu.md) | 1 GB Memory		 | [LXD >=3.0.3](https://linuxcontainers.org/lxd/introduction/) |
+| [Ubuntu 64-bit](ubuntu.md) | 1 GB Memory		 | [LXD >=3.0.3](https://documentation.ubuntu.com/lxd/en/latest/) |
 | [macOS Mojave](macos.md)	 | 8 GB Memory		 | [Multipass](https://multipass.run/) |
 | [Windows 10](windows.md)	 | 8 GB Memory 		 | [Multipass](https://multipass.run/) |
 
