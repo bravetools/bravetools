@@ -32,7 +32,7 @@ versions:
 
 ### Software requirements
 
-Default installation of Bravetools runs on top of the [LXD](https://linuxcontainers.org/lxd/introduction/) daemon.
+Default installation of Bravetools runs on top of the [LXD](https://documentation.ubuntu.com/lxd/en/latest/) daemon.
 
 ### Supported storage backends
 
