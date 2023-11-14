@@ -130,13 +130,17 @@ func initiateLxd(vm Lxd, whichLxc string) error {
 		return errors.New("failed to create LXD profile: " + err.Error())
 	}
 
-	err = shared.ExecCommand(
-		whichLxc,
+	storagePoolCmd := []string{
 		"storage",
 		"create",
 		vm.Settings.StoragePool.Name,
 		vm.Settings.StoragePool.Type,
-		"size="+vm.Settings.StoragePool.Size)
+	}
+	if vm.Settings.StoragePool.Type != "dir" {
+		storagePoolCmd = append(storagePoolCmd, "size="+vm.Settings.StoragePool.Size)
+	}
+
+	err = shared.ExecCommand(whichLxc, storagePoolCmd...)
 	if err != nil {
 		_ = shared.ExecCommand(whichLxc, "profile", "delete", vm.Settings.Profile)
 		return errors.New("failed to create storage pool: " + err.Error())
