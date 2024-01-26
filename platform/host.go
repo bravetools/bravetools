@@ -155,6 +155,13 @@ func SetupHostConfiguration(params HostConfig, userHome string) (settings HostSe
 
 	settings.Remote = shared.BravetoolsRemote
 
+	if params.Backend == "remote" {
+		settings.BackendSettings = BackendSettings{
+			Type: "remote",
+		}
+		// settings.Remote = "remote"
+	}
+
 	doc, err := yaml.Marshal(settings)
 	if err != nil {
 		log.Fatal(err.Error())

@@ -39,16 +39,36 @@ type StorageUsage struct {
 }
 
 // NewHostBackend returns a new Backend from provided host Settings
-func NewHostBackend(hostSetings HostSettings) (backend Backend, err error) {
-	backendType := hostSetings.BackendSettings.Type
+func NewHostBackend(hostSettings HostSettings) (backend Backend, err error) {
+	backendType := hostSettings.BackendSettings.Type
 
 	switch backendType {
 	case "multipass":
-		backend = NewMultipass(hostSetings)
+		backend = NewMultipass(hostSettings)
 	case "lxd":
-		backend = NewLxd(hostSetings)
+		backend = NewLxd(hostSettings)
+	case "remote":
+		backend = &DummyBackend{}
 	default:
 		err = fmt.Errorf("backend type %q not supported", backendType)
 	}
 	return backend, err
+}
+
+// DummyBackend is a non-functional backend
+type DummyBackend struct {
+	Settings HostSettings
+}
+
+func (d *DummyBackend) BraveBackendInit() error {
+	return nil
+}
+func (d *DummyBackend) Info() (Info, error) {
+	return Info{}, nil
+}
+func (d *DummyBackend) Running() (bool, error) {
+	return true, nil
+}
+func (d *DummyBackend) Start() error {
+	return nil
 }

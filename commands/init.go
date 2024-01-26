@@ -21,6 +21,7 @@ var hostInit = &cobra.Command{
 }
 
 var hostConfigPath, storage, ram, network, backendType string
+var remoteBackend bool
 
 func init() {
 	includeInitFlags(hostInit)
@@ -31,6 +32,8 @@ func includeInitFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVarP(&storage, "storage", "s", "12", "Host storage size in GB[OPTIONAL]. default: 12")
 	cmd.PersistentFlags().StringVarP(&ram, "memory", "m", "4GB", "Host memory size [OPTIONAL]. default 4GB")
 	cmd.PersistentFlags().StringVarP(&network, "network", "n", "", "Host network IP range [OPTIONAL]. default: randomly generate RFC1918 address")
+
+	cmd.PersistentFlags().BoolVar(&remoteBackend, "remote", false, "whether backend is remote (will not be initialized)")
 }
 
 func serverInit(cmd *cobra.Command, args []string) {
@@ -41,33 +44,53 @@ func serverInit(cmd *cobra.Command, args []string) {
 	}
 
 	hostOs := runtime.GOOS
-	switch hostOs {
-	case "linux":
-		backendType = "lxd"
-	case "darwin":
-		backendType = "multipass"
-	case "windows":
-		backendType = "multipass"
-	default:
-		err := deleteBraveHome(userHome)
-		if err != nil {
-			fmt.Println(err.Error())
-		}
-		log.Fatal("unsupported host OS: ", hostOs)
-	}
 
-	if network == "" {
-		ip, err := shared.GenerateRandomRFC1919()
-		if err != nil {
-			log.Fatal(err.Error())
+	if !remoteBackend {
+		switch hostOs {
+		case "linux":
+			backendType = "lxd"
+		case "darwin":
+			backendType = "multipass"
+		case "windows":
+			backendType = "multipass"
+		default:
+			err := deleteBraveHome(userHome)
+			if err != nil {
+				fmt.Println(err.Error())
+			}
+			log.Fatal("unsupported host OS: ", hostOs)
 		}
-		network = ip
+
+		if network == "" {
+			ip, err := shared.GenerateRandomRFC1919()
+			if err != nil {
+				log.Fatal(err.Error())
+			}
+			network = ip
+		}
+	} else {
+		backendType = "remote"
 	}
 
 	// Create $HOME/.bravetools
 	err := createBraveHome(userHome)
 	if err != nil {
 		log.Fatal(err.Error())
+	}
+
+	dbPath := path.Join(userHome, shared.BraveDB)
+
+	log.Println("Initialising Bravetools unit database")
+	_, err = os.Stat(dbPath)
+	if os.IsNotExist(err) {
+		err = db.InitDB(dbPath)
+
+		if err != nil {
+			if err := deleteBraveHome(userHome); err != nil {
+				fmt.Println(err.Error())
+			}
+			log.Fatal("failed to initialize database: ", err)
+		}
 	}
 
 	params := platform.HostConfig{
@@ -90,6 +113,11 @@ func serverInit(cmd *cobra.Command, args []string) {
 		userHome, _ := os.UserHomeDir()
 		platform.SetupHostConfiguration(params, userHome)
 		loadConfig()
+	}
+
+	if remoteBackend {
+		fmt.Println("bravetools initialized - add a remote with `brave remote add local ...`")
+		return
 	}
 
 	log.Println("Initialising Bravetools backend")
@@ -147,20 +175,5 @@ func serverInit(cmd *cobra.Command, args []string) {
 			fmt.Println(err.Error())
 		}
 		log.Fatal(err)
-	}
-
-	dbPath := path.Join(userHome, shared.BraveDB)
-
-	log.Println("Initialising Bravetools unit database")
-	_, err = os.Stat(dbPath)
-	if os.IsNotExist(err) {
-		err = db.InitDB(dbPath)
-
-		if err != nil {
-			if err := deleteBraveHome(userHome); err != nil {
-				fmt.Println(err.Error())
-			}
-			log.Fatal("failed to initialize database: ", err)
-		}
 	}
 }
