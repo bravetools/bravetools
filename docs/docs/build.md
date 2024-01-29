@@ -9,7 +9,7 @@ description: "Bravetools builds images automatically by reading instructions fro
 # Building an Image
 {: .no_toc }
 
-A `Bravefile` defines a set of instructions and configuration options for building a single system container. Bravetools supports [multiple CPU architectures](https://linuxcontainers.org/lxd/docs/master/architectures/) and a [wide number of base Linux distributions](https://uk.lxd.images.canonical.com).
+A `Bravefile` defines a set of instructions and configuration options for building a single system container. Bravetools supports [multiple CPU architectures](https://documentation.ubuntu.com/lxd/en/latest/architectures/) and a [wide number of base Linux distributions](https://uk.lxd.images.canonical.com).
 
 ## Table of contents
 {: .no_toc .text-delta }
@@ -85,7 +85,7 @@ base:
 ## Remote Image Storage
 Upon build completion, every Bravetools image is stored locally in `~/.bravetools/images` directory as tar.gz files. This simplifies the process of sharing each image, which can then be imported using [`brave import`](cli/brave_import.md) command.
 
-However, sometimes it can be desirable to also store an image on a remote LXD server, which acts as an [image repository](https://linuxcontainers.org/lxd/docs/master/image-handling/#remote-image-server-lxd-or-simplestreams). Bravetools enables this by specifying the remote name in the `image` field:
+However, sometimes it can be desirable to also store an image on a remote LXD server, which acts as an [image repository](https://documentation.ubuntu.com/lxd/en/latest/reference/remote_image_servers/#remote-server-types). Bravetools enables this by specifying the remote name in the `image` field:
 
 ```yaml
 image: qemu:cowsay/1.0

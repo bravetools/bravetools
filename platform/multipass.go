@@ -81,7 +81,7 @@ func (vm Multipass) BraveBackendInit() error {
 			return errors.New("failed to create LXD profile: " + err.Error())
 		}
 
-		err = shared.ExecCommand("multipass",
+		storagePoolCmd := []string{
 			"exec",
 			vm.Settings.Name,
 			"--",
@@ -90,7 +90,12 @@ func (vm Multipass) BraveBackendInit() error {
 			"create",
 			vm.Settings.StoragePool.Name,
 			vm.Settings.StoragePool.Type,
-			"size="+vm.Settings.StoragePool.Size)
+		}
+		if vm.Settings.StoragePool.Type != "dir" {
+			storagePoolCmd = append(storagePoolCmd, "size="+vm.Settings.StoragePool.Size)
+		}
+
+		err = shared.ExecCommand("multipass", storagePoolCmd...)
 		if err != nil {
 			return errors.New("failed to create storage pool: " + err.Error())
 		}
@@ -311,7 +316,7 @@ EOF`
 		return errors.New("failed to create LXD profile: " + err.Error())
 	}
 
-	err = shared.ExecCommand("multipass",
+	storagePoolCmd := []string{
 		"exec",
 		vm.Settings.Name,
 		"--",
@@ -320,7 +325,12 @@ EOF`
 		"create",
 		vm.Settings.StoragePool.Name,
 		vm.Settings.StoragePool.Type,
-		"size="+vm.Settings.StoragePool.Size)
+	}
+	if vm.Settings.StoragePool.Type != "dir" {
+		storagePoolCmd = append(storagePoolCmd, "size="+vm.Settings.StoragePool.Size)
+	}
+
+	err = shared.ExecCommand("multipass", storagePoolCmd...)
 	if err != nil {
 		return errors.New("failed to create storage pool: " + err.Error())
 	}

@@ -81,7 +81,7 @@ Finally, on your host machine, add this LXD server as a Bravetools remote:
 brave remote add myremote https://$SERVER_IP_ADDRESS:8443 --password root
 ```
 
-This step will use [build-in LXD authentication](https://linuxcontainers.org/lxd/docs/master/authentication/) to establish a connection between your host and an LXD Remote via LXD socket.
+This step will use [built-in LXD authentication](https://documentation.ubuntu.com/lxd/en/latest/authentication/) to establish a connection between your host and an LXD Remote via LXD socket.
 
 Confirm that the remote has been added:
 

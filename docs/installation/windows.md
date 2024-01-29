@@ -25,7 +25,7 @@ Hyper-V on Windows 10:
 
 ### Software requirements
 
-Default installation of Bravetools runs on top of the [LXD](https://linuxcontainers.org/lxd/introduction/) daemon, which is not supported natively on Windows.
+Default installation of Bravetools runs on top of the [LXD](https://documentation.ubuntu.com/lxd/en/latest/) daemon, which is not supported natively on Windows.
 
 To run effectively on Windows, Bravetool requires [multipass](multipass.run). Multipass uses Windows' native Hyper-V technology to provision fast and lightweight Ubuntu virtual machines, which are seamlessly used by Bravetools behind the scenes.
 

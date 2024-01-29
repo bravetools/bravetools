@@ -8,7 +8,7 @@ description: "Bravetools initialisation."
 
 # Introduction
 
-Bravetools uses [LXD](https://linuxcontainers.org/lxd/introduction/) to build, deploy, and manage System Containers. This means that on most Linux-like systems it can run natively, provided that LXD is installed. On MacOS/Windows, Bravetools uses a lightweight [Multipass VM](https://multipass.run) to take care of the Linux kernel features required by LXC containers.
+Bravetools uses [LXD](https://documentation.ubuntu.com/lxd/en/latest/) to build, deploy, and manage System Containers. This means that on most Linux-like systems it can run natively, provided that LXD is installed. On MacOS/Windows, Bravetools uses a lightweight [Multipass VM](https://multipass.run) to take care of the Linux kernel features required by LXC containers.
 
 Bravetools relies on the following LXD features:
 

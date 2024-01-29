@@ -2,7 +2,7 @@
 
 
   # Bravetools
-Bravetools provides a simple and consistent interface to declare, build, and deploy [system containers](https://linuxcontainers.org/lxd/introduction/).
+Bravetools provides a simple and consistent interface to declare, build, and deploy [system containers](https://documentation.ubuntu.com/lxd/en/latest/explanation/containers_and_vms/#application-containers-vs-system-containers).
 
 # Features
 
@@ -45,7 +45,7 @@ Prerequisites:
 
 * Mac/Windows: [Multipass](https://multipass.run)
 * Linux:
-  - [LXD](https://linuxcontainers.org/lxd/getting-started-cli/)
+  - [LXD](https://documentation.ubuntu.com/lxd/en/latest/)
   - Ensure your user belongs to the `lxd` group: `sudo usermod --append --groups lxd $USER`
   - You may also need `zfsutils`: `sudo apt install zfsutils-linux`
 
