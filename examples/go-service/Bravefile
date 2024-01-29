@@ -1,43 +1,19 @@
-image: go-service/1.0
-
 base:
-  image: ubuntu/xenial
+  image: ubuntu/22.04
   location: public
 
 packages:
   manager: apt
   system:
-    - snapd
-    - git
-    - htop
-
-copy:
-  - source: main.go
-    target: /root/
-
-run:
-  - command: snap
-    args:
-      - install
-      - go
-      - --classic
+    - nginx
 
 service:
-  name: go-service
-  ip: 10.167.7.15
+  image: braveai-test
+  name: braveai-test
+  version: release-1.0
+  ip: ""
   ports:
     - 3000:3000
   resources:
     ram: 1GB
     cpu: 1
-  postdeploy:
-    run:
-      - command: go
-        args:
-          - build
-          - main.go
-      - command: bash
-        args:
-          - -c
-        content: |-
-          ./main >std.txt 2>err.txt &
