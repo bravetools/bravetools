@@ -234,7 +234,7 @@ func buildImage(bh *BraveHost, bravefile *shared.Bravefile) error {
 			return err
 		}
 
-		err = CheckStoragePoolSpace(lxdServer, bh.Settings.StoragePool.Name, img.Size)
+		err = CheckStoragePoolSpace(lxdServer, bh.Remote.Storage, img.Size)
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
@@ -289,7 +289,7 @@ func buildImage(bh *BraveHost, bravefile *shared.Bravefile) error {
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
-		err = CheckStoragePoolSpace(lxdServer, bh.Settings.StoragePool.Name, imgSize)
+		err = CheckStoragePoolSpace(lxdServer, bh.Remote.Storage, imgSize)
 		if err := shared.CollectErrors(err, ctx.Err()); err != nil {
 			return err
 		}
