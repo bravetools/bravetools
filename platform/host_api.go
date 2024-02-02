@@ -431,6 +431,8 @@ func (bh *BraveHost) UmountShare(unit string, target string) error {
 		if err != nil {
 			return errors.New("failed to umount " + target + ": " + err.Error())
 		}
+	default:
+		return fmt.Errorf("mounts are not supported for backend type %q", backend)
 	}
 
 	volume, _ := GetVolume(lxdServer, bh.Settings.StoragePool.Name)
@@ -531,6 +533,8 @@ func (bh *BraveHost) MountShare(source string, destUnit string, destPath string)
 		if err != nil {
 			return errors.New("failed to mount " + source + " to " + destUnit + ":" + destPath + " : " + err.Error())
 		}
+	default:
+		return fmt.Errorf("mounts are not supported for backend type %q", backend)
 	}
 
 	return nil
