@@ -108,6 +108,7 @@ service:
   resources:
     ram: 2GB
     cpu: 2
+    disk: 10GB
 
 ```
 
