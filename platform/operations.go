@@ -292,6 +292,34 @@ func AddDevice(lxdServer lxd.InstanceServer, unitName string, devname string, de
 
 }
 
+func UpdateDevice(lxdServer lxd.InstanceServer, unitName string, deviceName string, deviceSettings map[string]string) error {
+	inst, etag, err := lxdServer.GetInstance(unitName)
+	if err != nil {
+		return errors.New("Error accessing unit: " + unitName)
+	}
+
+	currentSettings, ok := inst.Devices[deviceName]
+	if !ok {
+		return fmt.Errorf("device %q not found on unit %q", deviceName, unitName)
+	}
+
+	for k, v := range deviceSettings {
+		currentSettings[k] = v
+	}
+
+	op, err := lxdServer.UpdateInstance(unitName, inst.Writable(), etag)
+	if err != nil {
+		return errors.New("Errors updating unit configuration: " + unitName)
+	}
+
+	err = op.Wait()
+	if err != nil {
+		return errors.New("Error updating unit " + unitName + " Error: " + err.Error())
+	}
+
+	return nil
+}
+
 // MountDirectory mounts local directory to unit
 func MountDirectory(lxdServer lxd.InstanceServer, sourcePath string, destUnit string, destPath string) error {
 
