@@ -44,6 +44,7 @@ service:
     ram: "1GB"
     cpu: 4
     gpu: "no"
+    disk: "10GB"
 ```
 
 Running `brave build` followed by `brave deploy` on a ``Bravefile`` above, will pull a blank Alpine Edge system image for your CPU architecture, install python3, and make the container available on your network with 1GB of RAM and 4 CPUs. Image itself, will be sotred as `alpine-python3` and can be viewed by running `brave images`.
@@ -146,6 +147,7 @@ service:
     ram: "4GB"
     cpu: 4
     gpu: "no"
+    disk: "10GB"
 ```
 
 If you're deploying to a remote Bravetools host, you can append `<remote>:` to the `name` field. Note that you have to ensure that `profile` and `network` options are set and reflect the set up of your remote LXD instance.
