@@ -15,7 +15,7 @@ Bravetools provides a simple and consistent interface to declare, build, and dep
 The steps to build and deploy an image are configured using a [Bravefile](https://bravetools.github.io/bravetools/docs/bravefile/).  
 View [sample Bravefiles](https://github.com/beringresearch/bravefiles/) on GitHub to explore common use cases.
 
-<img src="docs/assets/bravefile-template.png" alt="template" width="200">
+<img src="docs/assets/bravefile-template.png" alt="template" width="220">
 
 ## Build images
 Build new images or layer existing ones using `brave build`  
@@ -108,7 +108,7 @@ service:
   resources:
     ram: 2GB
     cpu: 2
-
+    disk: 10GB
 ```
 
 Create an image using the Bravefile
