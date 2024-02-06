@@ -269,7 +269,7 @@ func DeleteDevice(lxdServer lxd.InstanceServer, name string, target string) (str
 	return source, nil
 }
 
-// AddDevice adds an external device to
+// AddDevice adds an external device to a unit with the given devSettings
 func AddDevice(lxdServer lxd.InstanceServer, unitName string, devname string, devSettings map[string]string) error {
 	inst, etag, err := lxdServer.GetInstance(unitName)
 	if err != nil {
@@ -292,6 +292,8 @@ func AddDevice(lxdServer lxd.InstanceServer, unitName string, devname string, de
 
 }
 
+// UpdateDevice updates the deviceSettings of an existing device - existing config remains unchanged unless
+// overwritten by a matching key in the provided deviceSettings
 func UpdateDevice(lxdServer lxd.InstanceServer, unitName string, deviceName string, deviceSettings map[string]string) error {
 	inst, etag, err := lxdServer.GetInstance(unitName)
 	if err != nil {
