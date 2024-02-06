@@ -1154,6 +1154,14 @@ func (bh *BraveHost) InitUnit(backend Backend, unitParams shared.Service) (err e
 		}
 	}
 
+	if unitParams.Resources.Disk != "" {
+		diskLimitConfig := map[string]string{"size": unitParams.Resources.Disk}
+		err = UpdateDevice(lxdServer, unitName, "root", diskLimitConfig)
+		if err != nil {
+			return fmt.Errorf("failed to apply disk limit: %s", err)
+		}
+	}
+
 	err = SetConfig(lxdServer, unitName, config)
 	if err = shared.CollectErrors(err, ctx.Err()); err != nil {
 		return errors.New("error configuring unit: " + err.Error())

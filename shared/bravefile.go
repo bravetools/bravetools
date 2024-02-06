@@ -62,9 +62,10 @@ type Postdeploy struct {
 
 // Resources defines resources allocated to service
 type Resources struct {
-	RAM string `yaml:"ram"`
-	CPU string `yaml:"cpu"`
-	GPU string `yaml:"gpu"`
+	RAM  string `yaml:"ram"`
+	CPU  string `yaml:"cpu"`
+	GPU  string `yaml:"gpu"`
+	Disk string `yaml:"disk"`
 }
 
 // Bravefile describes unit configuration
@@ -212,6 +213,9 @@ func (s *Service) Merge(service *Service) {
 	}
 	if s.Resources.RAM == "" {
 		s.Resources.RAM = service.Resources.RAM
+	}
+	if s.Resources.Disk == "" {
+		s.Resources.Disk = service.Resources.Disk
 	}
 	if len(s.Postdeploy.Copy) == 0 {
 		s.Postdeploy.Copy = append(s.Postdeploy.Copy, service.Postdeploy.Copy...)

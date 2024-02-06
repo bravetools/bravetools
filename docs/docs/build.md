@@ -49,7 +49,7 @@ service:
     ram: 1GB
     cpu: 2
     gpu: "no"
-
+    disk: "10GB"
 ```
 
 This image will use Alpine Edge as its base and running `brave build` will install `python3` and `pip3` system packages using Alpine's `apk` package manager.
