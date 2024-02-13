@@ -19,8 +19,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     end
 
     config.vm.define "bravetoolsvm" do |bravetoolsvm|
-        bravetoolsvm.vm.box = "ubuntu/bionic64"
-        bravetoolsvm.disksize.size = "10GB"
+        bravetoolsvm.vm.box = "bento/ubuntu-22.04"
+        bravetoolsvm.disksize.size = "20GB"
         bravetoolsvm.vm.hostname = "bravetoolsvm"
 
         # Remote LXD port
