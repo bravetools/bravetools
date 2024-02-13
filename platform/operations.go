@@ -593,9 +593,14 @@ func Exec(ctx context.Context, lxdServer lxd.InstanceServer, name string, comman
 	fmt.Println(shared.Info("["+name+"] "+"RUN: "), shared.Warn(command))
 
 	req := api.ContainerExecPost{
-		Command:      command,
-		WaitForWS:    true,
-		RecordOutput: true,
+		Command:   command,
+		WaitForWS: true,
+		// record-output variable when set to true records stdout and stderr to disk.
+		// wait-for-websocket must be set to false.
+		// Both cannot be rue at the same time
+		// ! THIS IS A TEMPORARY FIX
+		// TODO: record-output and wait-for-websocket should be handled explicitly in Bravefile
+		RecordOutput: false,
 		Interactive:  false,
 		Environment:  arg.env,
 	}
@@ -608,6 +613,7 @@ func Exec(ctx context.Context, lxdServer lxd.InstanceServer, name string, comman
 		DataDone: make(chan bool),
 	}
 
+	// TODO: this parameter should be handled in Bravefile
 	if arg.detach {
 		req.WaitForWS = false
 	}

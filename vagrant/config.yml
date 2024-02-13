@@ -1,12 +1,13 @@
-name: brave
-trust: brave
-profile: brave
+name: braveai
+trust: braveai
+profile: braveai
 storage:
   type: zfs
-  name: brave
-  size: 8GB
+  name: braveai
+  size: 15GB
 network:
-  bridge: 20.0.0.1
+  name: braveaibr0
+  ip: 30.0.0.1
 backendsettings:
   type: lxd
   resources:
@@ -15,5 +16,5 @@ backendsettings:
     cpu: ""
     ram: ""
     hd: ""
-    ip: 0.0.0.0
+    ip: 127.0.0.1
 status: inactive
