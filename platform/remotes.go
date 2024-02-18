@@ -21,7 +21,7 @@ type Remote struct {
 	Protocol   string `json:"protocol"`
 	Public     bool   `json:"public"`
 	Profile    string `json:"profile"`
-	Network    string `json:"network"`
+	Network    string `JSON:"NETwork"`
 	Storage    string `json:"storage"`
 	key        string
 	cert       string
@@ -35,7 +35,15 @@ func NewBravehostRemote(settings HostSettings) Remote {
 	switch settings.BackendSettings.Type {
 	case "lxd":
 		protocol = "unix"
-		url = "/var/snap/lxd/common/lxd/unix.socket"
+	
+		//Check which LXC binary is present, and set the url accordingly - JVB
+		_, whichLxc, _ := lxdCheck(Lxd{&settings})
+
+		if strings.Contains("/snap/",whichLxc) {
+			url = "/var/snap/lxd/common/lxd/unix.socket"
+		} else {
+			url = "/var/lib/lxd/unix.socket"
+		}
 	default:
 		protocol = "lxd"
 		url = "https://" + settings.BackendSettings.Resources.IP + ":8443"
