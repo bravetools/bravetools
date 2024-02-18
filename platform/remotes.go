@@ -21,7 +21,7 @@ type Remote struct {
 	Protocol   string `json:"protocol"`
 	Public     bool   `json:"public"`
 	Profile    string `json:"profile"`
-	Network    string `JSON:"NETwork"`
+	Network    string `JSON:"network"`
 	Storage    string `json:"storage"`
 	key        string
 	cert       string
