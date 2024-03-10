@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path"
 	"path/filepath"
@@ -35,11 +36,13 @@ func NewBravehostRemote(settings HostSettings) Remote {
 	switch settings.BackendSettings.Type {
 	case "lxd":
 		protocol = "unix"
-	
+
 		//Check which LXC binary is present, and set the url accordingly - JVB
 		_, whichLxc, _ := lxdCheck(Lxd{&settings})
 
-		if strings.Contains("/snap/",whichLxc) {
+		log.Println("LXC binary location: " + whichLxc)
+
+		if strings.Contains(whichLxc, "snap") {
 			url = "/var/snap/lxd/common/lxd/unix.socket"
 		} else {
 			url = "/var/lib/lxd/unix.socket"
