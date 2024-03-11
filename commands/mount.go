@@ -4,6 +4,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/bravetools/bravetools/platform"
 	"github.com/spf13/cobra"
 )
 
@@ -33,12 +34,20 @@ func mount(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	remote := strings.SplitN(args[1], ":", -1)
-	if len(remote) == 1 {
+	remoteInfo := strings.SplitN(args[1], ":", -1)
+	if len(remoteInfo) == 1 {
 		log.Fatal("target directory should be specified as UNIT:<target>")
 	}
 
-	err := host.MountShare(args[0], remote[0], remote[1])
+	//Mounts are supported only over a local remote
+	remote, err := platform.LoadRemoteSettings("local")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	host.Remote = remote
+
+	err = host.MountShare(args[0], remoteInfo[0], remoteInfo[1])
 	if err != nil {
 		log.Fatal(err)
 	}

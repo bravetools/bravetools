@@ -324,7 +324,6 @@ func UpdateDevice(lxdServer lxd.InstanceServer, unitName string, deviceName stri
 
 // MountDirectory mounts local directory to unit
 func MountDirectory(lxdServer lxd.InstanceServer, sourcePath string, destUnit string, destPath string) error {
-
 	inst, etag, err := lxdServer.GetInstance(destUnit)
 	if err != nil {
 		return err
