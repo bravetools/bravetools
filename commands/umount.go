@@ -4,6 +4,7 @@ import (
 	"log"
 	"strings"
 
+	"github.com/bravetools/bravetools/platform"
 	"github.com/spf13/cobra"
 )
 
@@ -20,6 +21,14 @@ func umount(cmd *cobra.Command, args []string) {
 		log.Fatal("missing UNIT:<path>")
 		return
 	}
+
+	//Mounts are supported only over a local remote
+	remote, err := platform.LoadRemoteSettings("local")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	host.Remote = remote
 
 	for _, arg := range args {
 		remote := strings.SplitN(arg, ":", -1)
