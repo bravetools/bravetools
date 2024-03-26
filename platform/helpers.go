@@ -644,7 +644,7 @@ func bravefileCopy(ctx context.Context, lxdServer lxd.InstanceServer, copy []sha
 		}
 
 		if c.Action != "" {
-			_, err = Exec(ctx, lxdServer, service, []string{"bash", "-c", c.Action}, ExecArgs{})
+			_, err = Exec(ctx, lxdServer, service, []string{"sh", "-c", c.Action}, ExecArgs{})
 			if err != nil {
 				return errors.New("Failed to execute action: " + err.Error())
 			}
