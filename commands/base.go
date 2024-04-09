@@ -13,7 +13,7 @@ import (
 var baseBuild = &cobra.Command{
 	Use:   "base DISTRIBUTION/RELEASE/ARCH",
 	Short: "Pull a base image from LXD Image Server or public Github Bravefile",
-	Long: `Import images available at https://images.linuxcontainers.org or
+	Long: `Import images available at https://cloud-images.ubuntu.com/releases or
 from Bravefiles stored in public GitHub repositories`,
 	Run: buildBase,
 }

@@ -419,7 +419,7 @@ func resolveBaseImageLocation(imageString string, architecture string) (location
 	}
 
 	// Query public remote for alias
-	publicLxd, err := GetSimplestreamsLXDSever("https://images.linuxcontainers.org", nil)
+	publicLxd, err := GetSimplestreamsLXDSever("https://cloud-images.ubuntu.com/releases", nil)
 	if err != nil {
 		return "", err
 	}

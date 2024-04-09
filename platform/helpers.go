@@ -203,7 +203,7 @@ func buildImage(bh *BraveHost, bravefile *shared.Bravefile) error {
 
 		// Connect to image source LXD server
 		if bravefile.Base.Location == "public" {
-			sourceImageServer, err = GetSimplestreamsLXDSever("https://images.linuxcontainers.org", nil)
+			sourceImageServer, err = GetSimplestreamsLXDSever("https://cloud-images.ubuntu.com/releases", nil)
 			if err != nil {
 				return err
 			}
