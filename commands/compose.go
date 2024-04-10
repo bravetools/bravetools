@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/bravetools/bravetools/platform"
 	"github.com/bravetools/bravetools/shared"
 	"github.com/spf13/cobra"
 )
@@ -14,6 +15,14 @@ var braveCompose = &cobra.Command{
 	Short: "Compose a system from a set of images",
 	Long:  ``,
 	Run:   compose,
+}
+
+func init() {
+	includeComposeFlags(braveCompose)
+}
+
+func includeComposeFlags(cmd *cobra.Command) {
+	cmd.Flags().StringVarP(&remoteName, "remote", "r", "local", "Name of a Bravetools remote that will build the image")
 }
 
 func compose(cmd *cobra.Command, args []string) {
@@ -54,6 +63,18 @@ func compose(cmd *cobra.Command, args []string) {
 
 	if err != nil {
 		log.Fatal("failed to load compose file: ", err)
+	}
+
+	// Load build backend
+	remote, err := platform.LoadRemoteSettings(remoteName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	host.Remote = remote
+
+	if remote.Name != "local" {
+		host.Settings.StoragePool.Name = remote.Storage
 	}
 
 	err = host.Compose(backend, composefile)
