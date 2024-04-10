@@ -11,7 +11,7 @@ import (
 )
 
 var braveCompose = &cobra.Command{
-	Use:   "compose",
+	Use:   "compose [PATH]",
 	Short: "Compose a system from a set of images",
 	Long:  ``,
 	Run:   compose,
