@@ -23,7 +23,7 @@ type HostSettings struct {
 	Network           Network         `yaml:"network"`
 	BackendSettings   BackendSettings `yaml:"backendsettings"`
 	Status            string          `yaml:"status"`
-	PublicImageRemote string          `yaml:"public_image_remote"`
+	PublicImageRemote string          `yaml:"public_image_remote,omitempty"`
 }
 
 // Storage ..
@@ -95,7 +95,7 @@ type HostConfig struct {
 }
 
 // SetupHostConfiguration creates configuration file and saves it in bravetools directory
-func SetupHostConfiguration(params HostConfig, userHome string) (settings HostSettings) {
+func SetupHostConfiguration(params HostConfig, userHome string, publicImageServer string) (settings HostSettings) {
 	poolSizeInt, _ := strconv.Atoi(params.Storage)
 	poolSizeInt = poolSizeInt - 2
 
@@ -123,7 +123,7 @@ func SetupHostConfiguration(params HostConfig, userHome string) (settings HostSe
 			IP:   params.Network,
 		},
 		Status:            "inactive",
-		PublicImageRemote: shared.DefaultPublicImageRemote,
+		PublicImageRemote: publicImageServer,
 	}
 
 	if params.Backend == "multipass" {
