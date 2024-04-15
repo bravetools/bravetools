@@ -16,6 +16,9 @@ const ImageStore = BraveHome + "/images/"
 // Bravetools local remote name
 const BravetoolsRemote = "local"
 
+// Bravetools default public image remote
+const DefaultPublicImageRemote = "https://cloud-images.ubuntu.com/releases"
+
 // BraveRemoteStore is path to remotes dir
 const BraveRemoteStore = BraveHome + "/remotes"
 
