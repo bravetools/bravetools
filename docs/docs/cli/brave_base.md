@@ -16,7 +16,7 @@ brave base DISTRIBUTION/RELEASE/ARCH
 
 ## Description
 
-Bravetools can import base images either from LXD Image Server (https://cloud-images.ubuntu.com/releases) or from Bravefiles stored in public GitHub repositories. This creates an efficient way of leveraging multiple pre-built images to speed up creation of a bespoke system container.
+Bravetools can import base images either from LXD Image Server (https://images.lxd.canonical.com) or from Bravefiles stored in public GitHub repositories. This creates an efficient way of leveraging multiple pre-built images to speed up creation of a bespoke system container.
 
 ### Pulling from LXD Image server
 

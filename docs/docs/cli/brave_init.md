@@ -40,7 +40,7 @@ These steps ensure that Bravetools establishes a connection with LXD server and 
 
 ```
   -c, --config string                 Path to the host configuration file [OPTIONAL]
-      --default_image_remote string   The default public image remote to check if a base image is public (default "https://cloud-images.ubuntu.com/releases")
+      --default_image_remote string   The default public image remote to check if a base image is public (default "https://images.lxd.canonical.com")
   -h, --help                          help for init
   -m, --memory string                 Host memory size [OPTIONAL]. default 4GB (default "4GB")
   -n, --network string                Host network IP range [OPTIONAL]. default: randomly generate RFC1918 address
