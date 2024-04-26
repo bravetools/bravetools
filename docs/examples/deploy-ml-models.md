@@ -60,7 +60,7 @@ stdout_logfile_backups=10
 Supervisor will launch the streamlit script on port 8501 and, in case our environment goes down, it will attempt to autostart the app.
 
 ## Configuring application environment
-Now it's time to package all of these little bits into a self-contained System Container! We begin with a [Bravefile](../../docs/bravefile) that describes our system with all of its dependencies. For this application we'll use an Ubuntu 18.04 image from the [LXD image server](https://images.linuxcontainers.org/) and bundle in python3 and [supervisor](http://supervisord.org/index.html).
+Now it's time to package all of these little bits into a self-contained System Container! We begin with a [Bravefile](../../docs/bravefile) that describes our system with all of its dependencies. For this application we'll use an Ubuntu 18.04 image from the [LXD image server](https://images.lxd.canonical.com/) and bundle in python3 and [supervisor](http://supervisord.org/index.html).
 
 ```yaml
 base:

@@ -76,7 +76,7 @@ base:
 
 Three types of image locations are supported:
 
-1. ``public`` - specifies that images are to be pulled from the [linuxcontainers](https://images.linuxcontainers.org) repository. Accepted image name syntax is ``Distribution/Release/Architecture``.
+1. ``public`` - specifies that images are to be pulled from the configured "public" image remote. The default setting pulls from the [LXD images](https://images.lxd.canonical.com) repository.
 2. ``local`` - images stored locally. Naming follows the convention ``NAME/VERSION/ARCH``.
 3. ``github`` - images that can be built and imported on the fly from Bravefiles stored inside GitHub directories. Naming convention is ``username/repository/directory``. Bravetools will search for a Bravefiles inside the ``/directory`` location.
 

@@ -191,7 +191,7 @@ func buildImage(bh *BraveHost, bravefile *shared.Bravefile) error {
 
 	// If base image location not provided, attempt to infer it
 	if bravefile.Base.Location == "" {
-		bravefile.Base.Location, err = resolveBaseImageLocation(bravefile.Base.Image, buildServerArch)
+		bravefile.Base.Location, err = resolveBaseImageLocation(bravefile.Base.Image, buildServerArch, bh.Settings.PublicImageRemote)
 		if err != nil {
 			return fmt.Errorf("base image %q does not exist: %s", bravefile.Base.Image, err.Error())
 		}
@@ -203,7 +203,7 @@ func buildImage(bh *BraveHost, bravefile *shared.Bravefile) error {
 
 		// Connect to image source LXD server
 		if bravefile.Base.Location == "public" {
-			sourceImageServer, err = GetSimplestreamsLXDSever("https://images.linuxcontainers.org", nil)
+			sourceImageServer, err = GetSimplestreamsLXDSever(bh.Settings.PublicImageRemote, nil)
 			if err != nil {
 				return err
 			}

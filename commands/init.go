@@ -22,6 +22,7 @@ var hostInit = &cobra.Command{
 
 var hostConfigPath, storage, ram, network, backendType string
 var remoteBackend bool
+var publicImageRemote string = shared.DefaultPublicImageRemote
 
 func init() {
 	includeInitFlags(hostInit)
@@ -34,6 +35,7 @@ func includeInitFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVarP(&network, "network", "n", "", "Host network IP range [OPTIONAL]. default: randomly generate RFC1918 address")
 
 	cmd.PersistentFlags().BoolVar(&remoteBackend, "remote", false, "whether backend is remote (will not be initialized)")
+	cmd.PersistentFlags().StringVar(&publicImageRemote, "default_image_remote", publicImageRemote, "The default public image remote to check if a base image is public")
 }
 
 func serverInit(cmd *cobra.Command, args []string) {
@@ -111,7 +113,7 @@ func serverInit(cmd *cobra.Command, args []string) {
 		loadConfig()
 	} else {
 		userHome, _ := os.UserHomeDir()
-		platform.SetupHostConfiguration(params, userHome)
+		platform.SetupHostConfiguration(params, userHome, publicImageRemote)
 		loadConfig()
 	}
 

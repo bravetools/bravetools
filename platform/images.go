@@ -380,7 +380,7 @@ func localImageSize(image BravetoolsImage) (bytes int64, err error) {
 	return info.Size(), nil
 }
 
-func resolveBaseImageLocation(imageString string, architecture string) (location string, err error) {
+func resolveBaseImageLocation(imageString string, architecture string, publicImageRemote string) (location string, err error) {
 
 	remote, imageString := ParseRemoteName(imageString)
 
@@ -419,7 +419,7 @@ func resolveBaseImageLocation(imageString string, architecture string) (location
 	}
 
 	// Query public remote for alias
-	publicLxd, err := GetSimplestreamsLXDSever("https://images.linuxcontainers.org", nil)
+	publicLxd, err := GetSimplestreamsLXDSever(publicImageRemote, nil)
 	if err != nil {
 		return "", err
 	}

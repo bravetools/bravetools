@@ -16,13 +16,14 @@ import (
 
 // HostSettings configuration data loaded from config.yaml
 type HostSettings struct {
-	Name            string          `yaml:"name"`
-	Trust           string          `yaml:"trust"`
-	Profile         string          `yaml:"profile"`
-	StoragePool     Storage         `yaml:"storage"`
-	Network         Network         `yaml:"network"`
-	BackendSettings BackendSettings `yaml:"backendsettings"`
-	Status          string          `yaml:"status"`
+	Name              string          `yaml:"name"`
+	Trust             string          `yaml:"trust"`
+	Profile           string          `yaml:"profile"`
+	StoragePool       Storage         `yaml:"storage"`
+	Network           Network         `yaml:"network"`
+	BackendSettings   BackendSettings `yaml:"backendsettings"`
+	Status            string          `yaml:"status"`
+	PublicImageRemote string          `yaml:"public_image_remote,omitempty"`
 }
 
 // Storage ..
@@ -94,7 +95,7 @@ type HostConfig struct {
 }
 
 // SetupHostConfiguration creates configuration file and saves it in bravetools directory
-func SetupHostConfiguration(params HostConfig, userHome string) (settings HostSettings) {
+func SetupHostConfiguration(params HostConfig, userHome string, publicImageServer string) (settings HostSettings) {
 	poolSizeInt, _ := strconv.Atoi(params.Storage)
 	poolSizeInt = poolSizeInt - 2
 
@@ -121,7 +122,8 @@ func SetupHostConfiguration(params HostConfig, userHome string) (settings HostSe
 			Name: networkBridgeName,
 			IP:   params.Network,
 		},
-		Status: "inactive",
+		Status:            "inactive",
+		PublicImageRemote: publicImageServer,
 	}
 
 	if params.Backend == "multipass" {
@@ -234,7 +236,9 @@ func ConfigureHost(settings HostSettings, remote Remote) error {
 
 // loadHostSettings reads config.yaml in /.bravetools directory
 func loadHostSettings(userHome string) (HostSettings, error) {
-	settings := HostSettings{}
+	settings := HostSettings{
+		PublicImageRemote: shared.DefaultPublicImageRemote,
+	}
 	var buf bytes.Buffer
 
 	f, err := os.Open(path.Join(userHome, shared.PlatformConfig))
