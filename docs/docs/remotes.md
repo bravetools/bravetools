@@ -157,3 +157,34 @@ Basic Bravetools commands such as `brave start`, `brave stop`, and `brave remove
 ```bash
 brave start myremote:test
 ```
+
+## Configurable base image servers
+
+### Default base image server
+Canonical has deployed their own images server that hosts images from other distributions (including alpine, centOS, Debian etc...). This server is available at https://images.lxd.canonical.com. The one downside to this image repository is that it does not ship Ubuntu server images, only Ubuntu desktop images. If you need Ubuntu server images they are available at a different repository: https://cloud-images.ubuntu.com/releases.
+
+You can configure bravetools to use Ubuntu server images by editing or adding the config option 'public_image_remote' in ~/.bravetools/config.yml:
+```
+public_image_remote: https://cloud-images.ubuntu.com/minimal/releases/
+```
+
+Alternatively you can follow the instructions below to add an "ubuntu" remote and use that remote when specifying your base image in your Bravefile.
+
+### Adding additional image servers
+It's possible to add remote image server as bravetools remotes and explicitly select which remote to use to retrieve the base image in the Bravefile instead of adjusting the default in bravetools config. This can be useful if you want to use a remote by default except for certain images - for example, using https://images.lxd.canonical.com for most images but https://cloud-images.ubuntu.com/releases for cloud Ubuntu server images.
+
+For example, first add a remote named "ubuntu" for Ubuntu server cloud images:
+```sh
+brave remote add --protocol simplestreams --public ubuntu https://cloud-images.ubuntu.com/releases/                     
+```
+
+Then in the Bravefile specify that this remote is to be used to retrieve the base image:
+```yaml
+image: example-image/v1.0
+
+base:
+  image: ubuntu:20.04
+
+service:
+  name: example-container
+```
