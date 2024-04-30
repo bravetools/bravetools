@@ -110,53 +110,6 @@ When a new remote is added, its configuration is stored in `~/.bravetools/remote
 
 `profile` and `network` parameters refer to LXD profile and bridge on your remote respectively. You may need to alter these values, depending on your remote set up and manually edit `profile` and `network` fields to reflect your remote LXD configuration.
 
-## Configuring Bravetools to use Remotes for image builds
-
-By default, Bravetools uses a `local` remote for an image build. On Mac/Windows, this is a Multipass VM, whilst on Linux host this is your local LXD server. Sometimes, it may be desirable to use a remote LXD server to cary out Image builds. For example, if your remote has a different CPU architecture (arm64 vs x86) or has more allocated resources.
-
-Bravetools remote backend can be set in the global configuration file `~/.bravetools/config.yml` by setting the `remote` field to the name of one of your added remotes.
-
-```yaml
-name: user
-trust: user
-profile: user
-storage:
-  type: zfs
-  name: user-20220915121119
-  size: 98GB
-network:
-  name: userbr0
-  ip: 10.57.220.1
-backendsettings:
-  type: multipass
-  resources:
-    name: user
-    os: bionic
-    cpu: "2"
-    ram: 4GB
-    hd: 100GB
-    ip: 192.168.64.60
-status: active
-remote: local
-```
-
-Next time you run `brave build`, Bravetools will execute Bravefile instructions on the remote LXD server.
-
-## Deploying Units to Remotes
-
-To deploy an image to a specific remote, you can simply append the remote name to your target Unit name either on the command line or in the ``service`` section of your ``Bravefile``.
-
-```
-brave deploy brave-base-alpine-edge-1.0 --name myremote:test --port 1234:1234
-```
-
-## Manipulating Units on Remotes
-
-Basic Bravetools commands such as `brave start`, `brave stop`, and `brave remove` can access both local and remote units. If remote name is not appended to the unit name, Bravetools will assume that the unit is running on a `local` remote. To interact with a unit on a remote LXD server, simply append <remote>: to the unit name:
-
-```bash
-brave start myremote:test
-```
 
 ## Configurable base image servers
 
@@ -188,3 +141,53 @@ base:
 service:
   name: example-container
 ```
+
+
+## Deploying Units to Remotes
+
+To deploy an image to a specific remote, you can simply append the remote name to your target Unit name either on the command line or in the ``service`` section of your ``Bravefile``.
+
+```
+brave deploy brave-base-alpine-edge-1.0 --name myremote:test --port 1234:1234
+```
+
+## Manipulating Units on Remotes
+
+Basic Bravetools commands such as `brave start`, `brave stop`, and `brave remove` can access both local and remote units. If remote name is not appended to the unit name, Bravetools will assume that the unit is running on a `local` remote. To interact with a unit on a remote LXD server, simply append <remote>: to the unit name:
+
+```bash
+brave start myremote:test
+```
+
+
+## Configuring Bravetools to use Remotes for image builds
+
+By default, Bravetools uses a `local` remote for an image build. On Mac/Windows, this is a Multipass VM, whilst on Linux host this is your local LXD server. Sometimes, it may be desirable to use a remote LXD server to cary out Image builds. For example, if your remote has a different CPU architecture (arm64 vs x86) or has more allocated resources.
+
+Bravetools remote backend can be set in the global configuration file `~/.bravetools/config.yml` by setting the `remote` field to the name of one of your added remotes.
+
+```yaml
+name: user
+trust: user
+profile: user
+storage:
+  type: zfs
+  name: user-20220915121119
+  size: 98GB
+network:
+  name: userbr0
+  ip: 10.57.220.1
+backendsettings:
+  type: multipass
+  resources:
+    name: user
+    os: bionic
+    cpu: "2"
+    ram: 4GB
+    hd: 100GB
+    ip: 192.168.64.60
+status: active
+remote: local
+```
+
+Next time you run `brave build`, Bravetools will execute Bravefile instructions on the remote LXD server.
