@@ -117,6 +117,41 @@ func serverInit(cmd *cobra.Command, args []string) {
 		loadConfig()
 	}
 
+	// Create default remotes
+	imagesRemote := platform.Remote{
+		Name:     "images",
+		URL:      "https://images.lxd.canonical.com",
+		Protocol: "simplestreams",
+		Public:   true,
+	}
+
+	ubuntuRemote := platform.Remote{
+		Name:     "ubuntu",
+		URL:      "https://cloud-images.ubuntu.com/releases/",
+		Protocol: "simplestreams",
+		Public:   true,
+	}
+
+	ubuntuMinimalRemote := platform.Remote{
+		Name:     "ubuntu-minimal",
+		URL:      "https://cloud-images.ubuntu.com/minimal/releases/",
+		Protocol: "simplestreams",
+		Public:   true,
+	}
+
+	err = platform.SaveRemote(imagesRemote)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = platform.SaveRemote(ubuntuRemote)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = platform.SaveRemote(ubuntuMinimalRemote)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	if remoteBackend {
 		fmt.Println("bravetools initialized - add a remote with `brave remote add local ...`")
 		return
