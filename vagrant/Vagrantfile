@@ -26,7 +26,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         # Remote LXD port
         bravetoolsvm.vm.network "forwarded_port", guest: 8443, host: 8443
         # App port
-        bravetoolsvm.vm.network "forwarded_port", guest: 3000, host: 3000
+        bravetoolsvm.vm.network "forwarded_port", guest: 3003, host: 3003
 
         bravetoolsvm.vm.provider "virtualbox" do |vb|
             vb.name = "bravedev"

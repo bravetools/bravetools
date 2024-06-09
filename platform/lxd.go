@@ -216,11 +216,11 @@ func checkLXDVersion(whichLxc string) (clientVersion int, serverVersion int, err
 	if len(serverVersionString) == 2 {
 		serverVersionString = serverVersionString + "0"
 	}
-	clientVersion, err = strconv.Atoi(clientVersionString)
+	clientVersion, err = strconv.Atoi(strings.Split(clientVersionString, " ")[0])
 	if err != nil {
 		fmt.Println(err)
 	}
-	serverVersion, err = strconv.Atoi(serverVersionString)
+	serverVersion, err = strconv.Atoi(strings.Split(serverVersionString, " ")[0])
 	if err != nil {
 		fmt.Println(err)
 	}
