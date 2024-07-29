@@ -132,7 +132,7 @@ func SetupHostConfiguration(params HostConfig, userHome string, publicImageServe
 			Type: "multipass",
 			Resources: BackendResources{
 				Name: hostName,
-				OS:   "bionic",
+				OS:   "noble",
 				CPU:  "2",
 				RAM:  params.Ram,
 				HD:   params.Storage + "GB",
