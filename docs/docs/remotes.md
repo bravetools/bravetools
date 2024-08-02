@@ -27,19 +27,7 @@ Ability to manipulate containers across multiple enables features such as:
 * remote unit deployment
 * remote management of system containers
 
-The default remote is called `local` and it is automatically added on first use of Bravetools. All remotes are stored in `~/.bravetools/remotes/` directory. Here's a basic configuration of a `local` remote, which follows a JSON structure:
-
-```json
-{
-    "name": "local",
-    "url": "https://192.168.64.60:8443",
-    "protocol": "lxd",
-    "public": false,
-    "profile": "user",
-    "network": "userbr0",
-    "storage": "user-20220915121119"
-}
-```
+The default remote is called `local` and it is automatically added on first use of Bravetools.
 
 ## Adding a New Remote
 
@@ -126,7 +114,7 @@ Alternatively you can follow the instructions below to add an "ubuntu" remote an
 ### Adding additional image servers
 It's possible to add remote image server as bravetools remotes and explicitly select which remote to use to retrieve the base image in the Bravefile instead of adjusting the default in bravetools config. This can be useful if you want to use a remote by default except for certain images - for example, using https://images.lxd.canonical.com for most images but https://cloud-images.ubuntu.com/releases for cloud Ubuntu server images.
 
-For example, first add a remote named "ubuntu" for Ubuntu server cloud images:
+For example, you could add a remote named "ubuntu" for Ubuntu server cloud images (although this remote is created for you during `brave init`):
 ```sh
 brave remote add --protocol simplestreams --public ubuntu https://cloud-images.ubuntu.com/releases/                     
 ```
