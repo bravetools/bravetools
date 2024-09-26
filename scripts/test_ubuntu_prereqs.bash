@@ -3,7 +3,8 @@
 if [[ "" != $(which lxd) ]]
 then
 	LXD_VERSION=$(lxd version)
-	dpkg --compare-versions 3.0.3 le "${LXD_VERSION}" 
+	LXD_VERSION_CLEANED=$(echo "$LXD_VERSION" | sed 's/ .*//')
+	dpkg --compare-versions 3.0.3 le "${LXD_VERSION_CLEANED}" 
 	if [[ $? != 0 ]]	
 	then
 		echo 'lxd version not new enough' ;

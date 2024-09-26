@@ -1,5 +1,5 @@
 base:
-  image: ubuntu/22.04
+  image: 22.04
   location: public
 
 packages:
