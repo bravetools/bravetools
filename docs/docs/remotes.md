@@ -148,34 +148,14 @@ brave start myremote:test
 ```
 
 
-## Configuring Bravetools to use Remotes for image builds
+## Remote image builds
 
 By default, Bravetools uses a `local` remote for an image build. On Mac/Windows, this is a Multipass VM, whilst on Linux host this is your local LXD server. Sometimes, it may be desirable to use a remote LXD server to cary out Image builds. For example, if your remote has a different CPU architecture (arm64 vs x86) or has more allocated resources.
 
-Bravetools remote backend can be set in the global configuration file `~/.bravetools/config.yml` by setting the `remote` field to the name of one of your added remotes.
+To use a remote LXD server to build an image use the `--remote` flag of the `brave build` command to select the remote. For example, the following command will use the remote named "utm_x86-64" to build the image and store the result in the local machine's image store.
 
-```yaml
-name: user
-trust: user
-profile: user
-storage:
-  type: zfs
-  name: user-20220915121119
-  size: 98GB
-network:
-  name: userbr0
-  ip: 10.57.220.1
-backendsettings:
-  type: multipass
-  resources:
-    name: user
-    os: bionic
-    cpu: "2"
-    ram: 4GB
-    hd: 100GB
-    ip: 192.168.64.60
-status: active
-remote: local
+```sh
+brave build --remote utm_x86-64
 ```
 
-Next time you run `brave build`, Bravetools will execute Bravefile instructions on the remote LXD server.
+Note that if you build an image on a remote with a different CPU architecture than your current machine you will not be able to launch that image on your local machine's LXD server. However you can deploy that image to any remote LXD server running on the same CPU architecture (x86_64 for the above example).
