@@ -23,10 +23,10 @@ import (
 
 	"github.com/briandowns/spinner"
 
-	lxd "github.com/lxc/lxd/client"
-	lxdshared "github.com/lxc/lxd/shared"
-	api "github.com/lxc/lxd/shared/api"
-	"github.com/lxc/lxd/shared/ioprogress"
+	lxd "github.com/canonical/lxd/client"
+	lxdshared "github.com/canonical/lxd/shared"
+	api "github.com/canonical/lxd/shared/api"
+	"github.com/canonical/lxd/shared/ioprogress"
 )
 
 // DeleteNetwork ..
@@ -110,8 +110,13 @@ func AddRemote(remote Remote, password string) error {
 	certf := path.Join(userHome, shared.BraveClientCert)
 	keyf := path.Join(userHome, shared.BraveClientKey)
 
+	options := lxdshared.CertOptions{}
+	options.AddHosts = false
+	options.CommonName = ""
+	options.SubjectAlternativeNames = []string{}
+
 	// Generate client certificates
-	err = lxdshared.FindOrGenCert(certf, keyf, true, false)
+	err = lxdshared.FindOrGenCert(certf, keyf, true, options)
 	if err != nil {
 		return err
 	}
@@ -122,7 +127,9 @@ func AddRemote(remote Remote, password string) error {
 
 	// Check if the system CA worked for the TLS connection
 	var certificate *x509.Certificate
-	certificate, err = lxdshared.GetRemoteCertificate(remote.URL, "")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	certificate, err = lxdshared.GetRemoteCertificate(ctx, remote.URL, "")
 	if err != nil {
 		return err
 	}
@@ -411,7 +418,7 @@ func GetBraveProfile(lxdServer lxd.InstanceServer, profileName string) (bravePro
 		if pName == profileName {
 			braveProfile.Name = pName
 			profile, _, _ := lxdServer.GetProfile(pName)
-			for k, v := range profile.ProfilePut.Devices {
+			for k, v := range profile.Devices {
 				if k == "eth0" {
 					braveProfile.Bridge = v["parent"]
 				}
@@ -426,7 +433,7 @@ func GetBraveProfile(lxdServer lxd.InstanceServer, profileName string) (bravePro
 }
 
 func containerHasProfile(container *api.Container, profileName string) bool {
-	for _, p := range container.ContainerPut.Profiles {
+	for _, p := range container.Profiles {
 		if p == profileName {
 			return true
 		}
@@ -599,7 +606,7 @@ func Exec(ctx context.Context, lxdServer lxd.InstanceServer, name string, comman
 		return 0, err
 	}
 
-	err = retry(5, 2*time.Second, func() (err error) {
+	err = retry(10, 4*time.Second, func() (err error) {
 		if err = ctx.Err(); err != nil {
 			return err
 		}
@@ -607,6 +614,9 @@ func Exec(ctx context.Context, lxdServer lxd.InstanceServer, name string, comman
 		if err != nil {
 			return fmt.Errorf("failed to get container %q: %s", name, err.Error())
 		}
+
+		fmt.Println("network:", c.Network)
+
 		ip := c.Network["eth0"].Addresses[0].Address
 		isIP := isIPv4(ip)
 		if !isIP {

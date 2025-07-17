@@ -16,8 +16,8 @@ import (
 	"syscall"
 
 	"github.com/bravetools/bravetools/shared"
-	lxd "github.com/lxc/lxd/client"
-	"github.com/lxc/lxd/shared/api"
+	lxd "github.com/canonical/lxd/client"
+	"github.com/canonical/lxd/shared/api"
 )
 
 // Private Helpers

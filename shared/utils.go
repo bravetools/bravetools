@@ -19,7 +19,7 @@ import (
 	"unicode"
 
 	"github.com/briandowns/spinner"
-	"github.com/lxc/lxd/shared"
+	"github.com/canonical/lxd/shared"
 )
 
 var (
@@ -82,7 +82,7 @@ func TCPPortStatus(host string, ports []string) error {
 	return nil
 }
 
-//GenerateRandomRFC1919 generates a random address in 10.x.x.1/24 range
+// GenerateRandomRFC1919 generates a random address in 10.x.x.1/24 range
 func GenerateRandomRFC1919() (string, error) {
 	for i := 0; i < 100; i++ {
 		cidr := fmt.Sprintf("10.%d.%d.1/24", rand.Intn(255), rand.Intn(255))
@@ -325,7 +325,7 @@ func FileSha256Hash(path string) (fingerprint string, err error) {
 	return fingerprint, nil
 }
 
-//CheckPath checks if path exists
+// CheckPath checks if path exists
 func CheckPath(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err == nil {
@@ -337,7 +337,7 @@ func CheckPath(path string) (bool, error) {
 	return false, err
 }
 
-//FileExists checks if path exists and ensures that it's a file
+// FileExists checks if path exists and ensures that it's a file
 func FileExists(filename string) bool {
 	info, err := os.Stat(filename)
 	if os.IsNotExist(err) {

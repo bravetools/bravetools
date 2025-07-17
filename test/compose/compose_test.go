@@ -36,7 +36,7 @@ func TestCompose(t *testing.T) {
 	//Cleanup
 	for service := range composefile.Services {
 		host.DeleteUnit(service)
-		host.DeleteLocalImage(composefile.Services[service].Image)
+		host.DeleteLocalImage(composefile.Services[service].Image, true)
 	}
 
 }

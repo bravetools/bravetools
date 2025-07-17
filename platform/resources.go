@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/bravetools/bravetools/shared"
-	lxd "github.com/lxc/lxd/client"
+	lxd "github.com/canonical/lxd/client"
 )
 
 // CheckMemory checks if the LXD server host has sufficient RAM to deploy requested unit
