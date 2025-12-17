@@ -443,12 +443,13 @@ func containerHasProfile(container *api.Container, profileName string) bool {
 
 // GetUnits returns all running units
 func GetUnits(lxdServer lxd.InstanceServer, profileName string) (units []shared.BraveUnit, err error) {
-	names, err := lxdServer.GetContainerNames()
+	names, err := lxdServer.GetInstanceNames(api.InstanceTypeContainer)
+
 	if err != nil {
 		return nil, err
 	}
 	for _, n := range names {
-		containerState, _, _ := lxdServer.GetContainerState(n)
+		containerState, _, _ := lxdServer.GetInstanceState(n)
 		var unit shared.BraveUnit
 		container, _, _ := lxdServer.GetContainer(n)
 
