@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"errors"
 	"io"
-	"io/ioutil"
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"strconv"
 
 	"github.com/bravetools/bravetools/shared"
@@ -103,7 +103,7 @@ func SetupHostConfiguration(params HostConfig, userHome string, publicImageServe
 
 	profileName, err := getCurrentUsername()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("cannot get user name", err)
 	}
 	storagePoolName := profileName
 
@@ -125,6 +125,9 @@ func SetupHostConfiguration(params HostConfig, userHome string, publicImageServe
 		Status:            "inactive",
 		PublicImageRemote: publicImageServer,
 	}
+
+	log.Println("HostSettings: ", settings)
+	log.Println("params: ", params)
 
 	if params.Backend == "multipass" {
 
@@ -163,13 +166,22 @@ func SetupHostConfiguration(params HostConfig, userHome string, publicImageServe
 
 	doc, err := yaml.Marshal(settings)
 	if err != nil {
-		log.Fatal(err.Error())
+		log.Fatal("Error creating setting file:", err.Error())
 	}
 
-	err = ioutil.WriteFile(path.Join(userHome, shared.PlatformConfig), doc, os.ModePerm)
+	dirPath := filepath.Dir(path.Join(userHome, shared.PlatformConfig))
+
+	err = os.MkdirAll(dirPath, 0755)
 	if err != nil {
-		log.Fatal(err.Error())
+		log.Fatal("failed to create directory: %w", err)
 	}
+
+	err = os.WriteFile(path.Join(userHome, shared.PlatformConfig), doc, os.ModePerm)
+	if err != nil {
+		log.Fatal("Error writing config file:", err.Error())
+	}
+
+	log.Println("settings:", settings)
 
 	return settings
 }
@@ -182,7 +194,7 @@ func UpdateBraveSettings(settings HostSettings) error {
 	}
 
 	userHome, _ := os.UserHomeDir()
-	err = ioutil.WriteFile(path.Join(userHome, shared.PlatformConfig), config, os.ModePerm)
+	err = os.WriteFile(path.Join(userHome, shared.PlatformConfig), config, os.ModePerm)
 	if err != nil {
 		return errors.New("Failed to write bravetools settings to file: " + err.Error())
 	}

@@ -1,0 +1,21 @@
+name: brave
+trust: brave
+profile: brave
+storage:
+  type: dir
+  name: brave
+  size: 10GB
+network:
+  name: bravebr0
+  ip: 30.0.0.1
+backendsettings:
+  type: lxd
+  resources:
+    name: brave
+    os: "24.04"
+    cpu: ""
+    ram: 
+    hd: 12GB
+    ip:
+status: inactive
+public_image_remote: https://cloud-images.ubuntu.com/releases/

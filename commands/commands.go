@@ -54,8 +54,11 @@ func init() {
 
 	userHome, _ := os.UserHomeDir()
 	exists, err := shared.CheckPath(path.Join(userHome, shared.PlatformConfig))
+	fmt.Println(exists)
+	log.Println("Checking platform configuration")
+	log.Println("error: ", err)
 	if err != nil {
-		log.Fatal(err.Error())
+		log.Fatal("Error loading platform configuration: ", err.Error())
 	}
 
 	if exists {
@@ -116,14 +119,15 @@ func deleteBraveHome(userHome string) error {
 }
 
 func loadConfig() {
+	fmt.Println("Loading config ...")
 	var err error
 	h, err := platform.NewBraveHost()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Config file not found: ", err)
 	}
 	host = *h
 	backend = host.Backend
-	if err != nil {
-		log.Fatal(err)
-	}
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
 }

@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"path/filepath"
 	"runtime"
 
 	"github.com/bravetools/bravetools/db"
@@ -47,6 +48,8 @@ func serverInit(cmd *cobra.Command, args []string) {
 
 	hostOs := runtime.GOOS
 
+	log.Println("remoteBackend:", remoteBackend)
+
 	if !remoteBackend {
 		switch hostOs {
 		case "linux":
@@ -58,17 +61,52 @@ func serverInit(cmd *cobra.Command, args []string) {
 		default:
 			err := deleteBraveHome(userHome)
 			if err != nil {
-				fmt.Println(err.Error())
+				fmt.Println("Error deleting home directory:", err.Error())
 			}
 			log.Fatal("unsupported host OS: ", hostOs)
 		}
 
-		if network == "" {
-			ip, err := shared.GenerateRandomRFC1919()
+		log.Println("hostConfigPath:", hostConfigPath)
+		if hostConfigPath != "" {
+			log.Println("Copy platform configuration")
+
+			dirPath := filepath.Dir(path.Join(userHome, shared.PlatformConfig))
+
+			err := os.MkdirAll(dirPath, 0755)
 			if err != nil {
-				log.Fatal(err.Error())
+				log.Fatal("failed to create directory: %w", err)
 			}
-			network = ip
+
+			err = shared.CopyFile(hostConfigPath, path.Join(userHome, shared.PlatformConfig))
+			log.Println("Error copy config:", err)
+			if err != nil {
+				if err := deleteBraveHome(userHome); err != nil {
+					fmt.Println("Error deleting home directory:", err.Error())
+				}
+				log.Fatal("Error copy config:", err)
+			}
+			loadConfig()
+		} else {
+			userHome, _ := os.UserHomeDir()
+			params := platform.HostConfig{
+				Storage: storage,
+				Ram:     ram,
+				Network: network,
+				Backend: backendType,
+			}
+			log.Println("params:", params)
+			log.Println("userHome:", userHome)
+			log.Println("publicImageRemote:", publicImageRemote)
+			platform.SetupHostConfiguration(params, userHome, publicImageRemote)
+			loadConfig()
+
+			if network == "" {
+				ip, err := shared.GenerateRandomRFC1919()
+				if err != nil {
+					log.Fatal("Error creating network:", err.Error())
+				}
+				network = ip
+			}
 		}
 	} else {
 		backendType = "remote"
@@ -77,7 +115,7 @@ func serverInit(cmd *cobra.Command, args []string) {
 	// Create $HOME/.bravetools
 	err := createBraveHome(userHome)
 	if err != nil {
-		log.Fatal(err.Error())
+		log.Fatal("Error create home directory:", err.Error())
 	}
 
 	dbPath := path.Join(userHome, shared.BraveDB)
@@ -93,28 +131,6 @@ func serverInit(cmd *cobra.Command, args []string) {
 			}
 			log.Fatal("failed to initialize database: ", err)
 		}
-	}
-
-	params := platform.HostConfig{
-		Storage: storage,
-		Ram:     ram,
-		Network: network,
-		Backend: backendType,
-	}
-
-	if hostConfigPath != "" {
-		err = shared.CopyFile(hostConfigPath, path.Join(userHome, shared.PlatformConfig))
-		if err != nil {
-			if err := deleteBraveHome(userHome); err != nil {
-				fmt.Println(err.Error())
-			}
-			log.Fatal(err)
-		}
-		loadConfig()
-	} else {
-		userHome, _ := os.UserHomeDir()
-		platform.SetupHostConfiguration(params, userHome, publicImageRemote)
-		loadConfig()
 	}
 
 	// Create default remotes

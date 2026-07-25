@@ -21,6 +21,6 @@ func main() {
 
 	err := commands.BravetoolsCmd.Execute()
 	if err != nil && err.Error() != "" {
-		log.Fatal(err)
+		log.Fatal("Error executing command:", err)
 	}
 }
